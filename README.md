@@ -27,7 +27,7 @@ This build system is intended to make your life easier when moving from a KSS st
 
 # Adding Custom JS
  * Because this tool uses html imports, the markup for which is inserted asyncronously, you'll probably want to load custom JS after everything has been output. To do this, create a `<script>` tag anywhere before `insert-nodes.js` is loaded and create a `window.protoScripts` variable. This variable should contain an array of relative paths to the scripts you'd like to include after all markup has loaded.
- * If you have a vendor JS bundle, you can most likely
+ * If you have a vendor JS bundle, you can most likely just load it in a script tag syncronously. No waiting necessary!
 
 # Test it out in this repo!
  * run `npm install`
