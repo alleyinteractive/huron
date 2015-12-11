@@ -16,10 +16,11 @@ This build system is intended to make your life easier when moving from a KSS st
  * Just rememeber: all static assets and partials you load in your prototype MUST be relative to the server root you set or, if you don't set anything, relative to the `huron` directory.
 
 # Building markup
- * Use the included `index.html` for a base prototype template. If you decide to create a new one, you MUST include `node_modulees/webcomponents.js/webcomponents-lite.min.js` and `js/insert-nodes.js` in the prototype footer.
+ * Use the included `index.html` for a base prototype template. If you decide to create a new one, you MUST include `node_modules/webcomponents.js/webcomponents-lite.min.js` and `js/insert-nodes.js` in the prototype footer.
  * Inserting a partial is a two-step process.
   * First, create an html import in your prototype `<head>` to include the necessary html. This is done via a link element: `<link rel="import" href="path/to/my-partial.html">`.
   * Next, insert an empty `<div>` tag with a `class` attribute corresponding to the filename of the partial you wish to insert and a `partial` attribute set with no value. Example: `<div class="my-partial" partial></div>` would insert the contents of `my-partial.html` imported in the previous step.
+ * If you need to create custom partials outside of your KSS workflow, you can! Keep in mind partials are recursive: you can go through the same two-step process above to include a sub-partial in your partial HTML (except you don't need a `<head>` tag, you can just put your import `<link>` tags above your markup).
 
 # KSS tools
  * Set `proto-skip` as an empty attribute on any element in your KSS markup to remove it from your generated partials
@@ -35,7 +36,7 @@ This build system is intended to make your life easier when moving from a KSS st
  * run `npm run prototype`
  * navigate to `localhost:8080/index.html` in your browser of choice
 
-Gotchas:
+# Gotchas
 * Sometimes you may need to do some "styleguide only" styles. I often delimit these styles in comments. If you do this, please do not use the work 'styleguide' in your comment! This will break the build tool. Only use the keyword 'styleguide' to denote a new styleguide section.
 
-That's it! Happy prototyping!
+**That's it! Happy prototyping!**
