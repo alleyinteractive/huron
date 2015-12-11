@@ -12,8 +12,8 @@ This build system is intended to make your life easier when moving from a KSS st
 # Serving
  * In order to work locally with webcomponents, they must be served and, therefore, you'll need to set a static directory from which to serve. The default is `huron`'s directory. You can change this with the `--serve-root` flag. I recommend you do one of two things:
   * If you want everything encapsulated, keep the default and serve from `huron` root. If you do this, you'll have to copy over any extra static assets to the `huron` directory.
-  * Swith to serving from `huron`'s parent directory. This way, you can access extra static assets straight from your parent repo or WP theme without copying anything over.
- * Just rememeber: all static assets and partials you load in your prototype MUST be relative to the server root you set or, if you don't set anthing, relative to the `huron` directory.
+  * Switch to serving from `huron`'s parent directory. This way, you can access extra static assets straight from your parent repo or WP theme without copying anything over.
+ * Just rememeber: all static assets and partials you load in your prototype MUST be relative to the server root you set or, if you don't set anything, relative to the `huron` directory.
 
 # Building markup
  * Use the included `index.html` for a base prototype template. If you decide to create a new one, you MUST include `node_modulees/webcomponents.js/webcomponents-lite.min.js` and `js/insert-nodes.js` in the prototype footer.
