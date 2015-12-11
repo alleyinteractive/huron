@@ -26,7 +26,7 @@ This build system is intended to make your life easier when moving from a KSS st
  * Set `proto-skip` as an empty attribute on any element in your KSS markup to remove it from your generated partials
  * Set `proto-ignore` as an empty attribute on a wrapper element (or any element for that matter, but a wrapper element is more obvious) to prevent a partial from being generated for that KSS section. Example usage: you don't have JS running in your styleguide, but you do in your prototype. Therefore, you need to mimic JS-inserted markup in your styleguide, but can use regular markup for your prototype.
 
-# Adding Custom JS
+# Adding custom JS
  * Because this tool uses html imports, the markup for which is inserted asyncronously, you'll probably want to load custom JS after everything has been output. To do this, create a `<script>` tag anywhere before `insert-nodes.js` is loaded and create a `window.protoScripts` variable. This variable should contain an array of relative paths to the scripts you'd like to include after all markup has loaded.
  * If you have a vendor JS bundle, you can most likely just load it in a script tag syncronously. No waiting necessary!
 
