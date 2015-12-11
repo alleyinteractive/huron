@@ -1,7 +1,7 @@
 Huron: Alley's Prototype Build System
 ======================
 
-This build system is intended to make your life easier when moving from a KSS styleguide or SC5 styleguide to full-page, in-browser prototypes. This tool will copy all markup from each of your KSS sections into a separate html file, which can then be imported via webcomponents HTML import. Below are the steps and, once you read through them, try it out within this repo (it's functional!).
+This build system is intended to make your life easier when moving from a KSS styleguide or SC5 styleguide to full-page, in-browser prototypes. This tool will copy all markup from each of your KSS sections into a separate html file, which can then be imported via webcomponents HTML import. If you use SC5's `<sg-insert>` to reference another section, this will be replaced by an import to the partial it references. Below are the steps and, once you read through them, try it out within this repo (it's functional!).
 
 # Installation
  * Don't forget to install the required npm packages with `npm install` (from within the `huron` directory).
@@ -25,6 +25,7 @@ This build system is intended to make your life easier when moving from a KSS st
 # KSS tools
  * Set `proto-skip` as an empty attribute on any element in your KSS markup to remove it from your generated partials
  * Set `proto-ignore` as an empty attribute on a wrapper element (or any element for that matter, but a wrapper element is more obvious) to prevent a partial from being generated for that KSS section. Example usage: you don't have JS running in your styleguide, but you do in your prototype. Therefore, you need to mimic JS-inserted markup in your styleguide, but can use regular markup for your prototype.
+ * When the tool replaces an `<sg-insert>`, it assumes the partial being referenced is also generated and output in `partials/generated` or your custom output path. If this is not the case or you would like to override the default, wrap the `<sg-insert>` in a `<div>` with a `path` attribute set to the path where the partial actually resides, relative to `partials/generated` or your custom output directory. Example if you're using the default output directory: `<div path="../user"><sg-insert>6.1</sg-insert></div>` will search for the partial from section `6.1` in `partials/user` instead of `partials/generated`. If it is a partial you created, make sure it's named the same thing as it would be if it were generated. This means if the section header is "Article Header Area" you'd name it `article-header-area.html`.
 
 # Adding custom JS
  * Because this tool uses html imports, the markup for which is inserted asyncronously, you'll probably want to load custom JS after everything has been output. To do this, create a `<script>` tag anywhere before `insert-nodes.js` is loaded and create a `window.protoScripts` variable. This variable should contain an array of relative paths to the scripts you'd like to include after all markup has loaded.

@@ -88,6 +88,7 @@ function writeMarkup(markup, styleguide, partialHeader) {
 				if (inserts.length) {
 					for (var i = 0; i < inserts.length; i++) {
 						var insert = inserts.item(i),
+							pathOverride = insert.parentElement.attributes.path,
 							section = styleguide.section(insert.textContent),
 							subsectionName = normalizeHeader(section.header()),
 							reference = doc.createElement('div'),
@@ -102,8 +103,8 @@ function writeMarkup(markup, styleguide, partialHeader) {
 
 						// Create link href, checking if there is a path override in the styleguide
 						link.href = '';
-						if ( 'undefined' !== typeof insert.attributes.path ) {
-							link.href += '../' + insert.attributes.path.nodeValue + '/';
+						if ( 'undefined' !== typeof pathOverride ) {
+							link.href += pathOverride.nodeValue + '/';
 						}
 						link.href += subsectionName + '.html';
 
