@@ -4,10 +4,10 @@ Alley Prototype Build System
 This build system is intended to make your life easier when moving from a KSS styleguide or SC5 styleguide to full-page, in-browser prototypes. This tool will copy all markup from each of your KSS sections into a separate html file, which can then be imported via webcomponents HTML import. Here are the steps:
 
 # Installation
- * Don't forget to install the required npm packages with `npm install` (from within the `prototype` directory).
- * Add an NPM script or run the prototypes script by hand via `node prototype/bin/prototype.js`.
+ * Don't forget to install the required npm packages with `npm install` (from within the `huron` directory).
+ * Add an NPM script or run the prototypes script by hand via `node huron/bin/prototype.js`.
  * Make sure you pass at least a KSS source directory with the flag `--kss-source=path/to/my/source`.
- * Run your script and make sure your partials were generated correctly. Default output directory for partials is `prototype/partials`, but this can be changed with the flag `--destination=path/to/output`. I recommended creating separate directories for auto-built partials and custom partials.
+ * Run your script and make sure your partials were generated correctly. Default output directory for partials is `partials/generated`, but this can be changed with the flag `--destination=path/to/output`. I recommended creating separate directories for auto-built partials and custom partials.
 
 # Serving
  * In order to work locally with webcomponents, they must be served and, therefore, you'll need to set a static directory from which to serve. The default is `huron`'s directory. You can change this with the `--serve-root` flag. I recommend you do one of two things:
