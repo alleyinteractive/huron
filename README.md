@@ -1,7 +1,7 @@
-Alley Prototype Build System
+Huron: Alley's Prototype Build System
 ======================
 
-This build system is intended to make your life easier when moving from a KSS styleguide or SC5 styleguide to full-page, in-browser prototypes. This tool will copy all markup from each of your KSS sections into a separate html file, which can then be imported via webcomponents HTML import. Here are the steps:
+This build system is intended to make your life easier when moving from a KSS styleguide or SC5 styleguide to full-page, in-browser prototypes. This tool will copy all markup from each of your KSS sections into a separate html file, which can then be imported via webcomponents HTML import. Below are the steps and, once you read through them, try it out within this repo (it's functional!).
 
 # Installation
  * Don't forget to install the required npm packages with `npm install` (from within the `huron` directory).
@@ -28,6 +28,12 @@ This build system is intended to make your life easier when moving from a KSS st
 # Adding Custom JS
  * Because this tool uses html imports, the markup for which is inserted asyncronously, you'll probably want to load custom JS after everything has been output. To do this, create a `<script>` tag anywhere before `insert-nodes.js` is loaded and create a `window.protoScripts` variable. This variable should contain an array of relative paths to the scripts you'd like to include after all markup has loaded.
  * If you have a vendor JS bundle, you can most likely
+
+# Test it out in this repo!
+ * run `npm install`
+ * make sure you're in the `huron` directory
+ * run `npm run prototype`
+ * navigate to `localhost:8080/index.html` in your browser of choice
 
 Gotchas:
 * Sometimes you may need to do some "styleguide only" styles. I often delimit these styles in comments. If you do this, please do not use the work 'styleguide' in your comment! This will break the build tool. Only use the keyword 'styleguide' to denote a new styleguide section.
