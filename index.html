@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Example Prtototype</title>
+
+	<link rel="stylesheet" href="/static/css/test.css">
+
+	<link rel="import" href="partials/generated/test-partial-one.html">
+	<link rel="import" href="partials/generated/test-partial-two.html">
+	<link rel="import" href="partials/user/test-partial-three.html">
+</head>
+<body>
+	<div class="test-partial-one" partial></div>
+	<div class="test-partial-two" partial></div>
+
+	<div class="test-partial-three" partial></div>
+	<div class="test-partial-three" partial></div>
+
+	<script type="text/javascript">
+		window.protoScripts = ['/static/js/test.js'];
+	</script>
+	<script type="text/javascript" src="node_modules/webcomponents.js/webcomponents-lite.min.js"></script>
+	<script type="text/javascript" src="js/insert-nodes.js"></script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+// Test Partial Two
+//
+// This is the second of two test partials
+//
+// markup:
+// <div class="test-partial-two">
+// 	<span>Hello again, world!</span>
+//	<p proto-skip>This paragraph tag should be ignored</p>
+// </div>
+//
+// Styleguide 1.2
+
+.test-partial-two {
+	color: red;
+}
