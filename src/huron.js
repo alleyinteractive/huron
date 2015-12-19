@@ -37,8 +37,6 @@ program
   .option('--runOnce', 'Run only once, without watching')
   .parse(process.argv);
 
-console.log(program);
-
 init();
 
 function init() {
