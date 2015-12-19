@@ -5,13 +5,27 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "prototype": "node bin/prototype.js --kss-source=test-kss --destination=partials/generated"
+    "prototype": "node bin/prototype.js --kss-source=test-kss --destination=partials/generated",
+    "prepublish": "./node_modules/.bin/babel -d lib src/",
+    "test": "./node_modules/.bin/babel-node ./src/huron.js -s test-kss -d partials/generated"
   },
+  "bin": {
+    "huron": "src/huron.js"'
+  },
+  "main": "index.js",
   "dependencies": {
-    "webcomponents.js": "^0.7.19",
+    "commander": "^2.9.0",
     "connect": "^3.4.0",
+    "gaze": "^0.5.2",
+    "jsdom": "^7.2.0",
     "kss": "^2.1.1",
     "serve-static": "^1.10.0",
-    "jsdom": "^7.2.0"
+    "webcomponents.js": "^0.7.19"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.3.17",
+    "babel-preset-es2015": "^6.3.13",
+    "jasmine-node": "^1.14.5",
+    "rewire": "^2.5.1"
   }
 }
