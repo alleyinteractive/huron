@@ -10,7 +10,7 @@
     "test": "./node_modules/.bin/babel-node ./src/huron.js -s test-kss -d partials/generated"
   },
   "bin": {
-    "huron": "src/huron.js"'
+    "huron": "src/huron.js"
   },
   "main": "index.js",
   "dependencies": {
