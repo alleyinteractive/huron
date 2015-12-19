@@ -67,21 +67,16 @@ function init() {
 
   gaze.on('all', (event, filepath) => {
     // Adding/Deleting files
-    if (event === 'deleted' || event === 'added') {
-      if (program.output) {
-        console.log(`${filepath.substring(cwd.length)} ${event}`);
-      }
-      // Remove the target file (since race conditions are dumb)
-      kssTraverse(gaze.watched());
+    if (event === 'deleted' || event === 'added' && program.output) {
+      console.log(`${filepath.substring(cwd.length)} ${event}`);
     }
 
     // Changed on target file
-    if (event === 'changed') {
-      if (program.output) {
-        console.log(`Running doctoc on ${program.target}`);
-      }
-      kssTraverse(gaze.watched());
+    if (event === 'changed' && program.output) {
+      console.log(`Running doctoc on ${program.target}`);
     }
+
+    kssTraverse(gaze.watched());
   });
 
 }
