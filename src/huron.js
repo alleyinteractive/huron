@@ -24,11 +24,20 @@ program
   )
   .option(
     '-r, --root [root]',
-    '[root] directory for the server, defaults to current working directory'
+    '[root] directory for the server, defaults to current working directory',
+    cwd
+  )
+  .option(
+    '--port [port]',
+    '[port] to listen the server on',
+    (port) => parseInt(port),
+    8080
   )
   .option('-o, --output', 'Verbose output of options')
   .option('--runOnce', 'Run only once, without watching')
   .parse(process.argv);
+
+console.log(program);
 
 init();
 
@@ -88,12 +97,14 @@ function kssTraverse(files) {
     // Loop through sections
     styleguide.data.sections.forEach((section, idx) => {
       const sectionData = styleguide.section(section.data.reference);
-      if ('undefined' !== typeof sectionData.data && 'undefined' !== section.data.markup) {
+      if (typeof sectionData.data !== 'undefined'
+        && section.data.markup !== 'undefined'
+      ) {
         const partialHeader = normalizeHeader(sectionData.header());
 
         // Check if we have markup
-        if ('string' === typeof section.data.markup) {
-          const tempOutput = writeMarkup(section.data.markup, styleguide, partialHeader);
+        if (typeof section.data.markup === 'string') {
+          writeMarkup(section.data.markup, styleguide, partialHeader);
         }
       }
     });
@@ -194,12 +205,8 @@ function startServer() {
   // Start server
   connect()
     .use(
-      serveStatic(
-        (typeof program.root !== 'undefined')
-        ? program.root
-        : cwd
-      )
+      serveStatic(program.root)
     )
-    .listen(8080);
-  console.log('Serving from localhost:8080...');
+    .listen(program.port);
+  console.log(`Serving from localhost:${program.port}...`);
 }
