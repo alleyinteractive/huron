@@ -188,9 +188,14 @@ function writeMarkup(markup, styleguide, partialHeader) {
 
         // Write the html
         if ( '' !== doc.body.innerHTML ) {
-          console.log(`Writing ${partialHeader}.html`);
+          if (program.output) {
+            console.log(`Writing ${partialHeader}.html`);
+          }
+
           fs.writeFileSync(filename, htmlOutput, {}, function(err) {
-            if (err) throw err;
+            if (err) {
+              throw err;
+            }
           });
         }
       }
