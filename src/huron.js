@@ -48,8 +48,10 @@ function init() {
 
 	const gaze = new Gaze(program.source);
 
+	// Run once no matter what to show most up to date
+	kssTraverse(gaze.watched());
+
 	if(program.runOnce) {
-		kssTraverse(gaze.watched());
 		gaze.close();
 		return;
 	} else {
@@ -78,8 +80,7 @@ function init() {
     }
 
     // Changed on target file
-    if (event === 'changed' &&
-      (filepath.substring(cwd.length) === program.target.substring(1))) {
+    if (event === 'changed') {
       if (program.output) {
         console.log(`Running doctoc on ${program.target}`);
       }
