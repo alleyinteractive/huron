@@ -5,7 +5,6 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "prototype": "node bin/prototype.js --kss-source=test-kss --destination=partials/generated",
     "prepublish": "./node_modules/.bin/babel -d lib src/",
     "test": "./node_modules/.bin/babel-node ./src/huron.js --source './test-kss/**/*.scss' --destination 'partials/generated/'",
     "test-once": "./node_modules/.bin/babel-node ./src/huron.js --source './test-kss/**/*.scss' --destination 'partials/generated/' --runOnce",
