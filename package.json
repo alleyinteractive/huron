@@ -7,7 +7,8 @@
   "scripts": {
     "prototype": "node bin/prototype.js --kss-source=test-kss --destination=partials/generated",
     "prepublish": "./node_modules/.bin/babel -d lib src/",
-    "test": "./node_modules/.bin/babel-node ./src/huron.js -s test-kss -d partials/generated"
+    "test": "./node_modules/.bin/babel-node ./src/huron.js --source './test-kss/**/*.scss' --destination 'partials/generated/' --runOnce",
+    "help": "./node_modules/.bin/babel-node ./src/huron.js -h"
   },
   "bin": {
     "huron": "src/huron.js"

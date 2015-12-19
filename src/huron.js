@@ -1,62 +1,113 @@
 #!/usr/bin/env node
 
 // Requires
-var fs = require('fs'),
-	path = require('path'),
-	kss = require('kss'),
-	connect = require('connect'),
-	serveStatic = require('serve-static'),
-	jsdom = require('jsdom');
+const fs = require('fs'); // File system
+const	path = require('path');
+const	kss = require('kss'); // node implementation of KSS: a methodology for documenting CSS and generating style guides
+const	connect = require('connect'); // HTTP server framework
+const	serveStatic = require('serve-static'); // File serving service
+const	jsdom = require('jsdom'); // JavaScript implementation of the WHATWG DOM and HTML
+const Gaze = require('gaze').Gaze; // File watcher
+const program = require('commander'); // Easy program flags
+const cwd = process.cwd(); // Current Working Directory
 
-// Vars
-var directory = '',
-	destination = path.join(__dirname, '../', 'partials/generated'),
-	serveRoot = path.join(__dirname, '../'),
-	options = {};
+program
+  .version('0.0.1')
+  .option(
+  	'--source [source]',
+  	'KSS [source directory]'
+  )
+  .option(
+  	'--destination [destination]',
+  	'[destination] of partials output',
+  	(dest) => [cwd,dest].join('/')
+  )
+  .option(
+  	'-r, --root [root]',
+  	'[root] directory for the server, defaults to current working directory'
+  )
+  .option('-o, --output', 'Verbose output of options')
+  .option('--runOnce', 'Run only once, without watching')
+  .parse(process.argv);
 
-process.argv.forEach(function(value, idx){
-	var ksspath, destpath, servpath;
+init();
 
-	// Location of KSS documentation to parse
-	if ( value.indexOf('kss-source') >= 0 ) {
-		kssPath = value.replace('--kss-source=', '');
-		directory = path.join(__dirname, '../', kssPath);
+function init() {
+	if (typeof program.source === 'undefined') {
+		console.log('No KSS source given');
+		return;
+	}
+	if (typeof program.destination === 'undefined') {
+		console.log('No destination given');
+		return;
 	}
 
-	// Output destination for partials
-	if ( value.indexOf('destination') >= 0 ) {
-		destPath = value.replace('--destination=', '');
-		destination = path.join(__dirname, '../', destPath);
+	let directory = program.source;
+	let destination = program.destination;
+	let serveRoot = program.root || '../../';
+
+	const gaze = new Gaze(program.source);
+
+	if(program.runOnce) {
+		kssTraverse(gaze.watched());
+		gaze.close();
+		return;
+	} else {
+		// Start connect server
+		startServer();
 	}
 
-	// Root directory for server
-	if ( value.indexOf('serve-root') >= 0 ) {
-		servePath = value.replace('--serve-root=', '');
-		serveRoot = path.join(__dirname, '../../', servePath);
-	}
-})
+	gaze.on('error', (error) => {
+    console.log(`An error has occured: ${error}`);
+    return;
+  });
 
-// Start connect server
-startServer();
+  gaze.on('nomatch', () => {
+    console.log('No matches found');
+    return;
+  });
+
+  gaze.on('all', (event, filepath) => {
+    // Adding/Deleting files
+    if (event === 'deleted' || event === 'added') {
+      if (program.output) {
+        console.log(`${filepath.substring(cwd.length)} ${event}`);
+      }
+      // Remove the target file (since race conditions are dumb)
+      kssTraverse(gaze.watched());
+    }
+
+    // Changed on target file
+    if (event === 'changed' &&
+      (filepath.substring(cwd.length) === program.target.substring(1))) {
+      if (program.output) {
+        console.log(`Running doctoc on ${program.target}`);
+      }
+      kssTraverse(gaze.watched());
+    }
+  });
+
+}
 
 // Parse KSS and insert into an HTML partial
-kss.traverse(directory, options, function(err, styleguide) {
-	// Loop through sections
-	styleguide.data.sections.forEach(function(section, idx) {
-		var sectionData = styleguide.section(section.data.reference);
-		if ('undefined' !== typeof sectionData.data && 'undefined' !== section.data.markup) {
-			var partialHeader = normalizeHeader(sectionData.header()),
-				filename = '',
-				htmlOutput = '',
-				inserts;
+function kssTraverse(files) {
+	let kssRoot = Object.keys(files)[0];
+	kss.traverse(kssRoot, {}, (err, styleguide) => {
+		// Loop through sections
+		styleguide.data.sections.forEach((section, idx) => {
+			const sectionData = styleguide.section(section.data.reference);
+			if ('undefined' !== typeof sectionData.data && 'undefined' !== section.data.markup) {
+				const partialHeader = normalizeHeader(sectionData.header());
 
-			// Check if we have markup
-			if ('string' === typeof section.data.markup) {
-				var tempOutput = writeMarkup(section.data.markup, styleguide, partialHeader);
+				// Check if we have markup
+				if ('string' === typeof section.data.markup) {
+					const tempOutput = writeMarkup(section.data.markup, styleguide, partialHeader);
+				}
 			}
-		}
+		});
 	});
-});
+}
+
 
 // Make sure we have a normalized string for filename
 function normalizeHeader(header) {
@@ -68,31 +119,33 @@ function normalizeHeader(header) {
 // Parse the section markup
 function writeMarkup(markup, styleguide, partialHeader) {
 	// Create filename string
-	var filename = destination + '/' + partialHeader + '.html',
-		htmlOutput = '',
-		linkList = [];
+	const filename = `${program.destination}/${partialHeader}.html`;
+	let htmlOutput = '';
+	let linkList = [];
 
 	// Use jsdom to parse section html
 	jsdom.env({
 		html: markup,
 		done: function(err, window) {
-			if (err) throw err;
+			if (err) {
+				throw err;
+			}
 
-			var doc = window.document,
-				inserts = doc.getElementsByTagName('sg-insert'),
-				skip = doc.querySelectorAll('[proto-skip]'),
-				ignore = doc.querySelectorAll('[proto-ignore]');
+			const doc = window.document;
+			const inserts = doc.getElementsByTagName('sg-insert');
+			const skip = doc.querySelectorAll('[proto-skip]');
+			const ignore = doc.querySelectorAll('[proto-ignore]');
 
 			// Find sg-insert elements, replace with prototype insert, add a corresponding html import <link>
 			if (!ignore.length) {
 				if (inserts.length) {
-					for (var i = 0; i < inserts.length; i++) {
-						var insert = inserts.item(i),
-							pathOverride = insert.parentElement.attributes.path,
-							section = styleguide.section(insert.textContent),
-							subsectionName = normalizeHeader(section.header()),
-							reference = doc.createElement('div'),
-							link = doc.createElement('link');
+					for (let i = 0; i < inserts.length; i++) {
+						const insert = inserts.item(i);
+						const pathOverride = insert.parentElement.attributes.path;
+						const section = styleguide.section(insert.textContent);
+						const subsectionName = normalizeHeader(section.header());
+						const reference = doc.createElement('div');
+						const link = doc.createElement('link');
 
 						// Create partial insert point
 						reference.className = subsectionName;
@@ -123,8 +176,8 @@ function writeMarkup(markup, styleguide, partialHeader) {
 
 				// Remove styleguide-only elements
 				if (skip.length) {
-					for (var j = 0; j < skip.length; j++) {
-						var exclude = skip.item(j);
+					for (let j = 0; j < skip.length; j++) {
+						const exclude = skip.item(j);
 
 						exclude.parentElement.removeChild(exclude);
 					}
@@ -134,7 +187,7 @@ function writeMarkup(markup, styleguide, partialHeader) {
 
 				// Write the html
 				if ( '' !== doc.body.innerHTML ) {
-					console.log('Writing ' + partialHeader + '.html' );
+					console.log(`Writing ${partialHeader}.html`);
 					fs.writeFileSync(filename, htmlOutput, {}, function(err) {
 						if (err) throw err;
 					});
@@ -144,10 +197,17 @@ function writeMarkup(markup, styleguide, partialHeader) {
 	});
 }
 
+
 function startServer() {
 	// Start server
-	connect().use(
-		serveStatic(serveRoot)
-	).listen(8080);
+	connect()
+		.use(
+			serveStatic(
+				(typeof program.root !== 'undefined')
+				? program.root
+				: cwd
+			)
+		)
+		.listen(8080);
 	console.log('Serving from localhost:8080...');
 }
