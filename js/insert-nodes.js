@@ -12,59 +12,80 @@ insertNodes(initLinks, document);
 
 // Recursive function for replacing nodes
 function insertNodes(links, context) {
-	// Loop through html import <link> elements
-	for (var i = 0; i < links.length; i++) {
-		// Grab the link contents and the href for insertion
-		var linkNode = links.item(i),
-			template = links.item(i).import,
-			href = linkNode.attributes.getNamedItem('href'),
-			contents, contentBody, target, targetId, childLinks;
+	window.addEventListener('WebComponentsReady', function() {
+		// Loop through html import <link> elements
+		for (var i = 0; i < links.length; i++) {
+			// Grab the link contents and the href for insertion
+			var linkNode = links.item(i),
+				href = linkNode.attributes.getNamedItem('href'),
+				template, target;
 
-		// Convert href into a class string
-		if ('undefined' !== href) {
-			targetId = href.nodeValue
-				.replace(/^.*[\\\/]/, '')
-				.replace('.html', '');
+			template = linkNode.import;
+			target = convertHref(href, context);
+			moveMarkup(template, target);
+		}
+	});
 
-			// Search for replaceable targets (divs with a class corresponding to an html import filename)
-			target = context.querySelectorAll('.' + targetId);
+	loadScripts(context);
+}
+
+function convertHref(href, context) {
+	var targetId, target;
+
+	// Convert href into a class string
+	if (href) {
+		targetId = href.value
+			.replace(/^.*[\\\/]/, '')
+			.replace('.html', '');
+
+		// Search for replaceable targets (divs with a class corresponding to an html import filename)
+		target = context.querySelectorAll('.' + targetId);
+
+		return target;
+	}
+
+	return false;
+}
+
+function moveMarkup(template, target) {
+	var childLinks, contents, contentBody;
+
+	// Check if we have both imported html and a target
+	if (template && target) {
+		// Find all the html imports in the partial
+		childLinks = template.querySelectorAll('link[rel="import"]');
+		contentBody = template.body;
+		contents = template.body.children;
+
+		// Recursively call insertNodes() for child templates
+		if (childLinks.length) {
+			insertNodes(childLinks, contentBody);
 		}
 
-		// Check if we have both imported html and a target
-		if (null !== template && null !== target) {
-			// Find all the html imports in the partial
-			childLinks = template.querySelectorAll('link[rel="import"]');
-			contentBody = template.body;
-			contents = template.body.children;
+		// Loop through each target and replace with the html import
+		for (var k = 0; k < target.length; k++) {
+			var currentTarget = target.item(k);
 
-			// Recursively call insertNodes() for child templates
-			if (childLinks.length) {
-				insertNodes(childLinks, contentBody);
-			}
+			// Make sure this is intended to be a partial insertion point by checking the 'partial' attribute
+			if ( 'undefined' !== typeof currentTarget.attributes.partial ) {
 
-			// Loop through each target and replace with the html import
-			for (var k = 0; k < target.length; k++) {
-				var currentTarget = target.item(k);
+				// Loop through contents of template
+				for (var j = 0; j < contents.length; j++) {
+					var childNode = contents.item(j),
+						clone = childNode.cloneNode(true);
 
-				// Make sure this is intended to be a partial insertion point by checking the 'partial' attribute
-				if ( 'undefined' !== typeof currentTarget.attributes.partial ) {
-
-					// Loop through contents of template
-					for (var j = 0; j < contents.length; j++) {
-						var childNode = contents.item(j),
-							clone = childNode.cloneNode(true);
-
-						// Add in contents
-						currentTarget.parentElement.insertBefore(clone, currentTarget);
-					}
-
-					// Remove target node as it is no longer needed
-					currentTarget.parentElement.removeChild(currentTarget);
+					// Add in contents
+					currentTarget.parentElement.insertBefore(clone, currentTarget);
 				}
+
+				// Remove target node as it is no longer needed
+				currentTarget.parentElement.removeChild(currentTarget);
 			}
 		}
 	}
+}
 
+function loadScripts(context) {
 	if ( document === context && 'undefined' !== window.protoScripts && window.protoScripts.length ) {
 		var scriptArray = protoScripts,
 			bodyNodes = document.body.children;
