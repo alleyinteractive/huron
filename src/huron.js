@@ -74,13 +74,13 @@ function init() {
 
   gaze.on('all', (event, filepath) => {
     // Adding/Deleting files
-    if (event === 'deleted' || event === 'added' && program.output) {
+    if (event === 'deleted' || event === 'added') {
       console.log(`${filepath.substring(cwd.length)} ${event}`);
     }
 
     // Changed on target file
-    if (event === 'changed' && program.output) {
-      console.log(`Running doctoc on ${program.target}`);
+    if (event === 'changed') {
+      console.log(`Writing partial for ${filepath}`);
     }
 
     kssTraverse(gaze.watched());
@@ -188,10 +188,6 @@ function writeMarkup(markup, styleguide, partialHeader) {
 
         // Write the html
         if ( '' !== doc.body.innerHTML ) {
-          if (program.output) {
-            console.log(`Writing ${partialHeader}.html`);
-          }
-
           fs.writeFileSync(filename, htmlOutput, {}, function(err) {
             if (err) {
               throw err;
