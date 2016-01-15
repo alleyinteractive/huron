@@ -47,7 +47,7 @@ function insertNodes(links, context) {
 				var currentTarget = target.item(k);
 
 				// Make sure this is intended to be a partial insertion point by checking the 'partial' attribute
-				if ( 'undefined' !== typeof currentTarget.attributes.partial ) {
+				if ('undefined' !== typeof currentTarget.attributes.partial) {
 
 					// Loop through contents of template
 					for (var j = 0; j < contents.length; j++) {
@@ -65,7 +65,7 @@ function insertNodes(links, context) {
 		}
 	}
 
-	if ( document === context && 'undefined' !== window.protoScripts && window.protoScripts.length ) {
+	if (document === context && 'undefined' !== window.protoScripts && window.protoScripts.length) {
 		var scriptArray = protoScripts,
 			bodyNodes = document.body.children;
 
