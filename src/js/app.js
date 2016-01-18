@@ -5,30 +5,32 @@
  * to insert.
  */
 
-var initLinks = document.querySelectorAll('link[rel="import"]');
+class InsertNodes {
 
-// Top level insert
-insertNodes(initLinks, document);
+	constructor(links, context) {
+		this.links = links;
+		this.context = context;
 
-// Recursive function for replacing nodes
-function insertNodes(links, context) {
-	// Loop through html import <link> elements
-	for (var i = 0; i < links.length; i++) {
-		// Grab the link contents and the href for insertion
-		var linkNode = links.item(i),
-			template = links.item(i).import,
-			href = linkNode.attributes.getNamedItem('href'),
-			contents, contentBody, target, targetId, childLinks;
+		// Inits
+		this.loopLinks();
+		this.insertScripts();
+	}
 
-		// Convert href into a class string
-		if ('undefined' !== href) {
-			targetId = href.nodeValue
-				.replace(/^.*[\\\/]/, '')
-				.replace('.html', '');
+	loopLinks() {
+		// Loop through html import <link> elements
+		for (let i = 0; i < this.links.length; i++) {
+			// Grab the link contents and the href for insertion
+			var linkNode = this.links.item(i),
+				template = linkNode.import,
+				href = linkNode.attributes.getNamedItem('href'),
+				target = this.getTarget(href);
 
-			// Search for replaceable targets (divs with a class corresponding to an html import filename)
-			target = context.querySelectorAll('.' + targetId);
-		}
+			this.replaceTarget(template, target);
+		};
+	}
+
+	replaceTarget(template, target) {
+		var contents, contentBody, childLinks;
 
 		// Check if we have both imported html and a target
 		if (null !== template && null !== target) {
@@ -37,14 +39,14 @@ function insertNodes(links, context) {
 			contentBody = template.body;
 			contents = template.body.children;
 
-			// Recursively call insertNodes() for child templates
+			// Recursively instantiate InsertNodes() for child templates
 			if (childLinks.length) {
-				insertNodes(childLinks, contentBody);
+				new InsertNodes(childLinks, contentBody);
 			}
 
 			// Loop through each target and replace with the html import
-			for (var k = 0; k < target.length; k++) {
-				var currentTarget = target.item(k);
+			for (let i = 0; i < target.length; i++) {
+				var currentTarget = target.item(i);
 
 				// Make sure this is intended to be a partial insertion point by checking the 'partial' attribute
 				if ('undefined' !== typeof currentTarget.attributes.partial) {
@@ -61,21 +63,45 @@ function insertNodes(links, context) {
 					// Remove target node as it is no longer needed
 					currentTarget.parentElement.removeChild(currentTarget);
 				}
-			}
+			};
 		}
 	}
 
-	if (document === context && 'undefined' !== window.protoScripts && window.protoScripts.length) {
-		var scriptArray = protoScripts,
-			bodyNodes = document.body.children;
+	getTarget(href) {
+		var targetId, target;
 
-		scriptArray.forEach(function(value, id) {
-			var scriptTag = document.createElement('script');
+		// Convert href into a class string
+		if ('undefined' !== href) {
+			targetId = href.nodeValue
+				.replace(/^.*[\\\/]/, '')
+				.replace('.html', '');
 
-			scriptTag.type = 'text/javascript';
-			scriptTag.src = value;
+			// Search for replaceable targets (divs with a class corresponding to an html import filename)
+			target = this.context.querySelectorAll('.' + targetId);
 
-			document.body.insertBefore(scriptTag, bodyNodes[bodyNodes.length - 1]);
-		});
+			return target;
+		}
+
+		return false;
+	}
+
+	insertScripts() {
+		if (document === this.context && 'undefined' !== window.protoScripts && window.protoScripts.length) {
+			var scriptArray = protoScripts,
+				bodyNodes = document.body.children;
+
+			scriptArray.forEach((value) => {
+				var scriptTag = document.createElement('script');
+
+				scriptTag.type = 'text/javascript';
+				scriptTag.src = value;
+
+				document.body.insertBefore(scriptTag, bodyNodes[bodyNodes.length - 1]);
+			});
+		}
 	}
 }
+
+// Top level insert
+var initLinks = document.querySelectorAll('link[rel="import"]');
+new InsertNodes(initLinks, document);

@@ -7,9 +7,9 @@
   "scripts": {
     "start": "webpack --config src/config/webpack.config.js -d -w",
     "build": "PRODUCTION=true webpack --config src/config/webpack.config.js -p",
-    "prepublish": "./node_modules/.bin/babel -d lib src/",
-    "test": "./node_modules/.bin/babel-node ./src/huron.js --source './test-kss/**/*.scss' --destination 'partials/generated/'",
-    "test-once": "./node_modules/.bin/babel-node ./src/huron.js --source './test-kss/**/*.scss' --destination 'partials/generated/' --runOnce",
+    "prepublish": "./node_modules/.bin/babel -d lib src/js/huron.js",
+    "test": "./node_modules/.bin/babel-node ./src/huron.js --source './prototype/test-kss/**/*.scss' --destination './prototype/partials/generated/'",
+    "test-once": "./node_modules/.bin/babel-node ./src/huron.js --source './prototype/test-kss/**/*.scss' --destination './prototype/partials/generated/' --runOnce",
     "help": "./node_modules/.bin/babel-node ./src/huron.js -h"
   },
   "bin": {
