@@ -1,5 +1,5 @@
 {
-  "name": "ai-prototype",
+  "name": "huron",
   "description": "An in-browser prototyping tool for Alley Interactive",
   "author": "Owen Stowe",
   "private": true,
@@ -7,14 +7,12 @@
   "scripts": {
     "start": "webpack --config src/config/webpack.config.js -d -w",
     "build": "PRODUCTION=true webpack --config src/config/webpack.config.js -p",
-    "prepublish": "./node_modules/.bin/babel -d lib src/js/huron.js",
+    "prepublish": "babel -d lib src/huron.js",
     "test": "./node_modules/.bin/babel-node ./src/huron.js --source './prototype/test-kss/**/*.scss' --destination './prototype/partials/generated/'",
     "test-once": "./node_modules/.bin/babel-node ./src/huron.js --source './prototype/test-kss/**/*.scss' --destination './prototype/partials/generated/' --runOnce",
     "help": "./node_modules/.bin/babel-node ./src/huron.js -h"
   },
-  "bin": {
-    "huron": "src/huron.js"
-  },
+  "bin": "src/huron.js",
   "main": "index.js",
   "dependencies": {
     "commander": "^2.9.0",
