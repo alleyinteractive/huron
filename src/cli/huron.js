@@ -10,46 +10,11 @@ const jsdom = require('jsdom'); // JavaScript implementation of the WHATWG DOM a
 const Gaze = require('gaze').Gaze; // File watcher
 const program = require('commander'); // Easy program flags
 const cwd = process.cwd(); // Current Working Directory
-const exec = require('child_process').exec; // Execute a child process
 
-program
-  .version('0.0.1')
-  .option(
-    '--source [source]',
-    'KSS [source directory]'
-  )
-  .option(
-    '--destination [destination]',
-    '[destination] of partials output',
-    (dest) => [cwd,dest].join('/')
-  )
-  .option(
-    '-r, --root [root]',
-    '[root] directory for the server, defaults to current working directory',
-    cwd
-  )
-  .option(
-    '--port [port]',
-    '[port] to listen the server on',
-    (port) => parseInt(port),
-    8080
-  )
-  .option('-o, --output', 'Verbose output of options')
-  .option('--runOnce', 'Run only once, without watching')
-  .parse(process.argv);
-
+require('./huron-config.js')(program, process, cwd);
 init();
 
 function init() {
-  if (typeof program.source === 'undefined') {
-    console.log('No KSS source given');
-    return;
-  }
-  if (typeof program.destination === 'undefined') {
-    console.log('No destination given');
-    return;
-  }
-
   const gaze = new Gaze(program.source);
 
   // Run once no matter what to show most up to date
@@ -86,7 +51,6 @@ function init() {
 
     kssTraverse(gaze.watched());
   });
-
 }
 
 // Parse KSS and insert into an HTML partial
@@ -123,7 +87,6 @@ function writeMarkup(markup, styleguide, partialHeader) {
   // Create filename string
   const filename = `${program.destination}/${partialHeader}.html`;
   let htmlOutput = '';
-  let linkList = [];
 
   // Use jsdom to parse section html
   jsdom.env({
@@ -134,6 +97,9 @@ function writeMarkup(markup, styleguide, partialHeader) {
       }
 
       const doc = window.document;
+      const templateWrapper = doc.createElement('template');
+      const moduleWrapper = doc.createElement('dom-module');
+      const wrap = doc.createElement('div');
       const inserts = doc.getElementsByTagName('sg-insert');
       const skip = doc.querySelectorAll('[proto-skip]');
       const ignore = doc.querySelectorAll('[proto-ignore]');
@@ -146,33 +112,10 @@ function writeMarkup(markup, styleguide, partialHeader) {
             const pathOverride = insert.parentElement.attributes.path;
             const section = styleguide.section(insert.textContent);
             const subsectionName = normalizeHeader(section.header());
-            const reference = doc.createElement('div');
-            const link = doc.createElement('link');
-
-            // Create partial insert point
-            reference.className = subsectionName;
-            reference.setAttribute('partial', '');
-
-            // Create link element for html import
-            link.rel = 'import';
-
-            // Create link href, checking if there is a path override in the styleguide
-            link.href = '';
-            if ( 'undefined' !== typeof pathOverride ) {
-              link.href += pathOverride.nodeValue + '/';
-            }
-            link.href += subsectionName + '.html';
+            const reference = doc.createElement(subsectionName);
 
             // Replace sg-insert with parital insert reference
             insert.parentElement.replaceChild(reference, insert);
-
-            // If link element hasn't been inserted yet, insert it!
-            if (linkList.indexOf(subsectionName) < 0) {
-              doc.body.insertBefore(link, doc.body.children.item(0));
-            }
-
-            // Add link name to link list so it's not duplicated in markup
-            linkList.push(subsectionName);
           }
         }
 
@@ -185,7 +128,11 @@ function writeMarkup(markup, styleguide, partialHeader) {
           }
         }
 
-        htmlOutput = doc.body.innerHTML;
+        templateWrapper.id = partialHeader;
+        templateWrapper.innerHTML = doc.body.innerHTML;
+        moduleWrapper.appendChild(templateWrapper);
+        wrap.appendChild(moduleWrapper);
+        htmlOutput = wrap.innerHTML;
 
         // Write the html
         if ( '' !== doc.body.innerHTML ) {

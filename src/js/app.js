@@ -1,11 +1,11 @@
+'use strict';
+
 /* Method for inserting nodes via html import
  *
  * Uses webcomponents import() method to grab html, then inserts that html
  * into a <div> using a class corresponding to the filename of the html import you wish
  * to insert.
  */
-
-require('../../prototype/index.html');
 
 class InsertNodes {
 
@@ -19,69 +19,44 @@ class InsertNodes {
 	}
 
 	loopLinks() {
+		var targetList = [];
+
 		// Loop through html import <link> elements
 		for (let i = 0; i < this.links.length; i++) {
 			// Grab the link contents and the href for insertion
 			var linkNode = this.links.item(i),
 				template = linkNode.import,
 				href = linkNode.attributes.getNamedItem('href'),
-				target = this.getTarget(href);
+				targetID = this.getTargetID(href);
 
-			this.replaceTarget(template, target);
+			if (-1 === targetList.indexOf(targetID)) {
+				targetList.push(targetID);
+				this.buildCustomElement(template, targetID);
+			}
 		};
 	}
 
-	replaceTarget(template, target) {
-		var contents, contentBody, childLinks;
+	buildCustomElement(template, targetID) {
+		let elProto = Object.create(HTMLElement.prototype),
+			t = template;
 
-		// Check if we have both imported html and a target
-		if (null !== template && null !== target) {
-			// Find all the html imports in the partial
-			childLinks = template.querySelectorAll('link[rel="import"]');
-			contentBody = template.body;
-			contents = template.body.children;
-
-			// Recursively instantiate InsertNodes() for child templates
-			if (childLinks.length) {
-				new InsertNodes(childLinks, contentBody);
-			}
-
-			// Loop through each target and replace with the html import
-			for (let i = 0; i < target.length; i++) {
-				var currentTarget = target.item(i);
-
-				// Make sure this is intended to be a partial insertion point by checking the 'partial' attribute
-				if ('undefined' !== typeof currentTarget.attributes.partial) {
-
-					// Loop through contents of template
-					for (var j = 0; j < contents.length; j++) {
-						var childNode = contents.item(j),
-							clone = childNode.cloneNode(true);
-
-						// Add in contents
-						currentTarget.parentElement.insertBefore(clone, currentTarget);
-					}
-
-					// Remove target node as it is no longer needed
-					currentTarget.parentElement.removeChild(currentTarget);
-				}
-			};
+		elProto.createdCallback = function() {
+			this.innerHTML = template.getElementById(targetID).innerHTML;
 		}
+
+		document.registerElement(targetID, {prototype: elProto});
 	}
 
-	getTarget(href) {
-		var targetId, target;
+	getTargetID(href) {
+		var targetID;
 
 		// Convert href into a class string
 		if ('undefined' !== href) {
-			targetId = href.nodeValue
+			targetID = href.nodeValue
 				.replace(/^.*[\\\/]/, '')
 				.replace('.html', '');
 
-			// Search for replaceable targets (divs with a class corresponding to an html import filename)
-			target = this.context.querySelectorAll('.' + targetId);
-
-			return target;
+			return targetID;
 		}
 
 		return false;
