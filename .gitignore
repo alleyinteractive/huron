@@ -4,4 +4,4 @@ node_modules
 Thumbs.db
 .sublime-project
 /dist/*
-/lib/*
+
