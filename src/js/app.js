@@ -14,8 +14,8 @@ class InsertNodes {
 		this.context = context;
 
 		// Inits
-		this.loopLinks();
 		this.insertScripts();
+		this.loopLinks();
 	}
 
 	loopLinks() {
@@ -38,10 +38,12 @@ class InsertNodes {
 
 	buildCustomElement(template, targetID) {
 		let elProto = Object.create(HTMLElement.prototype),
-			t = template;
+			t = template.getElementById(targetID)
 
 		elProto.createdCallback = function() {
-			this.innerHTML = template.getElementById(targetID).innerHTML;
+			if ( null !== t ) {
+				this.innerHTML = t.innerHTML;
+			}
 		}
 
 		document.registerElement(targetID, {prototype: elProto});
@@ -80,5 +82,7 @@ class InsertNodes {
 }
 
 // Top level insert
-var initLinks = document.querySelectorAll('link[rel="import"]');
-new InsertNodes(initLinks, document);
+window.addEventListener('WebComponentsReady', () => {
+	const initLinks = document.querySelectorAll('link[rel="import"]');
+	new InsertNodes(initLinks, document);
+});
