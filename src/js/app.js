@@ -3,8 +3,8 @@
 /* Method for inserting nodes via html import
  *
  * Uses webcomponents import() method to grab html, then inserts that html
- * into a <div> using a class corresponding to the filename of the html import you wish
- * to insert.
+ * into a custom element. That element is then replaced with the element's template contents
+ * in order to keep prototype markup as close to WordPress markup as possible.
  */
 class InsertNodes {
 
