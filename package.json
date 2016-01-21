@@ -5,14 +5,12 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "start": "webpack --config src/config/webpack.config.js -d -w",
-    "build": "PRODUCTION=true webpack --config src/config/webpack.config.js -p",
-    "prepublish": "babel -d lib src/huron.js",
-    "test": "./node_modules/.bin/babel-node ./src/huron.js --source './prototype/test-kss/**/*.scss' --destination './prototype/partials/generated/'",
-    "test-once": "./node_modules/.bin/babel-node ./src/huron.js --source './prototype/test-kss/**/*.scss' --destination './prototype/partials/generated/' --runOnce",
-    "help": "./node_modules/.bin/babel-node ./src/huron.js -h"
+    "prepublish": "babel src -d lib",
+    "test": "lib/cli/huron.js --source './prototype/test-kss/**/*.scss' --destination './prototype/partials/generated/'",
+    "test-once": "lib/huron.js --source 'prototype/test-kss/**/*.scss' --destination 'prototype/partials/generated/' --runOnce",
+    "help": "lib/huron.js -h"
   },
-  "bin": "src/huron.js",
+  "bin": "dist/huron.js",
   "main": "index.js",
   "dependencies": {
     "commander": "^2.9.0",
@@ -32,6 +30,7 @@
     "eslint-loader": "^1.2.0",
     "jasmine-node": "^1.14.5",
     "rewire": "^2.5.1",
+    "vulcanize": "^1.14.3",
     "webpack": "^1.12.11"
   }
 }

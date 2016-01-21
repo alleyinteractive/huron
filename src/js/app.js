@@ -5,6 +5,8 @@
  * to insert.
  */
 
+require('../../prototype/index.html');
+
 class InsertNodes {
 
 	constructor(links, context) {

@@ -10,6 +10,7 @@ const jsdom = require('jsdom'); // JavaScript implementation of the WHATWG DOM a
 const Gaze = require('gaze').Gaze; // File watcher
 const program = require('commander'); // Easy program flags
 const cwd = process.cwd(); // Current Working Directory
+const exec = require('child_process').exec; // Execute a child process
 
 program
   .version('0.0.1')
@@ -198,7 +199,6 @@ function writeMarkup(markup, styleguide, partialHeader) {
     }
   });
 }
-
 
 function startServer() {
   // Start server
