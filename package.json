@@ -9,7 +9,7 @@
     "huron": "./node_modules/.bin/babel-node src/cli/huron.js --source './prototype/test-kss/**/*.scss' --destination './prototype/partials/generated/'",
     "help": "./node_modules/.bin/babel-node src/cli/huron.js -h"
   },
-  "bin": "dist/huron.js",
+  "bin": "lib/cli/huron.js",
   "main": "index.js",
   "dependencies": {
     "commander": "^2.9.0",
