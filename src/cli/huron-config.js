@@ -1,4 +1,6 @@
-module.exports = function processArgs(program, process, cwd) {
+import { program, cwd } from './huron.js';
+
+export function processArgs() {
   program
     .version('0.0.1')
     .option(
