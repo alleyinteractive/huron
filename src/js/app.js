@@ -11,6 +11,7 @@ class InsertNodes {
   constructor(links, context) {
     this.links = links;
     this.context = context;
+    this.targetList = [];
 
     // Inits
     this.insertScripts();
@@ -21,8 +22,6 @@ class InsertNodes {
    * Loop through import links, create a custom element for them, and insert import into that element
    */
   loopLinks() {
-    let targetList = [];
-
     // Loop through html import <link> elements
     for (let i = 0; i < this.links.length; i++) {
       // Grab the link contents and the href for insertion
@@ -31,24 +30,24 @@ class InsertNodes {
           href = linkNode.attributes.getNamedItem('href'),
           targetID = this.getTargetID(href);
 
-      if (-1 === targetList.indexOf(targetID)) {
-        targetList.push(targetID);
+      if (-1 === this.targetList.indexOf(targetID)) {
+        this.targetList.push(targetID);
         this.buildCustomElement(template, targetID);
       }
     };
 
-    this.replaceEls(targetList);
+    this.replaceEls(document);
   }
 
   /*
    * Replace all custom elements with the actual template markup,
    * ensuring our prototypes look as close as possible to the final product.
    *
-   * @param {array} targetList - an array of custom element names
+   * @param {obj} context - node object
    */
-  replaceEls(targetList) {
-    targetList.forEach((tagName, idx) => {
-      var tags = document.querySelectorAll(tagName);
+  replaceEls(context) {
+    this.targetList.forEach((tagName, idx) => {
+      var tags = context.querySelectorAll(tagName);
 
       for (let i = 0; i < tags.length; i++) {
         var tag = tags.item(i);
@@ -63,6 +62,10 @@ class InsertNodes {
         tag.parentNode.removeChild(tag);
       }
     } );
+
+    if (! document === context) {
+      return context;
+    }
   }
 
   /*
@@ -73,11 +76,13 @@ class InsertNodes {
    */
   buildCustomElement(template, targetID) {
     let elProto = Object.create(HTMLElement.prototype),
-        t = template.getElementById(targetID)
+        t = template.getElementById(targetID),
+        protoContext = this;
 
     elProto.createdCallback = function() {
       if ( null !== t ) {
         this.innerHTML = t.innerHTML;
+        protoContext.replaceEls(this);
       }
     }
 
