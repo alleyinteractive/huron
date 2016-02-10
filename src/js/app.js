@@ -35,8 +35,6 @@ class InsertNodes {
         this.buildCustomElement(template, targetID);
       }
     };
-
-    this.replaceEls(document);
   }
 
   /*
@@ -78,7 +76,6 @@ class InsertNodes {
     elProto.createdCallback = function() {
       if ( null !== t ) {
         this.innerHTML = t.innerHTML;
-        protoContext.replaceEls(this);
       }
     }
 
@@ -128,5 +125,6 @@ class InsertNodes {
 // Top level insert
 window.addEventListener('WebComponentsReady', () => {
   const initLinks = document.querySelectorAll('link[rel="import"]');
-  new InsertNodes(initLinks, document);
+  const insertNodes = new InsertNodes(initLinks, document);
+  insertNodes.replaceEls(document);
 });
