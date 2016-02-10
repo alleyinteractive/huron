@@ -62,10 +62,6 @@ class InsertNodes {
         tag.parentNode.removeChild(tag);
       }
     } );
-
-    if (! document === context) {
-      return context;
-    }
   }
 
   /*
