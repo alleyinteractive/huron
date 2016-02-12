@@ -1,6 +1,6 @@
 import { program, cwd } from './huron.js';
 
-export function processArgs() {
+export default function processArgs() {
   program
     .version('0.0.1')
     .option(
@@ -11,6 +11,10 @@ export function processArgs() {
       '--destination [destination]',
       '[destination] of partial output',
       (dest) => [cwd, dest].join('/')
+    )
+    .option(
+      '--bundle',
+      'bundle partials into a single file'
     )
     .option(
       '-r, --root [root]',

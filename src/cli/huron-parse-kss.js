@@ -5,7 +5,7 @@ const kss = require('kss'); // node implementation of KSS: a methodology for doc
 const jsdom = require('jsdom'); // JavaScript implementation of the WHATWG DOM and HTML
 
 // Parse KSS and insert into an HTML partial
-export function kssTraverse(files) {
+export default function kssTraverse(files) {
   let kssRoot = Object.keys(files)[0];
   kss.traverse(kssRoot, {}, (err, styleguide) => {
     // Loop through sections
