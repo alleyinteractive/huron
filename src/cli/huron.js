@@ -8,8 +8,9 @@ const Gaze = require('gaze').Gaze; // File watcher
 const program = require('commander'); // Easy program flags
 const cwd = process.cwd(); // Current Working Directory
 
-import { processArgs } from './huron-config.js';
-import { kssTraverse } from './huron-parse-kss.js';
+import processArgs from './huron-config.js';
+import kssTraverse from './huron-parse-kss.js';
+import bundle from './huron-bundle.js';
 export { program, cwd };
 
 processArgs();
@@ -20,6 +21,9 @@ function init() {
 
   // Run once no matter what to show most up to date
   kssTraverse(gaze.watched());
+  if (program.bundle) {
+    bundle(path.resolve(cwd, program.destination));
+  }
 
   if(program.runOnce) {
     gaze.close();

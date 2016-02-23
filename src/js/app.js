@@ -11,29 +11,61 @@ class InsertNodes {
   constructor(links, context) {
     this.links = links;
     this.context = context;
-    this.targetList = [];
+    this.templates = {};
+    this.bundle = this.context.getElementById('huron-bundle');
+    this.hasBundle = (null !== this.bundle) && ('LINK' === this.bundle.tagName);
 
     // Inits
     this.insertScripts();
-    this.loopLinks();
+    this.importTemplates();
+    this.buildElements();
   }
 
   /*
-   * Loop through import links, create a custom element for them, and insert import into that element
+   * Loop through links or bundle, import templates, and cache
    */
-  loopLinks() {
-    // Loop through html import <link> elements
-    for (let i = 0; i < this.links.length; i++) {
-      // Grab the link contents and the href for insertion
-      let linkNode = this.links.item(i),
-          template = linkNode.import,
-          href = linkNode.attributes.getNamedItem('href'),
-          targetID = this.getTargetID(href);
+  importTemplates() {
+    // Are we using bundled partials or not?
+    if (!this.hasBundle) {
+      for (let i = 0; i < this.links.length; i++) {
+        // Grab the link contents and the href for insertion
+        let linkNode = this.links.item(i);
+        let templateImport = linkNode.import;
+        let template = templateImport.querySelector('template');
+        let templateID = template.getAttribute('id');
 
-      if (-1 === this.targetList.indexOf(targetID)) {
-        this.targetList.push(targetID);
-        this.buildCustomElement(template, targetID);
+        this.cacheTemplate(templateID, template);
+      };
+    } else {
+      let bundleImport = this.bundle.import;
+      let bundleTemplates = bundleImport.getElementsByTagName('template');
+
+      // Loop through template elements in bundle
+      for (let i = 0; i < bundleTemplates.length; i++) {
+        let template = bundleTemplates.item(i);
+        let templateID = template.getAttribute('id');
+
+        this.cacheTemplate(templateID, template);
       }
+    }
+  }
+
+  /*
+   * Add template to the cache
+   */
+  cacheTemplate(templateID, template) {
+    if (!this.templates.hasOwnProperty(templateID)) {
+      this.templates[templateID] = template;
+    }
+  }
+
+  /*
+   * Loop through targets and build custom elements
+   */
+  buildElements() {
+    // Loop through html import <link> elements
+    for (let templateID in this.templates) {
+      this.buildCustomElement(this.templates[templateID], templateID);
     };
   }
 
@@ -44,62 +76,39 @@ class InsertNodes {
    * @param {obj} context - node object
    */
   replaceEls(context) {
-    this.targetList.forEach((tagName, idx) => {
-      var tags = context.querySelectorAll(tagName);
+    for (let templateID in this.templates) {
+      let tags = context.querySelectorAll(templateID);
 
       for (let i = 0; i < tags.length; i++) {
-        var tag = tags.item(i);
+        let tag = tags.item(i);
 
         if (tag.children.length) {
           for (let i = 0; i < tag.children.length; i++) {
-            var childEl = tag.children.item(i).cloneNode(true);
+            let childEl = tag.children.item(i);
             tag.parentNode.insertBefore(childEl, tag);
           }
         }
 
         tag.parentNode.removeChild(tag);
       }
-    } );
+    };
   }
 
   /*
    * Register a new custom element and insert the template markup
    *
    * @param {object} template - a document object from one of our HTML imports
-   * @param {string} targetID - name of element to generate
+   * @param {string} templateID - name of element to generate
    */
-  buildCustomElement(template, targetID) {
+  buildCustomElement(template, templateID) {
     let elProto = Object.create(HTMLElement.prototype),
-        t = template.getElementById(targetID),
         protoContext = this;
 
     elProto.createdCallback = function() {
-      if ( null !== t ) {
-        this.innerHTML = t.innerHTML;
-      }
+      this.innerHTML = template.innerHTML;
     }
 
-    document.registerElement(targetID, {prototype: elProto});
-  }
-
-  /*
-   * Generate a custom element name from the <link> href
-   *
-   * @param {string} href - an href attribute from an html import link
-   */
-  getTargetID(href) {
-    var targetID;
-
-    // Convert href into a class string
-    if ('undefined' !== href) {
-      targetID = href.nodeValue
-        .replace(/^.*[\\\/]/, '')
-        .replace('.html', '');
-
-      return targetID;
-    }
-
-    return false;
+    document.registerElement(templateID, {prototype: elProto});
   }
 
   /*
