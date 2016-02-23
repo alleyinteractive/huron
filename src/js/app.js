@@ -13,7 +13,7 @@ class InsertNodes {
     this.context = context;
     this.templates = {};
     this.bundle = this.context.getElementById('huron-bundle');
-    this.hasBundle = null !== this.bundle && 'LINK' === this.bundle.tagName;
+    this.hasBundle = (null !== this.bundle) && ('LINK' === this.bundle.tagName);
 
     // Inits
     this.insertScripts();
@@ -30,7 +30,8 @@ class InsertNodes {
       for (let i = 0; i < this.links.length; i++) {
         // Grab the link contents and the href for insertion
         let linkNode = this.links.item(i);
-        let template = linkNode.querySelector('template');
+        let templateImport = linkNode.import;
+        let template = templateImport.querySelector('template');
         let templateID = template.getAttribute('id');
 
         this.cacheTemplate(templateID, template);
