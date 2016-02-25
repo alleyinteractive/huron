@@ -72,19 +72,20 @@ class InsertNodes {
   /*
    * Replace all custom elements with the actual template markup,
    * ensuring our prototypes look as close as possible to the final product.
-   *
-   * @param {obj} context - node object
    */
-  replaceEls(context) {
+  replaceEls() {
     for (let templateID in this.templates) {
-      let tags = context.querySelectorAll(templateID);
+      let tags = document.querySelectorAll(templateID);
 
       for (let i = 0; i < tags.length; i++) {
         let tag = tags.item(i);
 
-        if (tag.children.length) {
-          for (let i = 0; i < tag.children.length; i++) {
-            let childEl = tag.children.item(i);
+        console.log(tag.children);
+        console.log(tag.children.length);
+
+        if (tag.childNodes.length) {
+          for (let i = 0; i < tag.childNodes.length; i++) {
+            let childEl = tag.childNodes.item(i);
             tag.parentNode.insertBefore(childEl, tag);
           }
         }
