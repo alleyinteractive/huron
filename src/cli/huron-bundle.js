@@ -4,20 +4,13 @@ const path = require('path');
 const fs = require('fs');
 
 export default function bundle(combineDir) {
-	let partialOutput = '';
+	let output = fs.createWriteStream(`${program.destination}/huron-bundle.html`, 'utf8');
 	let files = [];
+	let data = '';
 
 	files = fs.readdirSync(combineDir);
-	files.forEach((currentPartial) => {
-		let data = fs.readFileSync(path.join(combineDir, currentPartial));
-		if (data) {
-			partialOutput += data;
-		}
+	files.forEach(currentPartial => {
+		data = fs.readFileSync(path.join(combineDir, currentPartial), 'utf8');
+		output.write(data, 'utf8');
 	});
-
-	fs.writeFileSync(`${program.destination}/huron-bundle.html`, partialOutput);
-
-	if ('' === partialOutput) {
-		console.log('partial bundle is empty! make sure you are properly generating partials');
-	}
 }

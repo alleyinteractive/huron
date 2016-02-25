@@ -21,9 +21,6 @@ function init() {
 
   // Run once no matter what to show most up to date
   kssTraverse(gaze.watched());
-  if (program.bundle) {
-    bundle(path.resolve(cwd, program.destination));
-  }
 
   if(program.runOnce) {
     gaze.close();

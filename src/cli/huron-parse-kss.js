@@ -6,9 +6,17 @@ const jsdom = require('jsdom'); // JavaScript implementation of the WHATWG DOM a
 
 // Parse KSS and insert into an HTML partial
 export default function kssTraverse(files) {
+  const bundleName = `${program.destination}/huron-bundle.html`;
+  let bundleOutput = null;
   let kssRoot = Object.keys(files)[0];
+
+  // Open stream if we're bundling
+  if (program.bundle) {
+    bundleOutput = fs.createWriteStream(bundleName, 'utf8');
+  }
+
+  // Loop through KSS sections
   kss.traverse(kssRoot, {}, (err, styleguide) => {
-    // Loop through sections
     styleguide.data.sections.forEach((section, idx) => {
       const sectionData = styleguide.section(section.data.reference);
       if (typeof sectionData.data !== 'undefined'
@@ -18,7 +26,7 @@ export default function kssTraverse(files) {
 
         // Check if we have markup
         if (typeof section.data.markup === 'string') {
-          writeMarkup(section.data.markup, styleguide, partialHeader);
+          writeMarkup(section.data.markup, styleguide, partialHeader, bundleOutput);
         }
       }
     });
@@ -34,7 +42,7 @@ function normalizeHeader(header) {
 }
 
 // Parse the section markup
-function writeMarkup(markup, styleguide, partialHeader) {
+function writeMarkup(markup, styleguide, partialHeader, bundleOutput) {
   // Create filename string
   const filename = `${program.destination}/${partialHeader}.html`;
   let htmlOutput = '';
@@ -87,11 +95,18 @@ function writeMarkup(markup, styleguide, partialHeader) {
 
         // Write the html
         if ( '' !== doc.body.innerHTML ) {
-          fs.writeFileSync(filename, htmlOutput, {}, function(err) {
+
+          // Write to separate partial
+          fs.writeFileSync(filename, htmlOutput, 'utf8', function(err) {
             if (err) {
               throw err;
             }
           });
+
+          // Write to bundle
+          if (program.bundle) {
+            bundleOutput.write(htmlOutput);
+          }
         }
       }
     }
