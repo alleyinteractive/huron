@@ -80,9 +80,6 @@ class InsertNodes {
       for (let i = 0; i < tags.length; i++) {
         let tag = tags.item(i);
 
-        console.log(tag.children);
-        console.log(tag.children.length);
-
         if (tag.childNodes.length) {
           for (let i = 0; i < tag.childNodes.length; i++) {
             let childEl = tag.childNodes.item(i);
