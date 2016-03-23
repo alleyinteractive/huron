@@ -12,10 +12,7 @@ class InsertNodes {
     this.links = links;
     this.context = context;
     this.templates = {};
-    this.bundles = [
-      this.context.getElementById('huron-bundle'),
-      this.context.getElementById('custom-bundle')
-    ];
+    this.bundles = this.context.querySelectorAll('#huron-bundle');
     this.hasBundle = (null !== this.bundles[0]) && ('LINK' === this.bundles[0].tagName);
 
     // Inits
@@ -40,20 +37,19 @@ class InsertNodes {
         this.cacheTemplate(templateID, template);
       };
     } else {
-      this.bundles.forEach((bundle) => {
-        if (null !== bundle) {
-          let bundleImport = bundle.import;
-          let bundleTemplates = bundleImport.getElementsByTagName('template');
+      for (let i = 0; i < this.bundles.length; i++) {
+        let bundle = this.bundles.item(i);
+        let bundleImport = bundle.import;
+        let bundleTemplates = bundleImport.getElementsByTagName('template');
 
-          // Loop through template elements in bundle
-          for (let i = 0; i < bundleTemplates.length; i++) {
-            let template = bundleTemplates.item(i);
-            let templateID = template.getAttribute('id');
+        // Loop through template elements in bundle
+        for (let i = 0; i < bundleTemplates.length; i++) {
+          let template = bundleTemplates.item(i);
+          let templateID = template.getAttribute('id');
 
-            this.cacheTemplate(templateID, template);
-          }
+          this.cacheTemplate(templateID, template);
         }
-      });
+      };
     }
   }
 
