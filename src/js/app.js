@@ -91,6 +91,7 @@ class InsertNodes {
           for (let i = 0; i < tag.childNodes.length; i++) {
             let childEl = tag.childNodes.item(i);
 
+            // nodeType 1 indicates a node of type ELEMENT
             if (childEl.nodeType === 1) {
               tag.parentNode.insertBefore(childEl, tag);
             }
