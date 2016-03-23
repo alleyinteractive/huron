@@ -70,11 +70,16 @@ function writeMarkup(markup, styleguide, partialHeader, bundleOutput) {
             const insert = inserts.item(i);
             const pathOverride = insert.parentElement.attributes.path;
             const section = styleguide.section(insert.textContent);
-            const subsectionName = normalizeHeader(section.header());
-            const reference = doc.createElement(subsectionName);
 
-            // Replace sg-insert with parital insert reference
-            insert.parentElement.replaceChild(reference, insert);
+            if (section) {
+              const subsectionName = normalizeHeader(section.header());
+              const reference = doc.createElement(subsectionName);
+
+              // Replace sg-insert with parital insert reference
+              insert.parentElement.replaceChild(reference, insert);
+            } else {
+              console.log(`section ${insert.textContent} does not exist`);
+            }
           }
         }
 

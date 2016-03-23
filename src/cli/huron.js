@@ -10,12 +10,19 @@ const cwd = process.cwd(); // Current Working Directory
 
 import processArgs from './huron-config.js';
 import kssTraverse from './huron-parse-kss.js';
+import bundleCustomPartials from './custom-bundle.js';
 export { program, cwd };
 
 processArgs();
-init();
+initKSS();
 
-function init() {
+// Only initialize the custom partial bundler program.custom and program.bundle are set
+if (program.bundle && program.custom) {
+  initCustom();
+}
+
+// Start KSS watcher
+function initKSS() {
   const gaze = new Gaze(program.source);
 
   // Run once no matter what to show most up to date
@@ -54,8 +61,24 @@ function init() {
   });
 }
 
+// Start custom partial watcher for bundling custom partials
+function initCustom() {
+  const gaze = new Gaze(`${program.custom}/*.html`);
+
+  bundleCustomPartials();
+
+  gaze.on('error', (error) => {
+    console.log(`An error has occured: ${error}`);
+    return;
+  });
+
+  gaze.on('all', () => {
+    bundleCustomPartials();
+  });
+}
+
+// Start the server
 function startServer() {
-  // Start server
   connect()
     .use(
       serveStatic(program.root)
