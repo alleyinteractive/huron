@@ -4,7 +4,7 @@ import { program, cwd } from './huron.js';
 const Gaze = require('gaze').Gaze; // File watcher
 
 export default function initCustom() {
-	const gaze = new Gaze(`${program.custom}/*.html`);
+  const gaze = new Gaze(`${program.custom}/*.html`);
 
   bundleCustomPartials();
 
@@ -19,7 +19,7 @@ export default function initCustom() {
   });
 
   gaze.on('all', (event, filepath) => {
-  	// Adding/Deleting files
+    // Adding/Deleting files
     if (event === 'deleted' || event === 'added') {
       console.log(`${filepath.substring(cwd.length)} ${event}`);
     }

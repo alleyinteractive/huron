@@ -4,7 +4,7 @@ import { program, cwd } from './huron.js';
 const Gaze = require('gaze').Gaze; // File watcher
 
 export default function initKSS() {
-	const gaze = new Gaze(program.source);
+  const gaze = new Gaze(program.source);
 
   // Run once no matter what to show most up to date
   kssTraverse(gaze.watched());

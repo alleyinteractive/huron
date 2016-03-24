@@ -77,9 +77,7 @@ function writeMarkup(markup, styleguide, partialHeader, bundleOutput) {
                 .replaceChild(
                   doc.createElement(
                     normalizeHeader(section.header())
-                  ),
-                  insert
-                );
+                  ), insert );
             } else {
               console.log(`section ${insert.textContent} does not exist`);
             }
