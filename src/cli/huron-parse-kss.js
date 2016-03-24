@@ -70,20 +70,25 @@ function writeMarkup(markup, styleguide, partialHeader, bundleOutput) {
             const insert = inserts.item(i);
             const pathOverride = insert.parentElement.attributes.path;
             const section = styleguide.section(insert.textContent);
-            const subsectionName = normalizeHeader(section.header());
-            const reference = doc.createElement(subsectionName);
 
-            // Replace sg-insert with parital insert reference
-            insert.parentElement.replaceChild(reference, insert);
+            if (section) {
+              // Replace sg-insert with parital insert reference
+              insert.parentElement
+                .replaceChild(
+                  doc.createElement(
+                    normalizeHeader(section.header())
+                  ), insert );
+            } else {
+              console.log(`section ${insert.textContent} does not exist`);
+            }
           }
         }
 
         // Remove styleguide-only elements
         if (skip.length) {
           for (let j = 0; j < skip.length; j++) {
-            const exclude = skip.item(j);
-
-            exclude.parentElement.removeChild(exclude);
+            exclude.parentElement
+              .removeChild(skip.item(j));
           }
         }
 

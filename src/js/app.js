@@ -12,8 +12,8 @@ class InsertNodes {
     this.links = links;
     this.context = context;
     this.templates = {};
-    this.bundle = this.context.getElementById('huron-bundle');
-    this.hasBundle = (null !== this.bundle) && ('LINK' === this.bundle.tagName);
+    this.bundles = this.context.querySelectorAll('#huron-bundle');
+    this.hasBundle = (null !== this.bundles[0]) && ('LINK' === this.bundles[0].tagName);
 
     // Inits
     this.insertScripts();
@@ -37,16 +37,19 @@ class InsertNodes {
         this.cacheTemplate(templateID, template);
       };
     } else {
-      let bundleImport = this.bundle.import;
-      let bundleTemplates = bundleImport.getElementsByTagName('template');
+      for (let i = 0; i < this.bundles.length; i++) {
+        let bundle = this.bundles.item(i);
+        let bundleImport = bundle.import;
+        let bundleTemplates = bundleImport.getElementsByTagName('template');
 
-      // Loop through template elements in bundle
-      for (let i = 0; i < bundleTemplates.length; i++) {
-        let template = bundleTemplates.item(i);
-        let templateID = template.getAttribute('id');
+        // Loop through template elements in bundle
+        for (let i = 0; i < bundleTemplates.length; i++) {
+          let template = bundleTemplates.item(i);
+          let templateID = template.getAttribute('id');
 
-        this.cacheTemplate(templateID, template);
-      }
+          this.cacheTemplate(templateID, template);
+        }
+      };
     }
   }
 
@@ -83,7 +86,11 @@ class InsertNodes {
         if (tag.childNodes.length) {
           for (let i = 0; i < tag.childNodes.length; i++) {
             let childEl = tag.childNodes.item(i);
-            tag.parentNode.insertBefore(childEl, tag);
+
+            // nodeType 1 indicates a node of type ELEMENT
+            if (childEl.nodeType === 1) {
+              tag.parentNode.insertBefore(childEl, tag);
+            }
           }
         }
 

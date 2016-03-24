@@ -13,6 +13,11 @@ export default function processArgs() {
       (dest) => [cwd, dest].join('/')
     )
     .option(
+      '--custom [custom]',
+      'location of user-generated [custom] partials',
+      (custom) => [cwd, custom].join('/')
+    )
+    .option(
       '--bundle',
       'bundle partials into a single file'
     )
