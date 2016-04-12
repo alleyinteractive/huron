@@ -5,7 +5,7 @@ This build system is intended to make your life easier when moving from a KSS st
 
 # Installation
  * Don't forget to install the required npm packages with `npm install` (from within the `huron` directory).
- * Add an NPM script or run the `huron` script by hand via `node huron/lib/huron.js`.
+ * Add an NPM script or run the `huron` script by hand via `node lib/cli/huron.js`.
  * Make sure you pass at least a KSS source directory with the flag `--source=path/to/my/source`.
  * Run your script and make sure your partials were generated correctly. Default output directory for partials is `prototype/partials/generated`, but this can be changed with the flag `--destination=path/to/output`. I recommended creating separate directories for auto-built partials and custom partials.
 
@@ -13,7 +13,7 @@ This build system is intended to make your life easier when moving from a KSS st
  * In order to work locally with webcomponents, they must be served and, therefore, you'll need to set a static directory from which to serve. The default is `huron`'s directory. You can change this with the `--root` flag. I recommend you do one of two things:
   * If you want everything encapsulated, keep the default and serve from `huron` root. If you do this, you'll have to copy over any extra static assets to the `huron` directory.
   * Switch to serving from `huron`'s parent directory. This way, you can access extra static assets straight from your parent repo or WP theme without copying anything over.
- * Just rememeber: all static assets and partials you load in your prototype MUST be relative to the server root you set or, if you don't set anything, relative to the `huron` directory.
+ * Just remember: all static assets and partials you load in your prototype MUST be relative to the server root you set or, if you don't set anything, relative to the `huron` directory.
 
 # Building markup
  * Use the included `index.html` for a base prototype template. If you decide to create a new one, you MUST include `node_modules/webcomponents.js/webcomponents-lite.min.js` and `lib/js/app.js` in the prototype footer.
@@ -31,7 +31,7 @@ This build system is intended to make your life easier when moving from a KSS st
 
 # Adding custom JS
  * Because this tool uses html imports, the markup for which is inserted asyncronously, you'll probably want to load custom JS after everything has been output. To do this, create a `<script>` tag anywhere before `app.js` is loaded and create a `window.protoScripts` variable. This variable should contain an array of relative paths to the scripts you'd like to include after all markup has loaded.
- * If you have a vendor JS bundle, you can most likely just load it in a script tag syncronously. No waiting necessary!
+ * If you have a vendor JS bundle, you can most likely just load it in a script tag synchronously. No waiting necessary!
 
 # Test it out in this repo!
  * run `npm install`
