@@ -8,7 +8,7 @@ const jsdom = require('jsdom'); // JavaScript implementation of the WHATWG DOM a
 export default function kssTraverse(files) {
   const bundleName = `${program.destination}/huron-bundle.html`;
   let bundleOutput = null;
-  let kssRoot = Object.keys(files)[0];
+  let kssRoot = Object.keys(files);
 
   // Open stream if we're bundling
   if (program.bundle) {
@@ -87,6 +87,8 @@ function writeMarkup(markup, styleguide, partialHeader, bundleOutput) {
         // Remove styleguide-only elements
         if (skip.length) {
           for (let j = 0; j < skip.length; j++) {
+            let exclude = skip.item(j);
+
             exclude.parentElement
               .removeChild(skip.item(j));
           }
