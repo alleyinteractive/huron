@@ -1,0 +1,15 @@
+{
+		"extends": "airbnb/base",
+		"ecmaFeatures": {
+			"arrowFunctions": true,
+			"blockBindings": true,
+			"classes": true,
+			"defaultParams": true,
+			"modules": true
+		},
+		"env": {
+			"node": true,
+			"commonjs": true,
+			"jquery": true
+		}
+}

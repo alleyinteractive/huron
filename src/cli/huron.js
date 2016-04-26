@@ -1,44 +1,44 @@
-#!/usr/bin/env node
+// CLI for Huron. Used solely to apply configuration options and
+// start webpack-dev-server programmatically.
 
-// Requires
 const path = require('path');
-const connect = require('connect'); // HTTP server framework
-const serveStatic = require('serve-static'); // File serving service
+const webpack = require('webpack');
+const webpackDevServer = require('webpack-dev-server');
 const program = require('commander'); // Easy program flags
 const cwd = process.cwd(); // Current Working Directory
+const config = require( path.resolve( __dirname, '../../config/webpack.config.js' ) );
 
-import processArgs from './huron-config.js';
-import initKSS from './init-kss.js';
-import initCustom from './init-custom.js';
-export { program, cwd };
-
-processArgs();
-init();
-
-// Start KSS watcher
-function init() {
-  initKSS();
-
-  // Only initialize the custom partial bundler program.custom and program.bundle are set
-  if (program.bundle && program.custom) {
-    initCustom();
-  }
-
-  if(program.runOnce) {
-    gaze.close();
-    return;
-  } else {
-    // Start connect server
-    startServer();
-  }
-}
-
-// Start the server
-function startServer() {
-  connect()
-    .use(
-      serveStatic(program.root)
+// Process arguments
+program.version('0.1.0')
+	.option(
+	  '--config [config]',
+	  '[config] for all huron options',
+	  path.resolve(__dirname, '../../config/huron.config.js')
+	)
+	.option(
+      '-r, --root [root]',
+      '[root] directory for the server, defaults to current working directory',
+      cwd
     )
-    .listen(program.port);
-  console.log(`Serving from localhost:${program.port}...`);
-}
+	.option(
+	  '--port [port]',
+	  '[port] to listen the server on',
+	  (port) => parseInt(port),
+	  8080
+	)
+	.parse(process.argv);
+
+
+// Add webpack-dev-server and HMR to Huron entry point
+config.entry.huron.unshift('webpack-dev-server/client?http://localhost:8080/', 'webpack/hot/dev-server');
+
+// Add huron options to config
+config.huron = require(program.config);
+
+const compiler = webpack(config);
+const server = new webpackDevServer(compiler, {
+	hot: true,
+	contentBase: program.root
+});
+
+server.listen(program.port);
