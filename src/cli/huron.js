@@ -16,11 +16,6 @@ program.version('0.1.0')
 	  path.resolve(__dirname, '../../config/huron.config.js')
 	)
 	.option(
-      '-r, --root [root]',
-      '[root] directory for the server, defaults to current working directory',
-      cwd
-    )
-	.option(
 	  '--port [port]',
 	  '[port] to listen the server on',
 	  (port) => parseInt(port),
@@ -38,7 +33,7 @@ config.huron = require(program.config);
 const compiler = webpack(config);
 const server = new webpackDevServer(compiler, {
 	hot: true,
-	contentBase: program.root
+	contentBase: program.config.root,
 });
 
 server.listen(program.port);

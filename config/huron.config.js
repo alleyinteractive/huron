@@ -1,5 +1,6 @@
 module.exports = {
 	source: ['client/css/**/*.css'],
-	destination: ['prototype/partials'],
-	css: ['prototype/static/css/test.css']
+	destination: 'prototype/partials/generated',
+	css: ['prototype/static/css/test.css'],
+	root: '../'
 }
