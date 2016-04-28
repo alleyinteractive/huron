@@ -21,19 +21,34 @@ program.version('0.1.0')
 	  (port) => parseInt(port),
 	  8080
 	)
+	.option(
+      '-r, --root [root]',
+      '[root] directory for the server, defaults to current working directory',
+      cwd
+    )
+	.option('--production', 'compile assets once for production')
 	.parse(process.argv);
-
-
-// Add webpack-dev-server and HMR to Huron entry point
-config.entry.huron.unshift('webpack-dev-server/client?http://localhost:8080/', 'webpack/hot/dev-server');
 
 // Add huron options to config
 config.huron = require(program.config);
 
-const compiler = webpack(config);
-const server = new webpackDevServer(compiler, {
-	hot: true,
-	contentBase: program.config.root,
-});
+if (program.production) {
+	webpack(
+		config,
+		(err, stats) => {
+			if (err) {
+				throw err;
+			}
+		}
+	);
+} else {
+	// Add webpack-dev-server and HMR to Huron entry point
+	config.entry.huron.unshift(`webpack-dev-server/client?http://localhost:${program.port}/`, 'webpack/hot/dev-server');
 
-server.listen(program.port);
+	const compiler = webpack(config);
+	const server = new webpackDevServer(compiler, {
+		hot: true,
+		contentBase: program.root,
+	});
+	server.listen(program.port);
+}

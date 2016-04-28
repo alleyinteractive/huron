@@ -1,7 +1,3 @@
-if (module.hot) {
-  module.hot.accept();
-}
-
 /* Method for inserting nodes via html import
  *
  * Uses webcomponents import() method to grab html, then inserts that html
@@ -10,57 +6,27 @@ if (module.hot) {
  */
 class InsertNodes {
 
-  constructor(context, templates) {
+  constructor(templates) {
     this.templates = templates;
-    this.context = context;
 
     // Inits
-    this.replaceEls(this.context);
     this.insertScripts();
+    this.cycleEls(document);
   }
 
   /*
    * Replace all template markers with the actual template markup,
    * ensuring our prototypes look as close as possible to the final product.
    */
-  replaceEls(context) {
+  cycleEls(context, parentId = null) {
     for (let templateId in this.templates) {
-      this.replaceEl(this.templates[templateId]);
-    };
-  }
+      let templateMarker = context.querySelector(templateId);
 
-  /*
-   * Replace a single template marker with template content. This is called by HMR
-   * when templates are edited.
-   */
-  replaceEl(template) {
-    const templateWrapper = template
-      .querySelector('template');
-    const templateId = templateWrapper.getAttribute('id');
-    const tags = this.context.querySelectorAll(templateId);
+      if (null !== templateMarker && 0 === templateMarker.childNodes.length) {
+        let template = this.templates[templateId];
 
-    for (let i = 0; i < tags.length; i++) {
-      let tag = tags.item(i);
-
-      tag.innerHTML = templateWrapper.innerHTML;
-    }
-
-    this.checkNestedTemplates(templateId, templateWrapper);
-  }
-
-  /*
-   * Check if a template has nested templates and, if so, call this.replaceEl recursively to replace nested templates
-   */
-  checkNestedTemplates(parentId, templateWrapper) {
-    for (let templateId in this.templates) {
-      let subTemplateMarker = templateWrapper.content
-        .querySelector(templateId);
-
-      if (null !== subTemplateMarker && 0 === subTemplateMarker.children.length) {
-        let subTemplate = this.templates[templateId];
-
-        if (!this.hasTemplate(parentId, subTemplate)) {
-          this.replaceEl(subTemplate);
+        if (!this.hasTemplate(template, parentId)) {
+          this.cycleEl(template, context);
         } else {
           throw "You have an infinite loop in your template parts! This usually means you have two templates including each other."
         }
@@ -69,23 +35,83 @@ class InsertNodes {
   }
 
   /*
+   * Replace a single template marker with template content. This is called by HMR
+   * when templates are edited.
+   */
+  cycleEl(template, context) {
+    const templateWrapper = template
+      .querySelector('template');
+    const templateChildren = templateWrapper.content.children;
+    const templateId = templateWrapper.getAttribute('id');
+    const tags = context.querySelectorAll(templateId);
+
+    if (document === context) {
+      this.disposeEl(tags, templateId);
+    }
+    this.cycleEls(templateWrapper.content, templateId);
+    this.insertEl(tags, templateId, templateChildren);
+  }
+
+  /*
+   * Replace template marker with contents of template
+   */
+  insertEl(tags, templateId, templateChildren) {
+    for (let i = 0; i < tags.length; i++) {
+      let tag = tags.item(i);
+
+      for (let i = 0; i < templateChildren.length; i++) {
+        // Child node must be cloned to allow insertion in multiple places
+        let childEl = templateChildren.item(i).cloneNode(true);
+
+        // Set the template-id attribute to mark it for disposal on the next cycle
+        childEl.setAttribute( 'template-id', templateId );
+        tag.parentNode.insertBefore(childEl, tag);
+      }
+
+      tag.style.display = 'none';
+    }
+  }
+
+  /*
+   * Ensure previously inserted template children are cleared before re-insertion
+   */
+  disposeEl(tags, templateId) {
+    const templateChildren = document
+      .querySelectorAll('[template-id="' + templateId + '"]');
+
+    // Loop through all instances of this template's children and remove them.
+    for (let i = 0; i < templateChildren.length; i++) {
+      let childEl = templateChildren.item(i);
+      childEl.parentNode.removeChild(childEl);
+    }
+
+    // Show the template insertion marker again
+    for (let i = 0; i < tags.length; i++) {
+      let tag = tags.item(i);
+      tag.style.display = '';
+    }
+  }
+
+  /*
    * Check if a template contains a specific subtemplate.
    */
-  hasTemplate(templateId, template) {
-    let subTemplate = template
-      .querySelector('template')
-      .content
-      .querySelector(templateId);
+  hasTemplate(template, templateId) {
+    if (null !== templateId) {
+      let subTemplate = template
+        .querySelector('template')
+        .content
+        .querySelector(templateId);
 
-    if (null !== subTemplate) {
-      return true;
+      if (null !== subTemplate) {
+        return true;
+      }
     }
 
     return false;
   }
 
   /*
-   * Insert script tags into <body> after all elemnts have loaded
+   * Insert script tags into <body> after all elements have loaded
    */
   insertScripts() {
     if (document === this.context && 'undefined' !== window.protoScripts) {
@@ -106,7 +132,15 @@ class InsertNodes {
   }
 }
 
-InsertNodes = new InsertNodes(document, templates);
+// Accept the huron.js module for Huron development
+if (module.hot) {
+  module.hot.accept();
+}
+
+// Create a new instance of the InsertNodes class
+let insert = new InsertNodes(templates);
+
+// Cycle elements when a template is changed
 function templateReplaceCallback(template) {
-  InsertNodes.replaceEl(template);
+  insert.cycleEl(template, document);
 }
