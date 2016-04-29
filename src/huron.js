@@ -59,16 +59,20 @@ class InsertNodes {
     for (let i = 0; i < tags.length; i++) {
       let tag = tags.item(i);
 
-      for (let i = 0; i < templateChildren.length; i++) {
-        // Child node must be cloned to allow insertion in multiple places
-        let childEl = templateChildren.item(i).cloneNode(true);
+      if (!tag.hasAttribute('huron-inserted')) {
+        for (let i = 0; i < templateChildren.length; i++) {
+          // Child node must be cloned to allow insertion in multiple places
+          let childEl = templateChildren.item(i).cloneNode(true);
 
-        // Set the template-id attribute to mark it for disposal on the next cycle
-        childEl.setAttribute( 'template-id', templateId );
-        tag.parentNode.insertBefore(childEl, tag);
+          // Set the template-id attribute to mark it for disposal on the next cycle
+          childEl.setAttribute( 'huron-id', templateId );
+          tag.parentNode.insertBefore(childEl, tag);
+        }
+
+        // Hide the tag and add huron-inserted attr to ensure it's not re-inserted on a later pass
+        tag.style.display = 'none';
+        tag.setAttribute('huron-inserted', '');
       }
-
-      tag.style.display = 'none';
     }
   }
 
@@ -77,7 +81,7 @@ class InsertNodes {
    */
   disposeEl(tags, templateId) {
     const templateChildren = document
-      .querySelectorAll('[template-id="' + templateId + '"]');
+      .querySelectorAll('[huron-id="' + templateId + '"]');
 
     // Loop through all instances of this template's children and remove them.
     for (let i = 0; i < templateChildren.length; i++) {
@@ -85,10 +89,10 @@ class InsertNodes {
       childEl.parentNode.removeChild(childEl);
     }
 
-    // Show the template insertion marker again
+    // Remove huron-insert attribute from each tag
     for (let i = 0; i < tags.length; i++) {
       let tag = tags.item(i);
-      tag.style.display = '';
+      tag.removeAttribute('huron-inserted');
     }
   }
 
