@@ -8,8 +8,6 @@ module.exports = {
     ],
   },
   output: {
-    path: path.resolve(__dirname, '../lib'),
-    publicPath: '/',
     filename: '[name].js',
     chunkFilename: '[name].chunk.min.js'
   },

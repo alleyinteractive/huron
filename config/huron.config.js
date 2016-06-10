@@ -1,7 +1,8 @@
 module.exports = {
-	source: ['client/css/**/*.css'],
-	destination: 'prototype/partials',
-	css: ['prototype/static/css/test.css'],
-	scripts: ['prototype/static/js/test.js'],
-	root: '../'
+	destination: 'partials',
+	css: ['static/css/test.css'],
+	scripts: ['static/js/test.js'],
+	kss: ['css/'],
+	port: 8080,
+	root: 'dist/',
 }

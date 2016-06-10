@@ -1,0 +1,23 @@
+/* Top level section
+ *
+ * Just a regular top level section
+ *
+ * Style guide: components
+ */
+
+/* Test partial one
+ *
+ * Your standard button suitable for clicking.
+ *
+ * :hover   - Highlights when hovering.
+ * .shiny   - Do not press this big, shiny, red button.
+ *
+ * Markup: ../prototype/partials/test-parial-one.html
+ *
+ * Style guide: components.testComponent
+ */
+
+.text-partial-one {
+	background-color: blue;
+	color: white;
+}
