@@ -8,6 +8,7 @@ module.exports = {
     ],
   },
   output: {
+    path: '/dist',
     filename: '[name].js',
     chunkFilename: '[name].chunk.min.js'
   },
@@ -27,9 +28,8 @@ module.exports = {
     ],
     loaders: [
       {
-        test: /\.js$/,
+        test: /huron.js$/,
         loader: 'babel!huron',
-        exclude: /node_modules/
       },
       {
         test: /\.css$/,

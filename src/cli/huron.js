@@ -25,6 +25,7 @@ const huron = require(program.config);
 const localWebpack = require(path.resolve(huron.root, huron.webpack));
 
 const config = generateConfig(huronWebpack, localWebpack);
+config.huron = huron;
 
 // kss.traverse(huron.kss, {mask: '*.css'}, (err, styleguide) => {
 //   console.log(styleguide);
@@ -46,7 +47,7 @@ if (program.production) {
 } else {
 // Add webpack-dev-server and HMR to Huron entry point for dev
   config.entry.huron.unshift(
-    `webpack-dev-server/client?http://localhost:${program.port}/`,
+    `webpack-dev-server/client?http://localhost:${huron.port}/`,
     'webpack/hot/dev-server'
   );
 
@@ -55,5 +56,5 @@ if (program.production) {
     hot: true,
     contentBase: huron.root,
   });
-  server.listen(program.port);
+  server.listen(huron.port);
 }

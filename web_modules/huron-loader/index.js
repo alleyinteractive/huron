@@ -10,14 +10,16 @@ module.exports = function(source, map) {
   var huron = this.options.huron;
   var templatePathArray = [];
   var templateIds = [];
+  var rootPath = path.join('../../', huron.root);
+  var templatePath = path.join(rootPath, huron.templates);
 
-  // Read the destination dir
-  var templates = fs.readdirSync(huron.destination);
+  // Read the templates dir
+  var templates = fs.readdirSync(path.join(huron.root, huron.templates));
 
   // Generate a list of paths and IDs for all templates
   templates.forEach(file => {
     templatePathArray.push(
-      `'${path.join(huron.root, huron.destination, file)}'`
+      `'${path.join(templatePath, file)}'`
     );
     templateIds.push(file.replace('.html', ''));
   });
@@ -50,7 +52,7 @@ module.exports = function(source, map) {
 
   huron.css.forEach((css) => {
     prependScript.push(
-      `css.push(require('${path.join(huron.root, css)}'));`
+      `css.push(require('${path.join(rootPath, css)}'));`
     )
   });
 
