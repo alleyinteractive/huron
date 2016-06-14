@@ -21,17 +21,22 @@ program.version('0.1.0')
   .parse(process.argv);
 
 // Load in huron options
-const huron = require(program.config);
-const localWebpack = require(path.resolve(huron.root, huron.webpack));
+const huron = require(path.join(cwd, program.config));
+const localWebpack = require(path.resolve(cwd, huron.webpack));
 
-const config = generateConfig(huronWebpack, localWebpack);
+// option defaults
+huron.port = huron.port || 8080;
+huron.root = huron.root || cwd;
+
+// Create config object
+const config = generateConfig(huron, huronWebpack, localWebpack);
 config.huron = huron;
+
+console.log(config);
 
 // kss.traverse(huron.kss, {mask: '*.css'}, (err, styleguide) => {
 //   console.log(styleguide);
 // });
-
-console.log(config);
 
 // Build for production
 if (program.production) {
@@ -45,16 +50,20 @@ if (program.production) {
     }
   );
 } else {
-// Add webpack-dev-server and HMR to Huron entry point for dev
-  config.entry.huron.unshift(
-    `webpack-dev-server/client?http://localhost:${huron.port}/`,
-    'webpack/hot/dev-server'
-  );
-
   const compiler = webpack(config);
   const server = new webpackDevServer(compiler, {
     hot: true,
+    quiet: false,
+    noInfo: false,
     contentBase: huron.root,
+    publicPath: `http://localhost:${huron.port}/${huron.root}`,
+    stats: {colors: true},
   });
-  server.listen(huron.port);
+  server.listen(huron.port, 'localhost', function (err, result) {
+    if (err) {
+      return console.log(err);
+    }
+
+    console.log(`Listening at http://localhost:${huron.port}/`);
+  });
 }

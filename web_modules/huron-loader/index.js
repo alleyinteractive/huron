@@ -5,23 +5,24 @@
 
 var path = require('path');
 var fs = require('fs');
+var cwd = process.cwd();
 
 module.exports = function(source, map) {
   var huron = this.options.huron;
   var templatePathArray = [];
   var templateIds = [];
-  var rootPath = path.join('../../', huron.root);
-  var templatePath = path.join(rootPath, huron.templates);
 
   // Read the templates dir
   var templates = fs.readdirSync(path.join(huron.root, huron.templates));
 
   // Generate a list of paths and IDs for all templates
   templates.forEach(file => {
-    templatePathArray.push(
-      `'${path.join(templatePath, file)}'`
-    );
-    templateIds.push(file.replace('.html', ''));
+    if (file.indexOf('.html') >= 0) {
+      templatePathArray.push(
+        `'${path.resolve(cwd, huron.root, huron.templates, file)}'`
+      );
+      templateIds.push(file.replace('.html', ''));
+    }
   });
 
   // Initialize templates, js, css and HMR acceptance logic
@@ -50,11 +51,13 @@ module.exports = function(source, map) {
     );
   });
 
-  huron.css.forEach((css) => {
-    prependScript.push(
-      `css.push(require('${path.join(rootPath, css)}'));`
-    )
-  });
+  if (huron.css && huron.css.length) {
+    huron.css.forEach((css) => {
+      prependScript.push(
+        `css.push(require('${path.join(rootPath, css)}'));`
+      )
+    });
+  }
 
   return [
     prependScript.join('\n'),

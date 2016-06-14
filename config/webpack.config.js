@@ -12,20 +12,10 @@ module.exports = {
     filename: '[name].js',
     chunkFilename: '[name].chunk.min.js'
   },
-  eslint: {
-    configFile: path.resolve(__dirname, './.eslintrc')
-  },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
   ],
   module: {
-    preLoaders: [
-      {
-        test: /\.js$/,
-        loader: 'eslint',
-        exclude: /node_modules/
-      }
-    ],
     loaders: [
       {
         test: /huron.js$/,

@@ -10,7 +10,6 @@ class InsertNodes {
     this.templates = templates;
 
     // Inits
-    this.insertScripts();
     this.cycleEls(document);
   }
 
@@ -19,16 +18,21 @@ class InsertNodes {
    * ensuring our prototypes look as close as possible to the final product.
    */
   cycleEls(context, parentId = null) {
-    for (let templateId in this.templates) {
-      let templateMarker = context.querySelector(templateId);
+    for (const templateId in this.templates) {
+      if (templateId !== null) {
+        const templateMarker = context.querySelector(templateId);
 
-      if (null !== templateMarker && 0 === templateMarker.childNodes.length) {
-        let template = this.templates[templateId];
+        if (templateMarker !== null && templateMarker.childNodes.length === 0) {
+          const template = this.templates[templateId];
 
-        if (!this.hasTemplate(template, parentId)) {
-          this.cycleEl(template, context);
-        } else {
-          throw "You have an infinite loop in your template parts! This usually means you have two templates including each other."
+          if (!this.hasTemplate(template, parentId)) {
+            this.cycleEl(template, context);
+          } else {
+            throw [
+              'You have an infinite loop in your template parts!',
+              'This usually means you have two templates including each other.',
+            ].join(' ');
+          }
         }
       }
     }
@@ -57,15 +61,15 @@ class InsertNodes {
    */
   insertEl(tags, templateId, templateChildren) {
     for (let i = 0; i < tags.length; i++) {
-      let tag = tags.item(i);
+      const tag = tags.item(i);
 
       if (!tag.hasAttribute('huron-inserted')) {
-        for (let i = 0; i < templateChildren.length; i++) {
+        for (let j = 0; j < templateChildren.length; i++) {
           // Child node must be cloned to allow insertion in multiple places
-          let childEl = templateChildren.item(i).cloneNode(true);
+          const childEl = templateChildren.item(j).cloneNode(true);
 
           // Set the template-id attribute to mark it for disposal on the next cycle
-          childEl.setAttribute( 'huron-id', templateId );
+          childEl.setAttribute('huron-id', templateId);
           tag.parentNode.insertBefore(childEl, tag);
         }
 
@@ -81,17 +85,17 @@ class InsertNodes {
    */
   disposeEl(tags, templateId) {
     const templateChildren = document
-      .querySelectorAll('[huron-id="' + templateId + '"]');
+      .querySelectorAll(`[huron-id="${templateId}"]`);
 
     // Loop through all instances of this template's children and remove them.
     for (let i = 0; i < templateChildren.length; i++) {
-      let childEl = templateChildren.item(i);
+      const childEl = templateChildren.item(i);
       childEl.parentNode.removeChild(childEl);
     }
 
     // Remove huron-insert attribute from each tag
     for (let i = 0; i < tags.length; i++) {
-      let tag = tags.item(i);
+      const tag = tags.item(i);
       tag.removeAttribute('huron-inserted');
     }
   }
@@ -100,39 +104,18 @@ class InsertNodes {
    * Check if a template contains a specific subtemplate.
    */
   hasTemplate(template, templateId) {
-    if (null !== templateId) {
-      let subTemplate = template
+    if (templateId !== null) {
+      const subTemplate = template
         .querySelector('template')
         .content
         .querySelector(templateId);
 
-      if (null !== subTemplate) {
+      if (subTemplate !== null) {
         return true;
       }
     }
 
     return false;
-  }
-
-  /*
-   * Insert script tags into <body> after all elements have loaded
-   */
-  insertScripts() {
-    if (document === this.context && 'undefined' !== window.protoScripts) {
-      if (window.protoScripts.length) {
-        var scriptArray = protoScripts,
-          bodyNodes = document.body.children;
-
-        scriptArray.forEach((value) => {
-          var scriptTag = document.createElement('script');
-
-          scriptTag.type = 'text/javascript';
-          scriptTag.src = value;
-
-          document.body.insertBefore(scriptTag, bodyNodes[bodyNodes.length - 1]);
-        });
-      }
-    }
   }
 }
 
@@ -142,9 +125,11 @@ if (module.hot) {
 }
 
 // Create a new instance of the InsertNodes class
-let insert = new InsertNodes(templates);
+/*eslint-disable*/
+const insert = new InsertNodes(templates);
 
 // Cycle elements when a template is changed
 function templateReplaceCallback(template) {
   insert.cycleEl(template, document);
 }
+/*eslint-enable*/
