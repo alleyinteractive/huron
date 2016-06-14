@@ -6,8 +6,9 @@ const webpack = require('webpack');
 const webpackDevServer = require('webpack-dev-server');
 const program = require('commander'); // Easy program flags
 const cwd = process.cwd(); // Current Working Directory
-const config = require( path.resolve( __dirname, '../../config/webpack.config.js' ) );
+const huronWebpack = require(path.resolve( __dirname, '../../config/webpack.config.js'));
 const kss = require('kss');
+import generateConfig from './generateConfig';
 
 // Process arguments
 program.version('0.1.0')
@@ -21,11 +22,17 @@ program.version('0.1.0')
 
 // Load in huron options
 const huron = require(program.config);
+const localWebpack = require(path.resolve(huron.root, huron.webpack));
 
-kss.traverse(config.huron.kss, {mask: '*.css'}, (err, styleguide) => {
-  console.log(styleguide);
-});
+const config = generateConfig(huronWebpack, localWebpack);
 
+// kss.traverse(huron.kss, {mask: '*.css'}, (err, styleguide) => {
+//   console.log(styleguide);
+// });
+
+console.log(config);
+
+// Build for production
 if (program.production) {
   config.output.path = path.resolve(cwd, huron.root);
   webpack(
@@ -37,8 +44,11 @@ if (program.production) {
     }
   );
 } else {
-  // Add webpack-dev-server and HMR to Huron entry point
-  config.entry.huron.unshift(`webpack-dev-server/client?http://localhost:${program.port}/`, 'webpack/hot/dev-server');
+// Add webpack-dev-server and HMR to Huron entry point for dev
+  config.entry.huron.unshift(
+    `webpack-dev-server/client?http://localhost:${program.port}/`,
+    'webpack/hot/dev-server'
+  );
 
   const compiler = webpack(config);
   const server = new webpackDevServer(compiler, {

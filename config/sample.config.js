@@ -3,20 +3,13 @@ var webpack = require('webpack'),
 
 module.exports = {
   entry: {
-    huron: [
-      path.resolve(__dirname, '../src/js/huron.js')
+    test: [
+      path.resolve(__dirname, '../src/js/test.js')
     ],
-  },
-  output: {
-    filename: '[name].js',
-    chunkFilename: '[name].chunk.min.js'
   },
   eslint: {
     configFile: path.resolve(__dirname, './.eslintrc')
   },
-  plugins: [
-    new webpack.HotModuleReplacementPlugin(),
-  ],
   module: {
     preLoaders: [
       {
@@ -28,17 +21,9 @@ module.exports = {
     loaders: [
       {
         test: /\.js$/,
-        loader: 'babel!huron',
+        loader: 'babel',
         exclude: /node_modules/
       },
-      {
-        test: /\.css$/,
-        loader:'style-loader!css'
-      },
-      {
-        test: /\.html?$/,
-        loader: 'dom!html'
-      }
     ]
   }
 };
