@@ -27,7 +27,9 @@ export const defaultConfig = {
   },
   module: {
     loaders: [
-
+      test: /\.html?$/,
+      loader: 'dom?tag=dom-module!html',
+      // include: ['path/to/templates']
     ]
   },
   huron: {
