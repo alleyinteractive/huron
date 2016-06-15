@@ -22,6 +22,11 @@ export default function processArgs() {
       'bundle partials into a single file'
     )
     .option(
+      '--bundle-name [bundleName]',
+      'name of bundle',
+      'huron'
+    )
+    .option(
       '-r, --root [root]',
       '[root] directory for the server, defaults to current working directory',
       cwd
