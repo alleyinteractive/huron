@@ -1,19 +1,20 @@
-// Huron loader
-//
-// Performs one simple function:
-// inserting static paths so webpack can statically analyze html templates and source CSS
+const path = require('path');
+const fs = require('fs');
+const cwd = process.cwd();
 
-var path = require('path');
-var fs = require('fs');
-var cwd = process.cwd();
+export default function requireTemplates(config) {
+  const huron = config.huron;
+  const templatePathArray = [];
+  const templateIds = [];
+  const templates = fs.readdirSync(path.join(huron.root, huron.templates));
+  const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'));
+  const outputPath = path.join(huron.root, 'js');
 
-module.exports = function(source, map) {
-  var huron = this.options.huron;
-  var templatePathArray = [];
-  var templateIds = [];
-
-  // Read the templates dir
-  var templates = fs.readdirSync(path.join(huron.root, huron.templates));
+  try {
+    fs.accessSync(outputPath, fs.F_OK);
+  } catch (e) {
+    fs.mkdirSync(outputPath);
+  }
 
   // Generate a list of paths and IDs for all templates
   templates.forEach(file => {
@@ -26,7 +27,7 @@ module.exports = function(source, map) {
   });
 
   // Initialize templates, js, css and HMR acceptance logic
-  var prependScript = [
+  const prependScript = [
     `const templates = {};`,
     `const css = []`,
     `const js = []`,
@@ -59,8 +60,11 @@ module.exports = function(source, map) {
     });
   }
 
-  return [
-    prependScript.join('\n'),
-    source
-  ].join('\n');
+  fs.writeFileSync(
+    path.join(outputPath, 'huron.js'),
+    [
+      prependScript.join('\n'),
+      huronScript,
+    ].join('\n')
+  );
 }

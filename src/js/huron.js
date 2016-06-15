@@ -20,6 +20,7 @@ class InsertNodes {
   cycleEls(context, parentId = null) {
     for (const templateId in this.templates) {
       if (templateId !== null) {
+        // Check if there's at least one instance of a template in this context
         const templateMarker = context.querySelector(templateId);
 
         if (templateMarker !== null && templateMarker.childNodes.length === 0) {
@@ -53,30 +54,29 @@ class InsertNodes {
       this.disposeEl(tags, templateId);
     }
     this.cycleEls(templateWrapper.content, templateId);
-    this.insertEl(tags, templateId, templateChildren);
+
+    for (let i = 0; i < tags.length; i++) {
+      const tag = tags.item(i);
+      if (!tag.hasAttribute('huron-inserted')) {
+        this.insertEl(tag, templateId, templateChildren);
+        // Hide the tag and add huron-inserted attr to ensure it's not re-inserted on a later pass
+        tag.style.display = 'none';
+        tag.setAttribute('huron-inserted', '');
+      }
+    }
   }
 
   /*
    * Replace template marker with contents of template
    */
-  insertEl(tags, templateId, templateChildren) {
-    for (let i = 0; i < tags.length; i++) {
-      const tag = tags.item(i);
+  insertEl(tag, templateId, templateChildren) {
+    for (let i = 0; i < templateChildren.length; i++) {
+      // Child node must be cloned to allow insertion in multiple places
+      const childEl = templateChildren.item(i).cloneNode(true);
 
-      if (!tag.hasAttribute('huron-inserted')) {
-        for (let j = 0; j < templateChildren.length; i++) {
-          // Child node must be cloned to allow insertion in multiple places
-          const childEl = templateChildren.item(j).cloneNode(true);
-
-          // Set the template-id attribute to mark it for disposal on the next cycle
-          childEl.setAttribute('huron-id', templateId);
-          tag.parentNode.insertBefore(childEl, tag);
-        }
-
-        // Hide the tag and add huron-inserted attr to ensure it's not re-inserted on a later pass
-        tag.style.display = 'none';
-        tag.setAttribute('huron-inserted', '');
-      }
+      // Set the template-id attribute to mark it for disposal on the next cycle
+      childEl.setAttribute('huron-id', templateId);
+      tag.parentNode.insertBefore(childEl, tag);
     }
   }
 

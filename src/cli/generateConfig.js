@@ -1,76 +1,48 @@
 const webpack = require('webpack');
 const path = require('path');
 const cwd = process.cwd();
+import { defaultConfig } from '../../config/webpack.config.js';
 
-export default function generateConfig(opts, huron, local) {
-  // Generic capture of local settings
-  const config = Object.assign({}, local);
+export default function generateConfig(config) {
+  config.huron = Object.assign({}, defaultConfig.huron, config.huron);
+  const huron = config.huron;
+  const entry = config.entry[huron.entry];
 
-  // Overwrite entries
-  config.entry = {
-    huron: [
-      `webpack-dev-server/client?http://localhost:${opts.port}/`,
-      'webpack/hot/dev-server',
-      'huron',
-    ],
-  }
+  // Manage entries
+  config.entry[huron.entry] = [
+    `webpack-dev-server/client?http://localhost:${huron.port}/`,
+    'webpack/hot/dev-server',
+    path.join(cwd, huron.root, 'js/huron'),
+  ].concat(entry);
 
-  // Add resolve
-  config.resolve = config.resolve || {};
-  config.resolve.modulesDirectories = config.resolve.modulesDirectories || [];
-  config.resolve.modulesDirectories.push(path.resolve(__dirname, '../js'));
+  // Manage loaders
+  config.module = config.module || {};
+  config.module.loaders = config.module.loaders || [];
 
-  // Add loader resolve
-  config.resolveLoader = config.resolveLoader || {};
-  config.resolveLoader.modulesDirectories = config.resolveLoader.modulesDirectories || [
-    'web_loaders', 'web_modules', 'node_loaders', 'node_modules'
-  ];
-  config.resolveLoader.modulesDirectories.push(path.resolve(__dirname, '../../web_modules'));
+  // Add loaders
+  config.module.loaders.push({
+    test: /\.html?$/,
+    loader: 'dom?tag=dom-module!html',
+    include: [path.join(cwd, huron.root, huron.templates)]
+  });
 
-  // Overwrite plugins
-  if (local.plugins && local.plugins.length) {
-    config.plugins = local.plugins.filter(plugin => {
+  // De-dupe HMR plugin
+  if (config.plugins && config.plugins.length) {
+    config.plugins = config.plugins.filter(plugin => {
       return plugin.constructor.name !== 'HotModuleReplacementPlugin';
     });
   }
-  const hmr = new webpack.HotModuleReplacementPlugin();
-  config.plugins.push(hmr);
-
-  // Add loaders
-  if (config.module && config.module.loaders) {
-    config.module.loaders.push(
-      {
-        test: /huron.js$/,
-        loader: 'babel!huron',
-      },
-      {
-        test: /\.css$/,
-        loader:'style-loader!css',
-        include: [path.resolve(cwd, opts.root)]
-      },
-      {
-        test: /\.html?$/,
-        loader: 'dom!html',
-        include: [path.resolve(cwd, opts.root, opts.templates)]
-      },
-      {
-        test: /(\.svg|\.png)$/,
-        loader: 'file',
-        include: [
-          path.resolve(cwd, opts.root)
-        ],
-      }
-    );
-  }
+  config.plugins.push(new webpack.HotModuleReplacementPlugin());
 
   // Set ouput options
-  config.output.path = path.resolve('/', opts.root);
-  config.output.filename = '[name].js';
-  config.output.chunkFileName = '[name].chunk.js';
-
-  // Remove existing devserver options
+  config.output = Object.assign({}, config.output, defaultConfig.output);
+  config.path = huron.root;
   delete config.output.publicPath;
+
+  // Remove dev server options
   delete config.devServer;
+
+  console.log(config)
 
   return config;
 }

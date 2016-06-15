@@ -6,41 +6,29 @@ const webpack = require('webpack');
 const webpackDevServer = require('webpack-dev-server');
 const program = require('commander'); // Easy program flags
 const cwd = process.cwd(); // Current Working Directory
-const huronWebpack = require(path.resolve( __dirname, '../../config/webpack.config.js'));
-const kss = require('kss');
 import generateConfig from './generateConfig';
+import requireTemplates from './requireTemplates';
 
 // Process arguments
 program.version('0.1.0')
   .option(
     '--config [config]',
     '[config] for all huron options',
-    path.resolve(__dirname, '../../config/huron.config.js')
+    path.resolve(__dirname, '../../config/webpack.config.js')
   )
   .option('--production', 'compile assets once for production')
   .parse(process.argv);
 
 // Load in huron options
-const huron = require(path.join(cwd, program.config));
-const localWebpack = require(path.resolve(cwd, huron.webpack));
+const localConfig = require(path.join(cwd, program.config));
 
-// option defaults
-huron.port = huron.port || 8080;
-huron.root = huron.root || cwd;
-
-// Create config object
-const config = generateConfig(huron, huronWebpack, localWebpack);
-config.huron = huron;
-
-console.log(config);
-
-// kss.traverse(huron.kss, {mask: '*.css'}, (err, styleguide) => {
-//   console.log(styleguide);
-// });
+// Generate dynamic requries
+const huronScript = requireTemplates(localConfig);
+const config = generateConfig(localConfig, huronScript);
+const huron = config.huron;
 
 // Build for production
 if (program.production) {
-  config.output.path = path.resolve(cwd, huron.root);
   webpack(
     config,
     (err, stats) => {
@@ -55,9 +43,9 @@ if (program.production) {
     hot: true,
     quiet: false,
     noInfo: false,
+    stats: {colors: true},
     contentBase: huron.root,
     publicPath: `http://localhost:${huron.port}/${huron.root}`,
-    stats: {colors: true},
   });
   server.listen(huron.port, 'localhost', function (err, result) {
     if (err) {
