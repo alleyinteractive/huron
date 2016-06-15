@@ -4,7 +4,7 @@ var webpack = require('webpack'),
 export const defaultConfig = {
   entry: {},
   output: {
-    path: '/dist',
+    // path: [huron root directory],
     filename: '[name].js',
     chunkFilename: '[name].chunk.min.js'
   },
@@ -13,8 +13,8 @@ export const defaultConfig = {
   ],
   resolve: {
     modulesDirectories: [
-      path.resolve(__dirname, '../src/js')
-    ]
+      path.resolve(__dirname, '../src/js'),
+    ],
   },
   resolveLoader: {
     modulesDirectories: [
@@ -22,23 +22,25 @@ export const defaultConfig = {
       'web_modules',
       'node_loaders',
       'node_modules',
-      path.resolve(__dirname, '../node_modules')
-    ]
+      path.resolve(__dirname, '../node_modules'),
+    ],
   },
   module: {
     loaders: [
-      test: /\.html?$/,
-      loader: 'dom?tag=dom-module!html',
-      // include: ['path/to/templates']
+      {
+        test: /\.html?$/,
+        loader: 'dom?tag=dom-module!html',
+        // include: ['path/to/templates']
+      }
     ]
   },
   huron: {
-    templates: 'partials',
-    css: ['static/css/test.css'],
-    scripts: ['static/js/test.js'],
+    entry: 'huron',
+    templates: 'prototype/partials',
+    css: ['css/test.css'],
+    scripts: ['js/test.js'],
     kss: ['css/'],
     port: 8080,
     root: 'dist/',
-    webpack: '../config/sample.config.js',
   }
 };
