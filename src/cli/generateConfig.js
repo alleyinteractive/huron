@@ -18,11 +18,17 @@ export default function generateConfig(config) {
   // Manage loaders
   config.module = config.module || {};
   config.module.loaders = config.module.loaders || [];
-  config.module.loaders.push({
-    test: /\.html?$/,
-    loader: 'dom?tag=dom-module!html',
-    include: [path.join(cwd, huron.root, huron.templates)]
-  });
+  config.module.loaders.push(
+    {
+      test: /\.html?$/,
+      loader: 'dom?tag=dom-module!html',
+      include: [path.join(cwd, huron.root, huron.templates)]
+    },
+    {
+      test: /\.handlebars$/,
+      loader: 'handlebars',
+    }
+  );
 
   // De-dupe HMR plugin
   if (config.plugins && config.plugins.length) {
