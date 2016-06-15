@@ -26,7 +26,7 @@ export default function generateConfig(config) {
     },
     {
       test: /\.handlebars$/,
-      loader: 'handlebars',
+      loader: 'handlebars!dom!html',
     }
   );
 
