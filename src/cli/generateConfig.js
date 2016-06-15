@@ -18,8 +18,6 @@ export default function generateConfig(config) {
   // Manage loaders
   config.module = config.module || {};
   config.module.loaders = config.module.loaders || [];
-
-  // Add loaders
   config.module.loaders.push({
     test: /\.html?$/,
     loader: 'dom?tag=dom-module!html',
