@@ -6,7 +6,7 @@ const jsdom = require('jsdom'); // JavaScript implementation of the WHATWG DOM a
 
 // Parse KSS and insert into an HTML partial
 export default function kssTraverse(files) {
-  const bundleName = `${program.destination}/huron-bundle.html`;
+  const bundleName = `${program.destination}/${program.bundleName}-bundle.html`;
   let bundleOutput = null;
   let kssRoot = Object.keys(files);
 
