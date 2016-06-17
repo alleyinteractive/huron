@@ -1,6 +1,8 @@
 Huron: Alley's Prototype Build System
 ======================
 
+Note: current 1.0 development is happening in `feature/one-point-oh` branch
+
 This build system is intended to make your life easier when moving from a KSS styleguide or SC5 styleguide to full-page, in-browser prototypes. This tool will copy all markup from each of your KSS sections into a separate html file, which can then be imported via webcomponents HTML import. If you use SC5's `<sg-insert>` to reference another section, this will be replaced by an import to the partial it references. Below are the steps and, once you read through them, try it out within this repo (it's functional!).
 
 # Installation
