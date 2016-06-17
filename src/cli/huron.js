@@ -1,31 +1,41 @@
-// CLI for Huron. Used solely to apply configuration options and
-// start webpack-dev-server programmatically.
+// CLI for Huron
 
+// External
+const cwd = process.cwd(); // Current working directory
+const kss = require('kss'); // node implementation of KSS: a methodology for documenting CSS and generating style guides
 const path = require('path');
 const webpack = require('webpack');
 const webpackDevServer = require('webpack-dev-server');
-const program = require('commander'); // Easy program flags
-const cwd = process.cwd(); // Current Working Directory
+import { createStore } from 'redux';
+
+// Local
+import { program } from './parseArgs';
 import generateConfig from './generateConfig';
 import requireTemplates from './requireTemplates';
+import huronReducer from './reducers';
 
-// Process arguments
-program.version('0.1.0')
-  .option(
-    '--config [config]',
-    '[config] for all huron options',
-    path.resolve(__dirname, '../../config/webpack.config.js')
-  )
-  .option('--production', 'compile assets once for production')
-  .parse(process.argv);
-
-// Load in huron options
+// Set vars
 const localConfig = require(path.join(cwd, program.config));
-
-// Generate dynamic requries
 const huronScript = requireTemplates(localConfig);
 const config = generateConfig(localConfig, huronScript);
-const huron = config.huron;
+const huron = config.huron; // huron config
+const store = createStore(reducer);
+
+kss.traverse(huron.kss, {}, (err, styleguide) => {
+  if (err) {
+    throw err;
+  }
+
+  styleguide.data.sections.forEach(section => {
+    let action = {
+      type: 'ADD_SECTION',
+      section: section,
+    }
+    store.dispatch(action);
+  });
+
+  console.log(store.getState());
+});
 
 // Build for production
 if (program.production) {
