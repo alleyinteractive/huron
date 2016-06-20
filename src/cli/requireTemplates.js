@@ -20,7 +20,7 @@ export default function requireTemplates(config) {
   templates.forEach(file => {
     if (file.indexOf('.html') >= 0) {
       templatePathArray.push(
-        `'${path.resolve(cwd, huron.root, huron.templates, file)}'`
+        `'${path.join(huron.root, huron.templates, file)}'`
       );
       templateIds.push(file.replace('.html', ''));
     }
@@ -52,10 +52,20 @@ export default function requireTemplates(config) {
     );
   });
 
+  // Add extra CSS
   if (huron.css && huron.css.length) {
     huron.css.forEach((css) => {
       prependScript.push(
         `css.push(require('${path.join(huron.root, css)}'));`
+      )
+    });
+  }
+
+  // Add extra JS
+  if (huron.js && huron.js.length) {
+    huron.js.forEach((js) => {
+      prependScript.push(
+        `js.push(require('${path.join(huron.root, js)}'));`
       )
     });
   }

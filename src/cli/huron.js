@@ -6,9 +6,11 @@ const kss = require('kss'); // node implementation of KSS: a methodology for doc
 const path = require('path');
 const webpack = require('webpack');
 const webpackDevServer = require('webpack-dev-server');
+const gaze = require('gaze');
 import { createStore } from 'redux';
 
 // Local
+// import './updateSection';
 import { program } from './parseArgs';
 import generateConfig from './generateConfig';
 import requireTemplates from './requireTemplates';
@@ -19,22 +21,37 @@ const localConfig = require(path.join(cwd, program.config));
 const huronScript = requireTemplates(localConfig);
 const config = generateConfig(localConfig, huronScript);
 const huron = config.huron; // huron config
-const store = createStore(reducer);
+const store = createStore(huronReducer);
 
+const unsubscribe = store.subscribe(() => {
+  console.log(store.getState());
+});
+
+// Generate initial dataset
 kss.traverse(huron.kss, {}, (err, styleguide) => {
   if (err) {
     throw err;
   }
 
-  styleguide.data.sections.forEach(section => {
-    let action = {
-      type: 'ADD_SECTION',
-      section: section,
-    }
-    store.dispatch(action);
-  });
+  let action = {
+    type: 'ADD_SECTION',
+    section: styleguide.data.sections[0],
+  }
+  store.dispatch(action);
 
-  console.log(store.getState());
+  let action2 = {
+    type: 'ADD_SECTION',
+    section: styleguide.data.sections[1],
+  }
+  store.dispatch(action2);
+
+  // styleguide.data.sections.forEach(section => {
+  //   let action = {
+  //     type: 'ADD_SECTION',
+  //     section: section,
+  //   }
+  //   store.dispatch(action);
+  // });
 });
 
 // Build for production
