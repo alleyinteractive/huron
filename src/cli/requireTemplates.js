@@ -8,7 +8,7 @@ export default function requireTemplates(config) {
   const templateIds = [];
   const templates = fs.readdirSync(path.join(huron.root, huron.templates));
   const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'));
-  const outputPath = path.join(huron.root, 'js');
+  const outputPath = path.join(huron.root);
 
   try {
     fs.accessSync(outputPath, fs.F_OK);
@@ -20,7 +20,7 @@ export default function requireTemplates(config) {
   templates.forEach(file => {
     if (file.indexOf('.html') >= 0) {
       templatePathArray.push(
-        `'${path.join(huron.root, huron.templates, file)}'`
+        `'./${path.join(huron.templates, file)}'`
       );
       templateIds.push(file.replace('.html', ''));
     }

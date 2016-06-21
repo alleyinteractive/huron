@@ -12,7 +12,7 @@ export default function generateConfig(config) {
   config.entry[huron.entry] = [
     `webpack-dev-server/client?http://localhost:${huron.port}/`,
     'webpack/hot/dev-server',
-    path.join(cwd, huron.root, 'js/huron'),
+    path.join(cwd, huron.root, 'huron'),
   ].concat(entry);
 
   // Manage loaders

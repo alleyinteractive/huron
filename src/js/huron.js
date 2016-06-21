@@ -4,13 +4,6 @@
  * into a custom element. That element is then replaced with the element's template contents
  * in order to keep prototype markup as close to WordPress markup as possible.
  */
-const template = require('./test.handlebars');
-console.log(template({
-  testone: 'test content',
-  testtwo: 'test content two'
-}));
-
-
 class InsertNodes {
 
   constructor(templates) {
