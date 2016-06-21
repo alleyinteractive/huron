@@ -12,26 +12,34 @@ function storeCb(err) {
   }
 }
 
+function writeStateTemplates(filename, templatePath, statesPath, output, huron) {
+  const statesRaw = fs.readFileSync(statesPath, 'utf8');
+  const templateRaw = fs.readFileSync(templatePath, 'utf8');
+  const states = JSON.parse(statesRaw);
+  const template = handlebars.compile(templateRaw);
+
+  for (let state in states) {
+    let outputPath = path.resolve(cwd, huron.root, huron.templates, output, `${filename}-${state}.html`);
+    let content = template(states[state]);
+    fs.outputFileSync(outputPath, content);
+    console.log(`output ${outputPath}`);
+  };
+}
+
 export function updateSection(sections, section) {
   // If markup is not inline, set a value for the markup name
   // and grab json for data and template states
   if (section.data.markup) {
     const isInline = section.data.markup.match(/<\/[^>]*>/) !== null;
-    let markup = {};
 
     if (!isInline) {
+      let markup = {};
+
       markup.section = section.data.referenceURI;
-
-      try {
-        markup = JSON.parse(section.data.markup);
-      } catch (e) {
-        markup.template = section.data.markup
-      }
-
-      const markupFile = path.parse(markup.template);
+      markup.template = section.data.markup
 
       sections.set(
-        markupFile.name,
+        path.parse(markup.template),
         markup,
         storeCb
       );
@@ -67,42 +75,37 @@ export function updateFile(filepath, sections, huron) {
 
     case '.hbs':
     case '.handlebars':
-      const templateRaw = fs.readFileSync(filepath, 'utf8');
       sections.get(file.name, (err, data) => {
-        let statesPath = null;
+        const statesPath = path.resolve(file.dir, `${file.name}.json`);
 
-        if (data.states) {
-          statesPath = path.resolve(file.dir, data.states);
-        } else {
-          statesPath = path.resolve(file.dir, `${file.name}.json`);
+        try {
+          fs.accessSync(statesPath, fs.F_OK);
+        } catch (e) {
+          console.log(`no data provided for template ${file.base}`);
         }
 
-        if (statesPath) {
-          try {
-            fs.accessSync(statesPath, fs.F_OK);
-          } catch (e) {
-            console.log(`no data provided for handlebars template ${file.name}`);
-          }
-
-          const statesRaw = fs.readFileSync(statesPath, 'utf8');
-          const states = JSON.parse(statesRaw);
-          const template = handlebars.compile(templateRaw);
-
-          if (states.for) {
-            delete states.for;
-          }
-
-          for (let state in states) {
-            let outputPath = path.resolve(cwd, huron.root, huron.templates, output, `${file.name}-${state}.html`)
-            let content = template(states[state]);
-            fs.outputFileSync(outputPath, content);
-            console.log(`output ${outputPath}`);
-          };
-        }
+        writeStateTemplates(file.name, filepath, statesPath, output, huron);
       })
       break;
 
     case '.json':
+      sections.get(file.name, (err, data) => {
+        let templatePath = null;
+
+        try {
+          templatePath = path.resolve(file.dir, `${file.name}.hbs`);
+          fs.accessSync(templatePath, fs.F_OK);
+        } catch (e) {
+          try {
+            templatePath = path.resolve(file.dir, `${file.name}.handlebars`);
+            fs.accessSync(templatePath, fs.F_OK);
+          } catch(e) {
+            console.log(`no template provided for data ${file.base}`);
+          }
+        }
+
+        writeStateTemplates(file.name, templatePath, filepath, output, huron);
+      })
       break;
 
     case huron.kssExt:
