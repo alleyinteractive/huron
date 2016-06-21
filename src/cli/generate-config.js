@@ -23,11 +23,12 @@ export default function generateConfig(config) {
       test: /\.html?$/,
       loader: 'dom?tag=dom-module!html',
       include: [path.join(cwd, huron.root, huron.templates)]
-    },
-    {
-      test: /\.handlebars$/,
-      loader: 'handlebars',
     }
+    // Potentially not useful
+    // {
+    //   test: /\.handlebars$/,
+    //   loader: 'handlebars?ignorePartials',
+    // }
   );
 
   // De-dupe HMR plugin

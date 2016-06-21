@@ -1,6 +1,6 @@
 const webpack = require('webpack');
 const webpackDevServer = require('webpack-dev-server');
-import { program } from './parseArgs';
+import { program } from './parse-args';
 
 export default function startWebpack(config) {
   const huron = config.huron;

@@ -39,7 +39,12 @@ export const defaultConfig = {
     templates: 'prototype/partials',
     css: ['css/test.css'],
     scripts: ['js/test.js'],
-    kss: ['css/'],
+    kss: 'css/',
+    kssOptions: {
+      multiline: true,
+      markdown: true,
+    },
+    kssExt: '.css',
     port: 8080,
     root: 'dist/',
   }

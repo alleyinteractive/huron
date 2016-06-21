@@ -9,10 +9,10 @@ const Gaze = require('gaze').Gaze;
 const memStore = require('memory-store');
 
 // Local
-import { program } from './parseArgs';
-import { updateSection } from './actions';
-import generateConfig from './generateConfig';
-import requireTemplates from './requireTemplates';
+import { program } from './parse-args';
+import { updateSection, updateFile } from './actions';
+import generateConfig from './generate-config';
+import requireTemplates from './require-templates';
 import startWebpack from './server';
 
 // Set vars
@@ -22,23 +22,8 @@ const config = generateConfig(localConfig, huronScript);
 const huron = config.huron; // huron config
 const sections = memStore.createStore();
 
-const gaze = new Gaze([
-  `${huron.kss}/**/*.html`,
-  `${huron.kss}/**/*.css`,
-  `${huron.kss}/**/*.md`,
-  `${huron.kss}/**/*.handlebars`,
-]);
-
-gaze.on('changed', (event, filepath) => {
-  console.log(filepath);
-});
-
-gaze.on('added', (event, filepath) => {
-  console.log(filepath);
-});
-
 // Generate initial dataset
-kss.traverse(huron.kss, {}, (err, sg) => {
+kss.traverse(huron.kss, huron.kssOptions, (err, sg) => {
   if (err) {
     throw err;
   }
@@ -46,7 +31,23 @@ kss.traverse(huron.kss, {}, (err, sg) => {
   sg.data.sections.forEach(section => {
       updateSection(sections, section);
   });
-});
 
-// Start webpack or build for production
-startWebpack(config);
+  const gaze = new Gaze([
+    `${huron.kss}/**/*.html`,
+    `${huron.kss}/**/*${huron.kssExt}`,
+    `${huron.kss}/**/*.handlebars`,
+    `${huron.kss}/**/*.hbs`,
+    `${huron.kss}/**/*.json`,
+  ]);
+
+  gaze.on('changed', (filepath) => {
+    updateFile(filepath, sections, huron);
+  });
+
+  gaze.on('added', (filepath) => {
+    console.log(filepath);
+  });
+
+  // Start webpack or build for production
+  // startWebpack(config);
+});
