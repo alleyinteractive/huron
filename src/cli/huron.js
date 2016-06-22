@@ -34,12 +34,27 @@ const gaze = new Gaze([
 initFiles(gaze.watched(), sections, templates, huron);
 requireTemplates(huron, templates);
 
+// file changed
 gaze.on('changed', (filepath) => {
   updateFile(filepath, sections, templates, huron);
 });
 
+// file added
 gaze.on('added', (filepath) => {
-  console.log(filepath);
+  updateFile(filepath, sections, templates, huron);
+  requireTemplates(huron, templates);
+});
+
+// file renamed
+gaze.on('renamed', (filepath) => {
+  updateFile(filepath, sections, templates, huron);
+  requireTemplates(huron, templates);
+});
+
+// file deleted
+gaze.on('deleted', (filepath) => {
+  // TODO: Add logic to remove output HTML
+  requireTemplates(huron, templates);
 });
 
 // Start webpack or build for production

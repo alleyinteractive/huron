@@ -66,6 +66,12 @@ function writeTemplate(id, output, content, templates, huron) {
   let outputRelative = path.join(huron.root, huron.templates, output, `${id}.html`);
   let outputPath = path.resolve(cwd, outputRelative);
 
+  content = [
+    `<template id="${id}">`,
+    content,
+    '</template>',
+  ].join('\n');
+
   templates.set(id, outputRelative, storeCb);
   fs.outputFileSync(outputPath, content);
   console.log(`writing ${outputPath}`);
@@ -159,45 +165,62 @@ export function updateFile(filepath, sections, templates, huron) {
   switch (file.ext) {
     // Plain HTML template, external
     case '.html':
-      let content = fs.readFileSync(filepath, 'utf8');
-      writeTemplate(file.name, output, content, templates, huron);
-      break;
+      sections.get(`markup_${file.name}`, (err, data) => {
+        if (data && data.section) {
+          sections.get(data.section, (err, section) => {
+            let content = fs.readFileSync(filepath, 'utf8');
+            let headerNormalized = normalizeHeader(section.header);
+            writeTemplate(headerNormalized, output, content, templates, huron);
+          });
+        }
+      });
+          break;
 
     // Handlebars template, external
     case '.hbs':
     case '.handlebars':
-      sections.get(file.name, (err, data) => {
-        const statesPath = path.resolve(file.dir, `${file.name}.json`);
+      sections.get(`markup_${file.name}`, (err, data) => {
+        if (data && data.section) {
+          sections.get(data.section, (err, section) => {
+            const statesPath = path.resolve(file.dir, `${file.name}.json`);
+            let headerNormalized = normalizeHeader(section.header);
 
-        try {
-          fs.accessSync(statesPath, fs.F_OK);
-        } catch (e) {
-          console.log(`no data provided for template ${file.base}`);
+            try {
+              fs.accessSync(statesPath, fs.F_OK);
+            } catch (e) {
+              console.log(`no data provided for template ${file.base}`);
+            }
+
+            writeStateTemplates(file.name, filepath, statesPath, output, templates, huron);
+          });
         }
-
-        writeStateTemplates(file.name, filepath, statesPath, output, templates, huron);
-      })
+      });
       break;
 
     // JSON template state data
     case '.json':
-      sections.get(file.name, (err, data) => {
-        let templatePath = null;
+      sections.get(`markup_${file.name}`, (err, data) => {
+        if (data && data.section) {
+          sections.get(data.section, (err, section) => {
+            let templatePath = null;
+            let headerNormalized = normalizeHeader(section.header);
 
-        try {
-          templatePath = path.resolve(file.dir, `${file.name}.hbs`);
-          fs.accessSync(templatePath, fs.F_OK);
-        } catch (e) {
-          try {
-            templatePath = path.resolve(file.dir, `${file.name}.handlebars`);
-            fs.accessSync(templatePath, fs.F_OK);
-          } catch(e) {
-            console.log(`no template provided for data ${file.base}`);
-          }
+            try {
+              templatePath = path.resolve(file.dir, `${file.name}.hbs`);
+              fs.accessSync(templatePath, fs.F_OK);
+            } catch (e) {
+              try {
+                templatePath = path.resolve(file.dir, `${file.name}.handlebars`);
+                fs.accessSync(templatePath, fs.F_OK);
+              } catch(e) {
+                console.log(`no template provided for data ${file.base}`);
+              }
+            }
+
+            writeStateTemplates(headerNormalized, templatePath, filepath, output, templates, huron);
+          });
         }
-
-        writeStateTemplates(file.name, templatePath, filepath, output, templates, huron);
-      })
+      });
       break;
 
     // KSS documentation (default extension is `.css`)
@@ -215,17 +238,13 @@ export function updateFile(filepath, sections, templates, huron) {
           if (styleguide.data.sections.length) {
             const section = styleguide.data.sections[0];
             const isInline = section.data.markup.match(/<\/[^>]*>/) !== null;
+            let headerNormalized = normalizeHeader(section.data.header);
 
             if (isInline) {
-              writeTemplate(
-                normalizeHeader(section.data.header),
-                output,
-                section.data.markup,
-                templates,
-                huron
-              );
+              writeTemplate(headerNormalized, output, section.data.markup, templates, huron);
             }
 
+            writeTemplate(`${headerNormalized}-description`, output, section.data.description, templates, huron);
             updateSection(sections, section, isInline);
           }
         });
