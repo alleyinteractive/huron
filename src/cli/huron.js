@@ -17,10 +17,10 @@ import startWebpack from './server';
 
 // Set vars
 const localConfig = require(path.join(cwd, program.config));
-const huronScript = requireTemplates(localConfig);
-const config = generateConfig(localConfig, huronScript);
+const config = generateConfig(localConfig);
 const huron = config.huron; // huron config
 const sections = memStore.createStore();
+const templates = memStore.createStore();
 
 // Generate initial dataset
 const gaze = new Gaze([
@@ -31,10 +31,11 @@ const gaze = new Gaze([
   `${huron.kss}/**/*.json`,
 ]);
 
-initFiles(gaze.watched(), sections, huron);
+initFiles(gaze.watched(), sections, templates, huron);
+requireTemplates(huron, templates);
 
 gaze.on('changed', (filepath) => {
-  updateFile(filepath, sections, huron);
+  updateFile(filepath, sections, templates, huron);
 });
 
 gaze.on('added', (filepath) => {

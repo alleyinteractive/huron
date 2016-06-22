@@ -3,6 +3,11 @@ const path = require('path');
 const cwd = process.cwd();
 import { defaultConfig } from '../../config/webpack.config.js';
 
+/**
+ * Generate a mutant hybrid of the huron default webpack config and your local webpack config
+ *
+ * @param {object} config - local webpack config
+ */
 export default function generateConfig(config) {
   config.huron = Object.assign({}, defaultConfig.huron, config.huron);
   const huron = config.huron;
@@ -47,6 +52,7 @@ export default function generateConfig(config) {
   // Remove dev server options
   delete config.devServer;
 
+  // Tempororary, for checking the hybrid config
   console.log(config)
 
   return config;
