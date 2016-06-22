@@ -43,6 +43,9 @@ export const defaultConfig = {
     kssOptions: {
       multiline: true,
       markdown: true,
+      custom: [
+        'states',
+      ]
     },
     kssExt: '.css',
     port: 8080,

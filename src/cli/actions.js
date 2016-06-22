@@ -12,11 +12,18 @@ function storeCb(err) {
   }
 }
 
+// Normalize a section title for use as a filename
+function normalizeHeader(header) {
+  return header
+    .toLowerCase()
+    .replace(/\s?\W\s?/g, '-');
+}
+
+// Output an HTML stnippet for each state listed in JSON data,
+// using handlebars template
 function writeStateTemplates(filename, templatePath, statesPath, output, huron) {
-  const statesRaw = fs.readFileSync(statesPath, 'utf8');
-  const templateRaw = fs.readFileSync(templatePath, 'utf8');
-  const states = JSON.parse(statesRaw);
-  const template = handlebars.compile(templateRaw);
+  const states = JSON.parse(fs.readFileSync(statesPath, 'utf8'));
+  const template = handlebars.compile(fs.readFileSync(templatePath, 'utf8'));
 
   for (let state in states) {
     let outputPath = path.resolve(cwd, huron.root, huron.templates, output, `${filename}-${state}.html`);
@@ -26,24 +33,47 @@ function writeStateTemplates(filename, templatePath, statesPath, output, huron) 
   };
 }
 
-export function updateSection(sections, section) {
-  // If markup is not inline, set a value for the markup name
-  // and grab json for data and template states
-  if (section.data.markup) {
-    const isInline = section.data.markup.match(/<\/[^>]*>/) !== null;
+// Loop through initial watched files from Gaze
+export function initFiles(data, sections, huron) {
+  const type = Object.prototype.toString.call( data );
 
-    if (!isInline) {
-      let markup = {};
+  switch (type) {
+    case '[object Object]':
+      for (let file in data) {
+        initFiles(data[file], sections, huron);
+      }
+      break;
 
-      markup.section = section.data.referenceURI;
-      markup.template = section.data.markup
+    case '[object Array]':
+      data.forEach(file => {
+        initFiles(file, sections, huron);
+      });
+      break;
 
-      sections.set(
-        path.parse(markup.template),
-        markup,
-        storeCb
-      );
-    }
+    case '[object String]':
+      const info = path.parse(data);
+      if (info.ext) {
+        updateFile(data, sections, huron);
+      }
+      break;
+  }
+}
+
+export function updateSection(sections, section, isInline) {
+  // If markup is not inline, set a value for the markup filename
+  // to allow us to easily determine the section reference based on a Gaze
+  // 'changed' event to the markup file.
+  if (section.data.markup && !isInline) {
+    let markup = {};
+
+    markup.section = section.data.referenceURI;
+    markup.template = section.data.markup
+
+    sections.set(
+      `markup_${path.parse(markup.template).name}`,
+      markup,
+      storeCb
+    );
   }
 
   // Update new section values
@@ -64,12 +94,11 @@ export function updateFile(filepath, sections, huron) {
   const file = path.parse(filepath);
   const filename = file.name.replace('_', '');
   const output = path.relative(path.resolve(cwd, huron.kss), file.dir);
-  let kssSource = null;
 
   switch (file.ext) {
     case '.html':
-      const outputPath = path.resolve(cwd, huron.root, huron.templates, output, `${file.name}.html`);
-      const content = fs.readFileSync(filepath, 'utf8');
+      let outputPath = path.resolve(cwd, huron.root, huron.templates, output, `${file.name}.html`);
+      let content = fs.readFileSync(filepath, 'utf8');
       fs.outputFileSync(outputPath, content);
       break;
 
@@ -109,7 +138,8 @@ export function updateFile(filepath, sections, huron) {
       break;
 
     case huron.kssExt:
-      kssSource = fs.readFileSync(filepath, 'utf8');
+      const kssSource = fs.readFileSync(filepath, 'utf8');
+
       if (kssSource) {
         kss.parse(kssSource, huron.kssOptions, (err, styleguide) => {
           if (err) {
@@ -118,7 +148,16 @@ export function updateFile(filepath, sections, huron) {
 
           if (styleguide.data.sections.length) {
             const section = styleguide.data.sections[0];
-            updateSection(sections, section);
+            const isInline = section.data.markup.match(/<\/[^>]*>/) !== null;
+
+            if (isInline) {
+              const outputFilename = normalizeHeader(section.data.header);
+              let outputPath = path.resolve(cwd, huron.root, huron.templates, output, `${outputFilename}.html`);
+              fs.outputFileSync(outputPath, section.data.markup);
+              console.log(`output ${outputPath}`);
+            }
+
+            updateSection(sections, section, isInline);
           }
         });
       } else {
