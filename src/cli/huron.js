@@ -21,18 +21,26 @@ const config = generateConfig(localConfig);
 const huron = config.huron; // huron config
 const sections = memStore.createStore();
 const templates = memStore.createStore();
+const extenstions = [
+  huron.kssExt,
+  '.html',
+  '.handlebars',
+  '.hbs',
+  '.json'
+];
 
-// Generate initial dataset
-const gaze = new Gaze([
-  `${huron.kss}/**/*.html`,
-  `${huron.kss}/**/*${huron.kssExt}`,
-  `${huron.kss}/**/*.handlebars`,
-  `${huron.kss}/**/*.hbs`,
-  `${huron.kss}/**/*.json`,
-]);
+// Generate watch list for Gaze, start gaze
+const gazeWatch = [];
+extenstions.forEach(ext => {
+  gazeWatch.push(`${huron.kss}/**/*${ext}`);
+});
+const gaze = new Gaze(gazeWatch);
 
-initFiles(gaze.watched(), sections, templates, huron);
-requireTemplates(huron, templates);
+// Initialize all files watched by gaze
+initFiles(gaze.watched(), sections, templates, huron)
+  .then(() => {
+    requireTemplates(huron, templates, sections);
+  });
 
 // file changed
 gaze.on('changed', (filepath) => {
@@ -41,20 +49,36 @@ gaze.on('changed', (filepath) => {
 
 // file added
 gaze.on('added', (filepath) => {
-  updateFile(filepath, sections, templates, huron);
-  requireTemplates(huron, templates);
+  updateFile(filepath, sections, templates, huron)
+    .then(
+      (sectionURI) => {
+        requireTemplates(huron, templates, sections);
+        console.log(`Section ${sectionURI} added!`);
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
 });
 
 // file renamed
 gaze.on('renamed', (filepath) => {
   updateFile(filepath, sections, templates, huron);
-  requireTemplates(huron, templates);
+    .then(
+      (sectionURI) => {
+        requireTemplates(huron, templates, sections);
+        console.log(`Section ${sectionURI} added!`);
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
 });
 
 // file deleted
 gaze.on('deleted', (filepath) => {
   // TODO: Add logic to remove output HTML
-  requireTemplates(huron, templates);
+  requireTemplates(huron, templates, sections);
 });
 
 // Start webpack or build for production

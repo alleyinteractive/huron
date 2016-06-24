@@ -1,28 +1,22 @@
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs-extra');
 const cwd = process.cwd();
 
-export default function requireTemplates(huron, templates) {
+export default function requireTemplates(huron, templates, sections) {
   const templateObj = templates._store;
   const templatePathArray = [];
   const templateIds = [];
   const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
   const outputPath = path.join(cwd, huron.root);
 
-  try {
-    fs.accessSync(outputPath, fs.F_OK);
-  } catch (e) {
-    fs.mkdirSync(outputPath);
-  }
-
   // Generate a list of paths and IDs for all templates
   for (let template in templateObj) {
     templatePathArray.push(`'${templateObj[template]}'`);
-    templateIds.push(template);
   };
 
   // Initialize templates, js, css and HMR acceptance logic
   const prependScript = [
+    `const sections = JSON.parse(${JSON.stringify(sections._store)})`,
     `const templates = {};`,
     `const css = []`,
     `const js = []`,
@@ -65,7 +59,7 @@ export default function requireTemplates(huron, templates) {
     });
   }
 
-  fs.writeFileSync(
+  fs.outputFileSync(
     path.join(outputPath, 'huron.js'),
     [
       prependScript.join('\n'),
