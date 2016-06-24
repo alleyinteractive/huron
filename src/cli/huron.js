@@ -40,46 +40,52 @@ const gaze = new Gaze(gazeWatch);
 initFiles(gaze.watched(), sections, templates, huron)
   .then(() => {
     requireTemplates(huron, templates, sections);
+
+    if (!program.production) {
+      // file changed
+      gaze.on('changed', (filepath) => {
+        updateFile(filepath, sections, templates, huron);
+      });
+
+      // file added
+      gaze.on('added', (filepath) => {
+        updateFile(filepath, sections, templates, huron)
+          .then(
+            (sectionURI) => {
+              requireTemplates(huron, templates, sections);
+              console.log(`Section ${sectionURI} added!`);
+            },
+            (error) => {
+              console.log(error);
+            }
+          );
+      });
+
+      // file renamed
+      gaze.on('renamed', (filepath) => {
+        updateFile(filepath, sections, templates, huron)
+          .then(
+            (sectionURI) => {
+              requireTemplates(huron, templates, sections);
+              console.log(`Section ${sectionURI} added!`);
+            },
+            (error) => {
+              console.log(error);
+            }
+          );
+      });
+
+      // file deleted
+      gaze.on('deleted', (filepath) => {
+        // TODO: Add logic to remove output HTML
+        requireTemplates(huron, templates, sections);
+      });
+    } else {
+      gaze.close();
+    }
+
+    // Start webpack or build for production
+    startWebpack(config);
   });
 
-// file changed
-gaze.on('changed', (filepath) => {
-  updateFile(filepath, sections, templates, huron);
-});
 
-// file added
-gaze.on('added', (filepath) => {
-  updateFile(filepath, sections, templates, huron)
-    .then(
-      (sectionURI) => {
-        requireTemplates(huron, templates, sections);
-        console.log(`Section ${sectionURI} added!`);
-      },
-      (error) => {
-        console.log(error);
-      }
-    );
-});
-
-// file renamed
-gaze.on('renamed', (filepath) => {
-  updateFile(filepath, sections, templates, huron);
-    .then(
-      (sectionURI) => {
-        requireTemplates(huron, templates, sections);
-        console.log(`Section ${sectionURI} added!`);
-      },
-      (error) => {
-        console.log(error);
-      }
-    );
-});
-
-// file deleted
-gaze.on('deleted', (filepath) => {
-  // TODO: Add logic to remove output HTML
-  requireTemplates(huron, templates, sections);
-});
-
-// Start webpack or build for production
-// startWebpack(config);

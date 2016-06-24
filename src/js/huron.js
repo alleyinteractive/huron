@@ -1,4 +1,3 @@
-document.body.innerHTML = template;
 /* Method for inserting nodes via html import
  *
  * Uses webcomponents import() method to grab html, then inserts that html

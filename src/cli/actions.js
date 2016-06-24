@@ -273,8 +273,8 @@ function writeStateTemplates(filename, templatePath, statesPath, output, templat
  * @param {object} huron - huron config object
  */
 function writeTemplate(id, output, content, templates, huron) {
-  let outputRelative = path.join(huron.root, huron.templates, output, `${id}.html`);
-  let outputPath = path.resolve(cwd, outputRelative);
+  let outputRelative = path.join(huron.templates, output, `${id}.html`);
+  let outputPath = path.resolve(cwd, huron.root, outputRelative);
 
   content = [
     `<template id="${id}">`,
@@ -282,7 +282,7 @@ function writeTemplate(id, output, content, templates, huron) {
     '</template>',
   ].join('\n');
 
-  templates.set(id, outputRelative, storeCb);
+  templates.set(id, `./${outputRelative}`, storeCb);
   fs.outputFileSync(outputPath, content);
   console.log(`writing ${outputPath}`);
 }

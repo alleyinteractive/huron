@@ -37,8 +37,8 @@ export const defaultConfig = {
   huron: {
     entry: 'huron',
     templates: 'prototype/partials',
-    css: ['css/test.css'],
-    scripts: ['js/test.js'],
+    css: [],
+    scripts: [],
     kss: 'css/',
     kssOptions: {
       multiline: true,

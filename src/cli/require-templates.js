@@ -16,7 +16,7 @@ export default function requireTemplates(huron, templates, sections) {
 
   // Initialize templates, js, css and HMR acceptance logic
   const prependScript = [
-    `const sections = JSON.parse(${JSON.stringify(sections._store)})`,
+  //   `const sections = JSON.parse(${JSON.stringify(sections._store)});`,
     `const templates = {};`,
     `const css = []`,
     `const js = []`,
@@ -45,7 +45,7 @@ export default function requireTemplates(huron, templates, sections) {
   if (huron.css && huron.css.length) {
     huron.css.forEach((css) => {
       prependScript.push(
-        `css.push(require('${path.join(huron.root, css)}'));`
+        `css.push(require('${css}'));`
       )
     });
   }
@@ -54,7 +54,7 @@ export default function requireTemplates(huron, templates, sections) {
   if (huron.js && huron.js.length) {
     huron.js.forEach((js) => {
       prependScript.push(
-        `js.push(require('${path.join(huron.root, js)}'));`
+        `js.push(require('${path.join(js)}'));`
       )
     });
   }

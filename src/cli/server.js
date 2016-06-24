@@ -4,18 +4,21 @@ import { program } from './parse-args';
 
 export default function startWebpack(config) {
   const huron = config.huron;
+  const compiler = webpack(config);
+
+  if (program.progress) {
+    compiler.apply(new webpack.ProgressPlugin(function(percentage, msg) {
+      console.log((percentage * 100) + '%', msg);
+    }));
+  }
 
   if (program.production) {
-    webpack(
-      config,
-      (err, stats) => {
-        if (err) {
-          throw err;
-        }
+    compiler.run((err, stats) => {
+      if (err) {
+        console.log(err);
       }
-    );
+    });
   } else {
-    const compiler = webpack(config);
     const server = new webpackDevServer(compiler, {
       hot: true,
       quiet: false,
