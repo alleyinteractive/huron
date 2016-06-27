@@ -130,6 +130,6 @@ const insert = new InsertNodes(templates);
 
 // Cycle elements when a template is changed
 function templateReplaceCallback(template) {
-  // insert.cycleEl(template, document);
+  insert.cycleEl(template, document);
 }
 /*eslint-enable*/

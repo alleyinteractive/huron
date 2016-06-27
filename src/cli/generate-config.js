@@ -1,5 +1,6 @@
 const webpack = require('webpack');
 const path = require('path');
+const fs = require('fs-extra');
 const cwd = process.cwd();
 const HTMLWebpackPlugin = require('html-webpack-plugin');
 import { defaultConfig } from '../../config/webpack.config.js';
@@ -14,6 +15,7 @@ export default function generateConfig(config) {
   config.huron = Object.assign({}, defaultConfig.huron, config.huron);
   const huron = config.huron;
   const entry = config.entry[huron.entry];
+  const template = fs.readFileSync(path.join(__dirname, '../../html/huron-wrapper.ejs'), 'utf8');
 
   // Manage entries
   config.entry = {};
@@ -34,7 +36,7 @@ export default function generateConfig(config) {
     {
       test: /\.html?$/,
       loader: 'dom?tag=dom-module!html',
-      include: [path.join(cwd, huron.root, huron.templates)]
+      include: [path.join(cwd, huron.root)]
     }
   );
 
@@ -47,7 +49,22 @@ export default function generateConfig(config) {
     }
     config.plugins.push(new webpack.HotModuleReplacementPlugin());
   }
-  config.plugins.push(new HTMLWebpackPlugin());
+
+  // Init HTML webpack plugin
+  fs.writeFileSync(path.join(cwd, huron.root, 'huron-wrapper.ejs'), template);
+  huron.prototypes.forEach(prototype => {
+    config.plugins.push(
+      new HTMLWebpackPlugin({
+        title: prototype,
+        window: huron.window,
+        js: huron.js,
+        filename: `${prototype}.html`,
+        template: path.join(huron.root, 'huron-wrapper.ejs'),
+        inject: false,
+        chunks: [huron.entry]
+      })
+    );
+  });
 
   // Set ouput options
   config.output = Object.assign({}, config.output, defaultConfig.output);
@@ -58,6 +75,8 @@ export default function generateConfig(config) {
 
   // Set publicPath
   delete config.output.publicPath;
+
+  console.log(config);
 
   return config;
 }

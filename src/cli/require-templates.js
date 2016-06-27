@@ -35,29 +35,17 @@ export default function requireTemplates(huron, templates, sections) {
   ];
 
   // Generate templates object using template IDs as keys
-  templatePathArray.forEach((template, idx) => {
+  for (let template in templateObj) {
     prependScript.push(
-      `templates['${templateIds[idx]}'] = require(${template});`
+      `templates['${template}'] = require('${templateObj[template]}');`
     );
+  };
+
+  huron.prototypes.forEach(prototype => {
+    prependScript.push(
+      `templates['prototype-${prototype}'] = require('./prototype-${prototype}.html');`
+    )
   });
-
-  // Add extra CSS
-  if (huron.css && huron.css.length) {
-    huron.css.forEach((css) => {
-      prependScript.push(
-        `css.push(require('${css}'));`
-      )
-    });
-  }
-
-  // Add extra JS
-  if (huron.js && huron.js.length) {
-    huron.js.forEach((js) => {
-      prependScript.push(
-        `js.push(require('${path.join(js)}'));`
-      )
-    });
-  }
 
   fs.outputFileSync(
     path.join(outputPath, 'huron.js'),

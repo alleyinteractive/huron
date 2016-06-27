@@ -62,8 +62,8 @@ initFiles(gaze.watched(), sections, templates, huron)
       });
 
       // file renamed
-      gaze.on('renamed', (filepath) => {
-        updateFile(filepath, sections, templates, huron)
+      gaze.on('renamed', (newPath, oldPath) => {
+        updateFile(newPath, sections, templates, huron)
           .then(
             (sectionURI) => {
               requireTemplates(huron, templates, sections);

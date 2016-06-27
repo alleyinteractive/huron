@@ -273,6 +273,13 @@ function writeStateTemplates(filename, templatePath, statesPath, output, templat
  * @param {object} huron - huron config object
  */
 function writeTemplate(id, output, content, templates, huron) {
+  // HTML does not allow tags starting with a number
+  if (parseInt(id.charAt(0), 10)) {
+    id = `template-${id}`;
+  }
+
+  // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
+
   let outputRelative = path.join(huron.templates, output, `${id}.html`);
   let outputPath = path.resolve(cwd, huron.root, outputRelative);
 

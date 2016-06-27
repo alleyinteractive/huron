@@ -36,7 +36,9 @@ export const defaultConfig = {
   },
   huron: {
     entry: 'huron',
+    js: [],
     templates: 'prototype/partials',
+    prototypes: ['index'],
     css: [],
     scripts: [],
     kss: 'css/',
@@ -50,5 +52,6 @@ export const defaultConfig = {
     kssExt: '.css',
     port: 8080,
     root: 'dist/',
+    window: {},
   }
 };
