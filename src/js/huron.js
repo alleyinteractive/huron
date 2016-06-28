@@ -5,11 +5,10 @@ if (module.hot) {
 
 import { templates, addCallback } from './huron-requires';
 
-/* Method for inserting nodes via html import
+/* Method for inserting HTML snippets at particular insertion points
  *
- * Uses webcomponents import() method to grab html, then inserts that html
- * into a custom element. That element is then replaced with the element's template contents
- * in order to keep prototype markup as close to WordPress markup as possible.
+ * Uses require() to grab html partials, then inserts that html
+ * into an element with an attribute `huron-id` corresponding to the template filename.
  */
 class InsertNodes {
 
@@ -29,7 +28,7 @@ class InsertNodes {
     for (const templateId in this._templates) {
       if (templateId !== null) {
         // Check if there's at least one instance of a template in this context
-        const templateMarker = context.querySelector(templateId);
+        const templateMarker = context.querySelector(`[huron-id=${templateId}`);
 
         if (templateMarker !== null && templateMarker.childNodes.length === 0) {
           const template = this._templates[templateId];
@@ -55,7 +54,7 @@ class InsertNodes {
     const templateWrapper = template
       .querySelector('template');
     const templateId = templateWrapper.getAttribute('id');
-    const tags = context.querySelectorAll(templateId);
+    const tags = context.querySelectorAll(`[huron-id=${templateId}`);
 
     for (let i = 0; i < tags.length; i++) {
       const tag = tags.item(i);
@@ -72,7 +71,7 @@ class InsertNodes {
       const subTemplate = template
         .querySelector('template')
         .content
-        .querySelector(templateId);
+        .querySelector(`[huron-id=${templateId}`);
 
       if (subTemplate !== null) {
         return true;
