@@ -35,13 +35,11 @@ export const defaultConfig = {
     ]
   },
   huron: {
+    css: [],
     entry: 'huron',
     js: [],
-    templates: 'prototype/partials',
-    prototypes: ['index'],
-    css: [],
-    scripts: [],
     kss: 'css/',
+    kssExt: '.css',
     kssOptions: {
       multiline: true,
       markdown: true,
@@ -49,9 +47,10 @@ export const defaultConfig = {
         'states',
       ]
     },
-    kssExt: '.css',
     port: 8080,
+    prototypes: ['index'],
     root: 'dist/',
+    templates: 'prototype/partials',
     window: {},
   }
 };

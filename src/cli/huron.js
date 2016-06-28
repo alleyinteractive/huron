@@ -10,7 +10,7 @@ const memStore = require('memory-store');
 
 // Local imports
 import { program } from './parse-args';
-import { initFiles, updateSection, updateFile } from './actions';
+import { initFiles, updateFile, deleteFile } from './actions';
 import generateConfig from './generate-config';
 import requireTemplates from './require-templates';
 import startWebpack from './server';
@@ -44,6 +44,7 @@ initFiles(gaze.watched(), sections, templates, huron)
     if (!program.production) {
       // file changed
       gaze.on('changed', (filepath) => {
+        const file = path.parse(filepath);
         updateFile(filepath, sections, templates, huron);
       });
 
@@ -63,6 +64,7 @@ initFiles(gaze.watched(), sections, templates, huron)
 
       // file renamed
       gaze.on('renamed', (newPath, oldPath) => {
+        deleteFile(oldPath, sections, templates, huron);
         updateFile(newPath, sections, templates, huron)
           .then(
             (sectionURI) => {
@@ -77,7 +79,7 @@ initFiles(gaze.watched(), sections, templates, huron)
 
       // file deleted
       gaze.on('deleted', (filepath) => {
-        // TODO: Add logic to remove output HTML
+        deleteFile(filepath, sections, templates, huron);
         requireTemplates(huron, templates, sections);
       });
     } else {
@@ -85,7 +87,7 @@ initFiles(gaze.watched(), sections, templates, huron)
     }
 
     // Start webpack or build for production
-    startWebpack(config);
+    // startWebpack(config);
   });
 
 
