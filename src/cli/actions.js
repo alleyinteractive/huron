@@ -62,7 +62,7 @@ export function initFiles(data, sections, templates, huron, depth = 0) {
 }
 
 /**
- * Logic for updating file inforormation based on file type (extension)
+ * Logic for updating and writing file information based on file type (extension)
  *
  * @param {string} filepath - path to updated file. usually passed in from Gaze
  * @param {object} sections - sections memory store
@@ -109,10 +109,17 @@ export function updateFile(filepath, sections, templates, huron) {
       // JSON template state data
       case '.json':
         let templatePath = getTemplateFromStates(file);
+        const states = JSON.parse(fs.readFileSync(filepath, 'utf8'));
         sectionRef = getSectionRef(file.name, sections);
         section = getSection(sectionRef, sections);
 
+        section.states = states;
+
         if (templatePath && section) {
+          // Update section with states data
+          updateMarkupStates(file.name, states, sections);
+
+          // Write templates based on states
           writeStateTemplates(section.referenceURI, templatePath, filepath, output, templates, huron);
           resolve(section.referenceURI);
         } else {
@@ -136,15 +143,13 @@ export function updateFile(filepath, sections, templates, huron) {
               section = styleguide.data.sections[0];
               const isInline = section.data.markup.match(/<\/[^>]*>/) !== null;
               const outputName = section.data.referenceURI;
-              const oldData = getSection(filepath, sections, true);
+              const oldData = getSection(filepath, sections);
 
               if (isInline) {
                 // If reference URI has changed, remove old templates
                 // and delete template indices from templates memory store
                 if (typeof oldData !== 'undefined' && oldData.referenceURI !== section.data.referenceURI) {
                   deleteTemplate(`${oldData.referenceURI}`, output, templates, huron);
-
-                  // Output update requires
                   requireTemplates(huron, templates, sections);
                 }
 
@@ -153,12 +158,12 @@ export function updateFile(filepath, sections, templates, huron) {
               }
 
               if (oldData && oldData.description !== section.data.description) {
-                deleteTemplate(`${oldData.referenceURI}-description`, output, templates, huron);
+                writeTemplate(`${outputName}-description`, output, section.data.description, templates, huron);
               }
 
               // Write separate HTML snippet for description
-              writeTemplate(`${outputName}-description`, output, section.data.description, templates, huron);
-              updateSection(sections, section, filepath, isInline);
+              updateSection(sections, section, filepath);
+              updateMarkup(sections, section, filepath, isInline);
 
               resolve(section.data.referenceURI);
             }
@@ -170,14 +175,14 @@ export function updateFile(filepath, sections, templates, huron) {
 
       // This should never happen if Gaze is working properly
       default:
-        reject('unrecognized filetype');
+        reject();
         break;
     }
   });
 }
 
 /**
- * Logic for deleting file inforormation based on file type (extension)
+ * Logic for deleting file information and files based on file type (extension)
  *
  * @param {string} filepath - path to updated file. usually passed in from Gaze
  * @param {object} sections - sections memory store
@@ -196,7 +201,7 @@ export function deleteFile(filepath, sections, templates, huron) {
       sectionRef = getSectionRef(file.name, sections);
       section = getSection(sectionRef, sections);
 
-      // Delete file
+      // Delete plain HTML template
       deleteTemplate(secton.referenceURI, output, templates, huron);
       break;
 
@@ -205,13 +210,27 @@ export function deleteFile(filepath, sections, templates, huron) {
       const statesPath = getStatesFromTemplate(file);
       sectionRef = getSectionRef(file.name, sections);
       section = getSection(sectionRef, sections);
+      sectionStates = getSectionStates(file.name, sections);
 
-      if (statesPath && section) {
-        deleteStateTemplates(section.referenceURI, filepath, statesPath, output, templates, huron);
+      if (!statesPath) {
+        if (section && section) {
+          // Remove all states templates
+          deleteStateTemplates(section.referenceURI, filepath, section.states, output, templates, huron);
+        } else {
+          sections.delete(`markup_${file.name}`, storeCb);
+        }
       }
       break;
 
     case '.json':
+      let templatePath = getTemplateFromStates(file);
+      sectionRef = getSectionRef(file.name, sections);
+      section = getSection(sectionRef, sections);
+
+      // Update section data and remove states if template also does not exist
+      if (!templatePath) {
+        sections.delete(`markup_${file.name}`, storeCb);
+      }
       break;
 
     case huron.kssExt:
@@ -220,16 +239,19 @@ export function deleteFile(filepath, sections, templates, huron) {
       if (section) {
         const isInline = section.markup.match(/<\/[^>]*>/) !== null;
 
+        // Remove associated inline template
         if (isInline) {
           deleteTemplate(`${section.referenceURI}`, output, templates, huron);
         }
 
+        // Remove description template
         deleteTemplate(`${section.referenceURI}-description`, output, templates, huron);
+
+        // Remove section from registry
+        sections.delete(filepath, storeCb);
       }
       break;
   }
-
-  console.log(`${filepath} deleted`);
 }
 
 // INTERNAL FUNCTIONS
@@ -242,17 +264,94 @@ export function deleteFile(filepath, sections, templates, huron) {
  * @param {string} sectionPath - path to KSS section
  * @param {bool} isInline - is the markup inline in the KSS docs, or external?
  */
-function updateSection(sections, section, sectionPath, isInline) {
-  const oldData = getSection(sectionPath, sections, true);
+function updateSection(sections, section, sectionPath) {
+  const oldData = getSection(sectionPath, sections);
+  const newData = section.data ? section.data : section;
+  const sectionMarkup = section.data ? section.data.markup : section.markup;
+  const sorted = getSection('sorted', sections) || {};
+  const newSort = sortSection(sorted, newData.referenceURI);
 
+  // Store section data based on filepath so we can garbage-collect references
+  // in the future
+  if (oldData) {
+    // If section exists, merge section data
+    sections.set(
+      sectionPath,
+      Object.assign({}, oldData, newData),
+      storeCb
+    );
+
+    unsortSection(sorted, oldData.referenceURI);
+  } else {
+    // If section does not exist, set the new section
+    sections.set(sectionPath, newData, storeCb);
+  }
+
+  // Update section sorting
+  sections.set('sorted', newSort, storeCb);
+}
+
+/**
+ * Remove a section from the sorted sections
+ *
+ * @param {object} sorted - currently sorted sections
+ * @param {string} reference - reference URI of section to sort
+ */
+function unsortSection(sorted, reference) {
+  let parts = reference.split('-');
+
+  if (sorted[parts[0]]) {
+    if (parts.length > 1) {
+      let newParts = parts.filter((part, idx) => {
+        return idx !== 0;
+      });
+      unsortSection(sorted[parts[0]], newParts.join('-'));
+    } else {
+      delete sorted[parts[0]];
+    }
+  }
+}
+
+/**
+ * Sort sections and subsections
+ *
+ * @param {object} sorted - currently sorted sections
+ * @param {string} reference - reference URI of section to sort
+ */
+function sortSection(sorted, reference) {
+  let parts = reference.split('-');
+  let newSort = sorted[parts[0]] || {};
+
+  if (parts.length > 1) {
+    let newParts = parts.filter((part, idx) => {
+      return idx !== 0;
+    });
+    sorted[parts[0]] = sortSection(newSort, newParts.join('-'));
+  } else {
+    sorted[parts[0]] = newSort;
+  }
+
+  return sorted;
+}
+
+/**
+ * Update markup field in sections memory store
+ *
+ * @param {object} sections - sections memory store
+ * @param {object} section - contains updated section data
+ * @param {string} sectionPath - path to KSS section
+ * @param {bool} isInline - is the markup inline in the KSS docs, or external?
+ */
+function updateMarkup(sections, section, sectionPath, isInline) {
+  const sectionMarkup = section.data ? section.data.markup : section.markup;
   // If markup is not inline, set a value for the markup filename
   // to allow us to easily determine the section reference based on a Gaze
   // 'changed' event to the markup file.
-  if (section.data.markup && !isInline) {
+  if (sectionMarkup && !isInline) {
     let markup = {};
 
     markup.section = sectionPath;
-    markup.template = section.data.markup;
+    markup.template = sectionMarkup;
 
     let templateFile = path.parse(markup.template);
 
@@ -262,19 +361,32 @@ function updateSection(sections, section, sectionPath, isInline) {
       storeCb
     );
   }
+}
 
-  // Store section data based on filepath so we can garbage-collect references
-  // in the future
-  if (oldData) {
-    // If section exists, merge section data
-    sections.set(
-      sectionPath,
-      Object.assign({}, oldData, section.data),
-      storeCb
-    );
-  } else {
-    // If section does not exist, simple set the new section
-    sections.set(sectionPath, section.data, storeCb);
+/**
+ * Update markup states in sections memory store
+ *
+ * @param {string} filename - name of markup file
+ * @param {object} states - list of markup states
+ * @param {object} sections - sections memory store
+ */
+function updateMarkupStates(filename, states, sections) {
+  const currentData = sections.get(`markup_${filename}`, (err, data) => {
+    if (err) {
+      throw err;
+    }
+
+    if (data) {
+      return data.states;
+    } else {
+      return false;
+    }
+  });
+  const newData = {};
+
+  if (currentData) {
+    newData.states = states;
+    sections.set(`markup_${filename}`, Object.assign({}, currentData, newData));
   }
 }
 
@@ -289,8 +401,7 @@ function getStatesFromTemplate(file) {
   try {
     fs.accessSync(statePath, fs.F_OK);
   } catch (e) {
-    console.log(e);
-    console.warn(`no data provided for template ${file.base}`);
+    return false;
   }
 
   return statePath;
@@ -312,7 +423,7 @@ function getTemplateFromStates(file) {
       templatePath = path.resolve(file.dir, `${file.name}.handlebars`);
       fs.accessSync(templatePath, fs.F_OK);
     } catch(e) {
-      console.warn(`no template provided for data ${file.base}`);
+      return false;
     }
   }
 
@@ -376,9 +487,7 @@ function writeStateTemplates(filename, templatePath, statesPath, output, templat
  * @param {object} templates - templates memory store
  * @param {object} huron - huron config object
  */
-function deleteStateTemplates(filename, templatePath, statesPath, output, templates, huron) {
-  const states = JSON.parse(fs.readFileSync(statesPath, 'utf8'));
-
+function deleteStateTemplates(filename, templatePath, states, output, templates, huron) {
   for (let state in states) {
     deleteTemplate(`${filename}-${state}`, output, templates, huron);
   };
@@ -441,7 +550,27 @@ function deleteTemplate(id, output, templates, huron) {
 }
 
 /**
- * Async request for section reference based on filename
+ * Request for markup states based on filename
+ *
+ * @param {string} filename - name of markup file that was changed or added
+ * @param {obj} sections - sections memory store
+ */
+function getSectionStates(filename, sections) {
+  return sections.get(`markup_${filename}`, (err, data) => {
+    if (err) {
+      throw err;
+    }
+
+    if (data && data.states) {
+      return data.states;
+    } else {
+      return false;
+    }
+  });
+}
+
+/**
+ * Request for section reference based on filename
  *
  * @param {string} filename - name of markup file that was changed or added
  * @param {obj} sections - sections memory store
@@ -455,20 +584,18 @@ function getSectionRef(filename, sections) {
     if (data && data.section) {
       return data.section;
     } else {
-      console.warn(`no section reference found for ${filename}`);
       return false;
     }
   });
 }
 
 /**
- * Async request for section data based on section reference
+ * Request for section data based on section reference
  *
  * @param {string} ref - reference key for section in memory store (filepath in this case)
  * @param {obj} sections - sections memory store
- * @param {bool} suppress - suppress errors
  */
-function getSection(ref, sections, suppress) {
+function getSection(ref, sections) {
   return sections.get(ref, (err, section) => {
     if (err) {
       throw err;
@@ -477,9 +604,6 @@ function getSection(ref, sections, suppress) {
     if (section) {
       return section;
     } else {
-      if (! suppress) {
-        console.warn(`no section found for ${ref}`);
-      }
       return false;
     }
   });

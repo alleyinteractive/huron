@@ -50,6 +50,7 @@ export const defaultConfig = {
     port: 8080,
     prototypes: ['index'],
     root: 'dist/',
+    sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
     templates: 'prototype/partials',
     window: {},
   }

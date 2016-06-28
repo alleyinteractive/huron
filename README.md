@@ -24,7 +24,8 @@ This build system is intended to make your life easier when moving from a KSS st
   * You may use any partial within another partial, as long as you add an HTMl import for it in the `<head>` of the prototype.
   * All partial markup should be wrapped in a `<dom-module>` and `<template>` element.
 
-# KSS tools
+# Filename Requirements
+* Handlebars templates and corresponding JSON file must have the same filename in order to output properly. In addition, the handlebars template must be refrenced in the `markup` field of a KSS section.
 
 # Webpack Config Guidelines
 Huron uses webpack (and for best results, webpack-dev-server and hot module replacement). By default, huron will attempt to merge your local webpack settings with its internal defaults. However, you may also use the internal defaults as a boilerplate for using your own config exclusively. To do this, set the `skipConfig` option to `true`;

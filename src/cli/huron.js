@@ -41,11 +41,22 @@ initFiles(gaze.watched(), sections, templates, huron)
   .then(() => {
     requireTemplates(huron, templates, sections);
 
+    console.log(sections._store.sorted);
+
     if (!program.production) {
       // file changed
       gaze.on('changed', (filepath) => {
         const file = path.parse(filepath);
-        updateFile(filepath, sections, templates, huron);
+        updateFile(filepath, sections, templates, huron)
+          .then(
+            (sectionURI) => {
+              console.log(`${filepath} updated!`);
+              console.log(sections._store.sorted);
+            },
+            (error) => {
+              console.log(error);
+            }
+          );
       });
 
       // file added
@@ -54,7 +65,7 @@ initFiles(gaze.watched(), sections, templates, huron)
           .then(
             (sectionURI) => {
               requireTemplates(huron, templates, sections);
-              console.log(`Section ${sectionURI} added!`);
+              console.log(`${filepath} added!`);
             },
             (error) => {
               console.log(error);
@@ -69,7 +80,7 @@ initFiles(gaze.watched(), sections, templates, huron)
           .then(
             (sectionURI) => {
               requireTemplates(huron, templates, sections);
-              console.log(`Section ${sectionURI} added!`);
+              console.log(`${newPath} added!`);
             },
             (error) => {
               console.log(error);
@@ -81,6 +92,7 @@ initFiles(gaze.watched(), sections, templates, huron)
       gaze.on('deleted', (filepath) => {
         deleteFile(filepath, sections, templates, huron);
         requireTemplates(huron, templates, sections);
+        console.log(`${filepath} deleted`);
       });
     } else {
       gaze.close();

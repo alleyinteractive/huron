@@ -43,7 +43,7 @@ export default function requireTemplates(huron, templates, sections) {
 
   huron.prototypes.forEach(prototype => {
     prependScript.push(
-      `templates['prototype-${prototype}'] = require('./prototype-${prototype}.html');`
+      `templates['prototype-${prototype}'] = require('./${huron.templates}/prototype-${prototype}.html');`
     )
   });
 

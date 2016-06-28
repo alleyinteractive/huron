@@ -15,7 +15,7 @@ export default function generateConfig(config) {
   config.huron = Object.assign({}, defaultConfig.huron, config.huron);
   const huron = config.huron;
   const entry = config.entry[huron.entry];
-  const template = fs.readFileSync(path.join(__dirname, '../../html/huron-wrapper.ejs'), 'utf8');
+  const wrapperTemplate = fs.readFileSync(path.join(__dirname, '../../templates/huron-wrapper.ejs'), 'utf8');
 
   // Manage entries
   config.entry = {};
@@ -51,7 +51,7 @@ export default function generateConfig(config) {
   }
 
   // Init HTML webpack plugin
-  fs.writeFileSync(path.join(cwd, huron.root, 'huron-wrapper.ejs'), template);
+  fs.writeFileSync(path.join(cwd, huron.root, 'huron-wrapper.ejs'), wrapperTemplate);
   huron.prototypes.forEach(prototype => {
     config.plugins.push(
       new HTMLWebpackPlugin({
