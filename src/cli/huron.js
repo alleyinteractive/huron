@@ -41,8 +41,6 @@ initFiles(gaze.watched(), sections, templates, huron)
   .then(() => {
     requireTemplates(huron, templates, sections);
 
-    console.log(sections._store.sorted);
-
     if (!program.production) {
       // file changed
       gaze.on('changed', (filepath) => {
@@ -51,7 +49,6 @@ initFiles(gaze.watched(), sections, templates, huron)
           .then(
             (sectionURI) => {
               console.log(`${filepath} updated!`);
-              console.log(sections._store.sorted);
             },
             (error) => {
               console.log(error);
@@ -99,7 +96,7 @@ initFiles(gaze.watched(), sections, templates, huron)
     }
 
     // Start webpack or build for production
-    // startWebpack(config);
+    startWebpack(config);
   });
 
 

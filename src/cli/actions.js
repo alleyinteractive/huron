@@ -150,7 +150,6 @@ export function updateFile(filepath, sections, templates, huron) {
                 // and delete template indices from templates memory store
                 if (typeof oldData !== 'undefined' && oldData.referenceURI !== section.data.referenceURI) {
                   deleteTemplate(`${oldData.referenceURI}`, output, templates, huron);
-                  requireTemplates(huron, templates, sections);
                 }
 
                 // Write new inline markup
@@ -164,6 +163,7 @@ export function updateFile(filepath, sections, templates, huron) {
               // Write separate HTML snippet for description
               updateSection(sections, section, filepath);
               updateMarkup(sections, section, filepath, isInline);
+              requireTemplates(huron, templates, sections);
 
               resolve(section.data.referenceURI);
             }
@@ -247,8 +247,8 @@ export function deleteFile(filepath, sections, templates, huron) {
         // Remove description template
         deleteTemplate(`${section.referenceURI}-description`, output, templates, huron);
 
-        // Remove section from registry
-        sections.delete(filepath, storeCb);
+        // Remove section data from memory store
+        unsetSection(sections, section, filepath);
       }
       break;
   }
@@ -262,7 +262,6 @@ export function deleteFile(filepath, sections, templates, huron) {
  * @param {object} sections - sections memory store
  * @param {object} section - contains updated section data
  * @param {string} sectionPath - path to KSS section
- * @param {bool} isInline - is the markup inline in the KSS docs, or external?
  */
 function updateSection(sections, section, sectionPath) {
   const oldData = getSection(sectionPath, sections);
@@ -270,25 +269,42 @@ function updateSection(sections, section, sectionPath) {
   const sectionMarkup = section.data ? section.data.markup : section.markup;
   const sorted = getSection('sorted', sections) || {};
   const newSort = sortSection(sorted, newData.referenceURI);
+  let resetData = null;
 
   // Store section data based on filepath so we can garbage-collect references
   // in the future
   if (oldData) {
     // If section exists, merge section data
-    sections.set(
-      sectionPath,
-      Object.assign({}, oldData, newData),
-      storeCb
-    );
-
+    resetData = Object.assign({}, oldData, newData);
+    // Remove old section from sorted data
+    sections.delete(oldData.referenceURI, storeCb);
     unsortSection(sorted, oldData.referenceURI);
   } else {
     // If section does not exist, set the new section
-    sections.set(sectionPath, newData, storeCb);
+    resetData = newData;
   }
+
+  // Add entries to memory store for both filepath and reference URI
+  sections.set(sectionPath, resetData, storeCb);
+  sections.set(newData.referenceURI, resetData, storeCb);
 
   // Update section sorting
   sections.set('sorted', newSort, storeCb);
+}
+
+/**
+ * Remove a section from the memory store
+ *
+ * @param {object} sections - sections memory store
+ * @param {object} section - contains updated section data
+ * @param {string} sectionPath - path to KSS section
+ */
+function unsetSection(sections, section, sectionPath) {
+  const sorted = getSection('sorted', sections) || {};
+
+  sections.delete(sectionPath, storeCb);
+  sections.delete(section.referenceURI, storeCb);
+  unsortSection(sorted, section.referenceURI);
 }
 
 /**
@@ -543,9 +559,14 @@ function deleteTemplate(id, output, templates, huron) {
   let outputRelative = path.join(huron.templates, output, `${id}.html`);
   let outputPath = path.resolve(cwd, huron.root, outputRelative);
 
+  try {
+    fs.accessSync(outputPath, fs.F_OK);
+  } catch (e) {
+    return false;
+  }
+
   templates.delete(id, storeCb);
   fs.unlinkSync(outputPath);
-
   console.log(`deleting ${outputPath}`);
 }
 
