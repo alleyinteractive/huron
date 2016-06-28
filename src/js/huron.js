@@ -1,3 +1,11 @@
+// Accept the huron.js module for Huron development
+if (module.hot) {
+  module.hot.accept();
+}
+
+import { templates, addCallback } from './huron-requires';
+console.log(templates);
+
 /* Method for inserting nodes via html import
  *
  * Uses webcomponents import() method to grab html, then inserts that html
@@ -57,6 +65,7 @@ class InsertNodes {
 
     for (let i = 0; i < tags.length; i++) {
       const tag = tags.item(i);
+      console.log(tag);
       if (!tag.hasAttribute('huron-inserted')) {
         this.insertEl(tag, templateId, templateChildren);
         // Hide the tag and add huron-inserted attr to ensure it's not re-inserted on a later pass
@@ -119,17 +128,12 @@ class InsertNodes {
   }
 }
 
-// Accept the huron.js module for Huron development
-if (module.hot) {
-  module.hot.accept();
-}
-
 // Create a new instance of the InsertNodes class
 /*eslint-disable*/
 const insert = new InsertNodes(templates);
 
 // Cycle elements when a template is changed
-function templateReplaceCallback(template) {
+addCallback(template => {
   insert.cycleEl(template, document);
-}
+});
 /*eslint-enable*/

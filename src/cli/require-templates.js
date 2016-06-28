@@ -6,7 +6,6 @@ export default function requireTemplates(huron, templates, sections) {
   const templateObj = templates._store;
   const templatePathArray = [];
   const templateIds = [];
-  const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
   const outputPath = path.join(cwd, huron.root);
 
   // Generate a list of paths and IDs for all templates
@@ -17,9 +16,11 @@ export default function requireTemplates(huron, templates, sections) {
   // Initialize templates, js, css and HMR acceptance logic
   const prependScript = [
   //   `const sections = JSON.parse(${JSON.stringify(sections._store)});`,
-    `const templates = {};`,
-    `const css = []`,
-    `const js = []`,
+    `export const templates = {};`,
+    `export function addCallback(cb) {`,
+      `templateReplaceCallback = cb;`,
+    `}`,
+    `let templateReplaceCallback = null`,
     `if (module.hot) {`,
       `module.hot.accept(`,
         `[${templatePathArray}],`,
@@ -48,10 +49,7 @@ export default function requireTemplates(huron, templates, sections) {
   });
 
   fs.outputFileSync(
-    path.join(outputPath, 'huron.js'),
-    [
-      prependScript.join('\n'),
-      huronScript,
-    ].join('\n')
+    path.join(outputPath, 'huron-requires.js'),
+    prependScript.join('\n')
   );
 }

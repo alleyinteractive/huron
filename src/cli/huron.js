@@ -21,6 +21,7 @@ const config = generateConfig(localConfig);
 const huron = config.huron; // huron config
 const sections = memStore.createStore();
 const templates = memStore.createStore();
+const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
 const extenstions = [
   huron.kssExt,
   '.html',
@@ -28,6 +29,9 @@ const extenstions = [
   '.hbs',
   '.json'
 ];
+
+// Move huron script into huron roon
+fs.writeFileSync(path.join(cwd, huron.root, 'huron.js'), huronScript);
 
 // Generate watch list for Gaze, start gaze
 const gazeWatch = [];
