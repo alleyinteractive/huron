@@ -28,7 +28,7 @@ export default function requireTemplates(huron, templates, sections) {
           `let updatedModules = Object.keys(update);`,
           `if (updatedModules.length) {`,
             `let template = __webpack_require__(update[updatedModules[0]][0]);`,
-            `templateReplaceCallback(template);`,
+            `templateReplaceCallback(template, templates);`,
           `}`,
         `}`,
       `);`,

@@ -4,7 +4,6 @@ if (module.hot) {
 }
 
 import { templates, addCallback } from './huron-requires';
-console.log(templates);
 
 /* Method for inserting nodes via html import
  *
@@ -15,7 +14,8 @@ console.log(templates);
 class InsertNodes {
 
   constructor(templates) {
-    this.templates = templates;
+    this._templates = templates;
+    this._templateIds = Object.keys(templates);
 
     // Inits
     this.cycleEls(document);
@@ -26,13 +26,13 @@ class InsertNodes {
    * ensuring our prototypes look as close as possible to the final product.
    */
   cycleEls(context, parentId = null) {
-    for (const templateId in this.templates) {
+    for (const templateId in this._templates) {
       if (templateId !== null) {
         // Check if there's at least one instance of a template in this context
         const templateMarker = context.querySelector(templateId);
 
         if (templateMarker !== null && templateMarker.childNodes.length === 0) {
-          const template = this.templates[templateId];
+          const template = this._templates[templateId];
 
           if (!this.hasTemplate(template, parentId)) {
             this.cycleEl(template, context);
@@ -54,58 +54,13 @@ class InsertNodes {
   cycleEl(template, context) {
     const templateWrapper = template
       .querySelector('template');
-    const templateChildren = templateWrapper.content.children;
     const templateId = templateWrapper.getAttribute('id');
     const tags = context.querySelectorAll(templateId);
 
-    if (document === context) {
-      this.disposeEl(tags, templateId);
-    }
-    this.cycleEls(templateWrapper.content, templateId);
-
     for (let i = 0; i < tags.length; i++) {
       const tag = tags.item(i);
-      console.log(tag);
-      if (!tag.hasAttribute('huron-inserted')) {
-        this.insertEl(tag, templateId, templateChildren);
-        // Hide the tag and add huron-inserted attr to ensure it's not re-inserted on a later pass
-        tag.style.display = 'none';
-        tag.setAttribute('huron-inserted', '');
-      }
-    }
-  }
-
-  /*
-   * Replace template marker with contents of template
-   */
-  insertEl(tag, templateId, templateChildren) {
-    for (let i = 0; i < templateChildren.length; i++) {
-      // Child node must be cloned to allow insertion in multiple places
-      const childEl = templateChildren.item(i).cloneNode(true);
-
-      // Set the template-id attribute to mark it for disposal on the next cycle
-      childEl.setAttribute('huron-id', templateId);
-      tag.parentNode.insertBefore(childEl, tag);
-    }
-  }
-
-  /*
-   * Ensure previously inserted template children are cleared before re-insertion
-   */
-  disposeEl(tags, templateId) {
-    const templateChildren = document
-      .querySelectorAll(`[huron-id="${templateId}"]`);
-
-    // Loop through all instances of this template's children and remove them.
-    for (let i = 0; i < templateChildren.length; i++) {
-      const childEl = templateChildren.item(i);
-      childEl.parentNode.removeChild(childEl);
-    }
-
-    // Remove huron-insert attribute from each tag
-    for (let i = 0; i < tags.length; i++) {
-      const tag = tags.item(i);
-      tag.removeAttribute('huron-inserted');
+      tag.innerHTML = templateWrapper.innerHTML;
+      this.cycleEls(tag, templateId);
     }
   }
 
@@ -126,6 +81,14 @@ class InsertNodes {
 
     return false;
   }
+
+  /*
+   * Set new templates object
+   */
+  set templates(templates) {
+    this._templates = templates;
+    this._templateIds = Object.keys(templates);
+  }
 }
 
 // Create a new instance of the InsertNodes class
@@ -133,7 +96,8 @@ class InsertNodes {
 const insert = new InsertNodes(templates);
 
 // Cycle elements when a template is changed
-addCallback(template => {
+addCallback((template, templates) => {
+  insert.templates = templates;
   insert.cycleEl(template, document);
 });
 /*eslint-enable*/
