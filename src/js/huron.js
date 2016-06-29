@@ -92,8 +92,11 @@ class InsertNodes {
 
 /* Helper function for inserting styleguide sections.
  *
- * Uses require() to grab html partials, then inserts that html
- * into an element with an attribute `huron-id` corresponding to the template filename.
+ * Recurses over sorted styleguide sections and inserts a <section> tag with
+ * [huron-id] equal to the section template name.
+ *
+ * @todo: figure out how to handle added/removed sections with HMR
+ * @todo: incorporate this function into the InsertNodes class
  */
 function outputSections(sections, parent, el) {
   let templateId = null;
