@@ -15,7 +15,7 @@ export default function requireTemplates(huron, templates, sections) {
 
   // Initialize templates, js, css and HMR acceptance logic
   const prependScript = [
-  //   `const sections = JSON.parse(${JSON.stringify(sections._store)});`,
+    `export const sections = require('./huron-sections.json');`,
     `export const templates = {};`,
     `export function addCallback(cb) {`,
       `templateReplaceCallback = cb;`,
@@ -51,5 +51,10 @@ export default function requireTemplates(huron, templates, sections) {
   fs.outputFileSync(
     path.join(outputPath, 'huron-requires.js'),
     prependScript.join('\n')
+  );
+
+  fs.outputFileSync(
+    path.join(outputPath, 'huron-sections.json'),
+    JSON.stringify(sections._store)
   );
 }

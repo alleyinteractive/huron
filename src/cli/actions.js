@@ -156,9 +156,11 @@ export function updateFile(filepath, sections, templates, huron) {
                 writeTemplate(outputName, output, section.data.markup, templates, huron);
               }
 
-              if (oldData && oldData.description !== section.data.description) {
+              if ((oldData && oldData.description !== section.data.description) || !oldData) {
                 writeTemplate(`${outputName}-description`, output, section.data.description, templates, huron);
               }
+
+              writeSection(section.data, templates, huron);
 
               // Write separate HTML snippet for description
               updateSection(sections, section, filepath);
@@ -520,7 +522,7 @@ function deleteStateTemplates(filename, templatePath, states, output, templates,
  * @param {object} huron - huron config object
  */
 function writeTemplate(id, output, content, templates, huron) {
-  // HTML does not allow tags starting with a number
+  // HTML does not allow tags or ids starting with a number
   if (parseInt(id.charAt(0), 10)) {
     id = `template-${id}`;
   }
@@ -532,6 +534,32 @@ function writeTemplate(id, output, content, templates, huron) {
   content = [
     `<template id="${id}">`,
     content,
+    '</template>',
+  ].join('\n');
+
+  templates.set(id, `./${outputRelative}`, storeCb);
+  fs.outputFileSync(outputPath, content);
+  console.log(`writing ${outputPath}`);
+}
+
+/**
+ * Output an HTML snippet for a template
+ *
+ * @param {object} section - section data
+ * @param {object} templates - templates memory store
+ * @param {object} huron - huron config object
+ */
+function writeSection(section, templates, huron) {
+  // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
+  const id = `section-${section.referenceURI}`;
+  const outputRelative = path.join('sections', `${id}.html`);
+  const outputPath = path.resolve(cwd, huron.root, outputRelative);
+  const template = fs.readFileSync(path.resolve(__dirname, '../../templates/section.hbs'), 'utf8');
+  const render = handlebars.compile(template);
+
+  const content = [
+    `<template id="${id}">`,
+    render(section),
     '</template>',
   ].join('\n');
 

@@ -3,7 +3,7 @@ if (module.hot) {
   module.hot.accept();
 }
 
-import { templates, addCallback } from './huron-requires';
+import { sections, templates, addCallback } from './huron-requires';
 
 /* Method for inserting HTML snippets at particular insertion points
  *
@@ -90,9 +90,50 @@ class InsertNodes {
   }
 }
 
+/* Helper function for inserting styleguide sections.
+ *
+ * Uses require() to grab html partials, then inserts that html
+ * into an element with an attribute `huron-id` corresponding to the template filename.
+ */
+function outputSections(sections, parent, el) {
+  let templateId = null;
+  let templateString = null;
+  let wrapper = null;
+
+  for (let section in sections) {
+    if (parent) {
+      templateId = `${parent}-${section}`;
+    } else {
+      templateId = section;
+    }
+
+    templateString = `section-${templateId}`;
+
+    if (el) {
+      wrapper = document.createElement('div');
+      wrapper.setAttribute('huron-id', templateString);
+      el.appendChild(wrapper);
+    }
+
+    if (sections[section] && wrapper) {
+      outputSections(
+        sections[section],
+        templateId,
+        document.querySelector(`[huron-id=${templateString}]`)
+      );
+    }
+  }
+}
+
 // Create a new instance of the InsertNodes class
 /*eslint-disable*/
 const insert = new InsertNodes(templates);
+const sectionsQuery = document.querySelector('[huron-sections]');
+
+if (sectionsQuery) {
+  outputSections(sections.sorted, null, sectionsQuery);
+  insert.cycleEls(document);
+}
 
 // Cycle elements when a template is changed
 addCallback((template, templates) => {

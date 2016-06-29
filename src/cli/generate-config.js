@@ -35,7 +35,15 @@ export default function generateConfig(config) {
   config.module.loaders.push(
     {
       test: /\.html?$/,
-      loader: 'dom?tag=dom-module!html',
+      loaders: [
+        'dom?tag=dom-module',
+        'html',
+        ],
+      include: [path.join(cwd, huron.root)]
+    },
+    {
+      test: /\.json?$/,
+      loaders: ['json'],
       include: [path.join(cwd, huron.root)]
     }
   );
