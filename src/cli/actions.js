@@ -149,15 +149,15 @@ export function updateFile(filepath, sections, templates, huron) {
                 // If reference URI has changed, remove old templates
                 // and delete template indices from templates memory store
                 if (typeof oldData !== 'undefined' && oldData.referenceURI !== section.data.referenceURI) {
-                  deleteTemplate(`${oldData.referenceURI}`, output, templates, huron);
+                  deleteTemplate(`${oldData.referenceURI}`, 'template', output, templates, huron);
                 }
 
                 // Write new inline markup
-                writeTemplate(outputName, output, section.data.markup, templates, huron);
+                writeTemplate(outputName, 'template', output, section.data.markup, templates, huron);
               }
 
               if ((oldData && oldData.description !== section.data.description) || !oldData) {
-                writeTemplate(`${outputName}-description`, output, section.data.description, templates, huron);
+                writeTemplate(outputName, 'description', output, section.data.description, templates, huron);
               }
 
               writeSection(section.data, templates, huron);
@@ -196,6 +196,7 @@ export function deleteFile(filepath, sections, templates, huron) {
   const output = path.relative(path.resolve(cwd, huron.kss), file.dir);
   let sectionRef = null;
   let section = null;
+  let sectionStates = null;
 
   switch (file.ext) {
     // Plain HTML template, external
@@ -203,8 +204,10 @@ export function deleteFile(filepath, sections, templates, huron) {
       sectionRef = getSectionRef(file.name, sections);
       section = getSection(sectionRef, sections);
 
-      // Delete plain HTML template
-      deleteTemplate(secton.referenceURI, output, templates, huron);
+      if (section) {
+        // Delete plain HTML template
+        deleteTemplate(section.referenceURI, 'template', output, templates, huron);
+      }
       break;
 
     case '.hbs':
@@ -215,7 +218,7 @@ export function deleteFile(filepath, sections, templates, huron) {
       sectionStates = getSectionStates(file.name, sections);
 
       if (!statesPath) {
-        if (section && section) {
+        if (section) {
           // Remove all states templates
           deleteStateTemplates(section.referenceURI, filepath, section.states, output, templates, huron);
         } else {
@@ -243,11 +246,11 @@ export function deleteFile(filepath, sections, templates, huron) {
 
         // Remove associated inline template
         if (isInline) {
-          deleteTemplate(`${section.referenceURI}`, output, templates, huron);
+          deleteTemplate(`${section.referenceURI}`, 'template', output, templates, huron);
         }
 
         // Remove description template
-        deleteTemplate(`${section.referenceURI}-description`, output, templates, huron);
+        deleteTemplate(`${section.referenceURI}`, 'description', output, templates, huron);
 
         // Remove section data from memory store
         unsetSection(sections, section, filepath);
@@ -487,6 +490,7 @@ function writeStateTemplates(filename, templatePath, statesPath, output, templat
   for (let state in states) {
     writeTemplate(
       `${filename}-${state}`,
+      'state',
       output,
       template(states[state]),
       templates,
@@ -507,7 +511,7 @@ function writeStateTemplates(filename, templatePath, statesPath, output, templat
  */
 function deleteStateTemplates(filename, templatePath, states, output, templates, huron) {
   for (let state in states) {
-    deleteTemplate(`${filename}-${state}`, output, templates, huron);
+    deleteTemplate(`${filename}-${state}`, 'state', output, templates, huron);
   };
 }
 
@@ -515,29 +519,26 @@ function deleteStateTemplates(filename, templatePath, states, output, templates,
  * Output an HTML snippet for a template
  *
  * @param {string} id - key at which to store this template's path in the templates store
+ * @param {string} type - type of file to output. Options are 'template', 'description', or 'state'
  * @param {string} output - output path
  * @param {string} templatePath - path relative to huron.root for requiring template
  * @param {string} content - file content to write
  * @param {object} templates - templates memory store
  * @param {object} huron - huron config object
  */
-function writeTemplate(id, output, content, templates, huron) {
-  // HTML does not allow tags or ids starting with a number
-  if (parseInt(id.charAt(0), 10)) {
-    id = `template-${id}`;
-  }
-
+function writeTemplate(id, type, output, content, templates, huron) {
   // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
-  let outputRelative = path.join(huron.templates, output, `${id}.html`);
+  let key = `${type}-${id}`;
+  let outputRelative = path.join(huron.templates, output, `${key}.html`);
   let outputPath = path.resolve(cwd, huron.root, outputRelative);
 
   content = [
-    `<template id="${id}">`,
+    `<template id="${key}">`,
     content,
     '</template>',
   ].join('\n');
 
-  templates.set(id, `./${outputRelative}`, storeCb);
+  templates.set(key, `./${outputRelative}`, storeCb);
   fs.outputFileSync(outputPath, content);
   console.log(`writing ${outputPath}`);
 }
@@ -551,19 +552,19 @@ function writeTemplate(id, output, content, templates, huron) {
  */
 function writeSection(section, templates, huron) {
   // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
-  const id = `section-${section.referenceURI}`;
-  const outputRelative = path.join('sections', `${id}.html`);
+  const key = `section-${section.referenceURI}`;
+  const outputRelative = path.join('sections', `${key}.html`);
   const outputPath = path.resolve(cwd, huron.root, outputRelative);
   const template = fs.readFileSync(path.resolve(__dirname, '../../templates/section.hbs'), 'utf8');
   const render = handlebars.compile(template);
 
   const content = [
-    `<template id="${id}">`,
+    `<template id="${key}">`,
     render(section),
     '</template>',
   ].join('\n');
 
-  templates.set(id, `./${outputRelative}`, storeCb);
+  templates.set(key, `./${outputRelative}`, storeCb);
   fs.outputFileSync(outputPath, content);
   console.log(`writing ${outputPath}`);
 }
@@ -572,19 +573,16 @@ function writeSection(section, templates, huron) {
  * Delete an HTML snippet for a template
  *
  * @param {string} id - key at which to store this template's path in the templates store
+ * @param {string} type - type of file to output. Options are 'template', 'description', or 'state'
  * @param {string} output - output path
  * @param {string} templatePath - path relative to huron.root for requiring template
  * @param {object} templates - templates memory store
  * @param {object} huron - huron config object
  */
-function deleteTemplate(id, output, templates, huron) {
-  // HTML does not allow tags starting with a number
-  if (parseInt(id.charAt(0), 10)) {
-    id = `template-${id}`;
-  }
-
+function deleteTemplate(id, type, output, templates, huron) {
   // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
-  let outputRelative = path.join(huron.templates, output, `${id}.html`);
+  let key = `${id}-${type}`;
+  let outputRelative = path.join(huron.templates, output, `${key}.html`);
   let outputPath = path.resolve(cwd, huron.root, outputRelative);
 
   try {
@@ -593,7 +591,7 @@ function deleteTemplate(id, output, templates, huron) {
     return false;
   }
 
-  templates.delete(id, storeCb);
+  templates.delete(key, storeCb);
   fs.unlinkSync(outputPath);
   console.log(`deleting ${outputPath}`);
 }
