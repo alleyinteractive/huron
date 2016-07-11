@@ -3,7 +3,8 @@ if (module.hot) {
   module.hot.accept();
 }
 
-import { sections, templates, addCallback } from './huron-requires';
+import { templates, addCallback } from './huron-requires';
+const sections = require('./huron-sections.json');
 
 /* Method for inserting HTML snippets at particular insertion points
  *

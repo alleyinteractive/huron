@@ -15,7 +15,6 @@ export default function requireTemplates(huron, templates, sections) {
 
   // Initialize templates, js, css and HMR acceptance logic
   const prependScript = [
-    `export const sections = require('./huron-sections.json');`,
     `export const templates = {};`,
     `export function addCallback(cb) {`,
       `templateReplaceCallback = cb;`,
@@ -27,8 +26,13 @@ export default function requireTemplates(huron, templates, sections) {
         `update => {`,
           `let updatedModules = Object.keys(update);`,
           `if (updatedModules.length) {`,
-            `let template = __webpack_require__(update[updatedModules[0]][0]);`,
-            `templateReplaceCallback(template, templates);`,
+            `let templateModules = update[updatedModules[0]];`,
+            `if (templateModules.length) {`,
+              `templateModules.forEach( templateKey => {`,
+                `let template = __webpack_require__(templateKey);`,
+                `templateReplaceCallback(template, templates);`,
+              `});`,
+            `}`,
           `}`,
         `}`,
       `);`,
