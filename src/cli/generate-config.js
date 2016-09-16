@@ -38,7 +38,7 @@ export default function generateConfig(config) {
       loaders: [
         'dom?tag=dom-module',
         'html',
-        ],
+      ],
       include: [path.join(cwd, huron.root)]
     },
     {
@@ -82,7 +82,7 @@ export default function generateConfig(config) {
   delete config.devServer;
 
   // Set publicPath
-  delete config.output.publicPath;
+ config.output.publicPath = 'http://localhost:8080/static/prototype';
 
   console.log(config);
 

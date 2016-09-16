@@ -1,5 +1,6 @@
 var webpack = require('webpack'),
-    path = require('path');
+    path = require('path'),
+    cwd = process.cwd();
 
 export const defaultConfig = {
   entry: {},
@@ -31,6 +32,11 @@ export const defaultConfig = {
         test: /\.html?$/,
         loader: 'dom?tag=dom-module!html',
         // include: ['path/to/templates']
+      },
+      {
+        test: /\.json?$/,
+        loaders: ['json'],
+        // include: [path.join(cwd, huron.root)]
       }
     ]
   },
@@ -52,6 +58,7 @@ export const defaultConfig = {
     root: 'dist/',
     sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
     templates: 'prototype/partials',
+    templateFormat: 'handlebars',
     window: {},
   }
 };
