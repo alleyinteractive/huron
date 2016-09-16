@@ -560,6 +560,8 @@ function writeTemplate(id, type, output, content, templates, huron) {
  * @param  {string} content - The content of the file to write.
  * @param  {object} huron - The huron config object.
  * @see writeTemplate()
+ * @todo We can look to this function to load the handlebars templates
+ *       through the webpack loader instead.
  */
 function copyFile(filename, output, content, huron) {
   const outputRelative = path.join(huron.templates, output, `${filename}.html`);
