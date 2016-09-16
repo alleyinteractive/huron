@@ -32,6 +32,8 @@ export default function startWebpack(config) {
         return console.log(err);
       }
 
+      console.log(server);
+
       console.log(`Listening at http://localhost:${huron.port}/`);
     });
   }
