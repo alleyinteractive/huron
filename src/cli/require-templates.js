@@ -8,6 +8,12 @@ export default function requireTemplates(huron, templates, sections) {
   const templateIds = [];
   const outputPath = path.join(cwd, huron.root);
 
+  // Add the prototypes to the template array
+  // These are copied from the huron.kss directory
+  huron.prototypes.forEach(prototype => {
+    templateObj[`prototype-${prototype}`] = `./${huron.templates}/prototypes/prototype-${prototype}.html`;
+  });
+
   // Generate a list of paths and IDs for all templates
   for (let template in templateObj) {
     templatePathArray.push(`'${templateObj[template]}'`);
@@ -45,12 +51,6 @@ export default function requireTemplates(huron, templates, sections) {
       `templates['${template}'] = require('${templateObj[template]}');`
     );
   };
-
-  huron.prototypes.forEach(prototype => {
-    prependScript.push(
-      `templates['prototype-${prototype}'] = require('./${huron.templates}/prototype-${prototype}.html');`
-    )
-  });
 
   fs.outputFileSync(
     path.join(outputPath, 'huron-requires.js'),
