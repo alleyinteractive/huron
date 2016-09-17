@@ -30,7 +30,7 @@ const extenstions = [
   '.json'
 ];
 
-// Move huron script into huron roon
+// Move huron script into huron root
 fs.writeFileSync(path.join(cwd, huron.root, 'huron.js'), huronScript);
 
 // Generate watch list for Gaze, start gaze
@@ -39,6 +39,7 @@ extenstions.forEach(ext => {
   gazeWatch.push(`${huron.kss}/**/*${ext}`);
 });
 const gaze = new Gaze(gazeWatch);
+
 
 // Initialize all files watched by gaze
 initFiles(gaze.watched(), sections, templates, huron)
@@ -55,7 +56,7 @@ initFiles(gaze.watched(), sections, templates, huron)
               console.log(`${filepath} updated!`);
             },
             (error) => {
-              console.log(error);
+              console.error('changed', error);
             }
           );
       });
@@ -69,7 +70,7 @@ initFiles(gaze.watched(), sections, templates, huron)
               console.log(`${filepath} added!`);
             },
             (error) => {
-              console.log(error);
+              console.error('update', error);
             }
           );
       });
@@ -84,7 +85,7 @@ initFiles(gaze.watched(), sections, templates, huron)
               console.log(`${newPath} added!`);
             },
             (error) => {
-              console.log(error);
+              console.error('renamed', error);
             }
           );
       });

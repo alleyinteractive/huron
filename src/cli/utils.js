@@ -12,7 +12,7 @@ export function updateFile(filepath, sections, huron) {
   const filename = file.name.replace('_', '');
   let kssSource = null;
 
-  console.log(path.relative(filepath, cwd));
+  console.log('update file', path.relative(filepath, cwd));
 
   switch (file.ext) {
     case '.html':

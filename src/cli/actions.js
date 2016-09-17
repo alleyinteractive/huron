@@ -87,7 +87,17 @@ export function updateFile(filepath, sections, templates, huron) {
           writeTemplate(section.referenceURI, output, content, templates, huron);
           resolve(section.referenceURI);
         } else {
-          reject(file.name);
+          // Check if this is a prototype file.
+          const isPrototype =
+            file.dir.indexOf('prototypes') !== -1 &&
+            file.name.indexOf('prototype-') !== -1 ? true : false;
+
+          if(isPrototype) {
+            // If so, copy over to the huron directory.
+            copyFile(file.name, output, content, huron);
+          } else {
+            reject(`Rejected file: ${file.name}`);
+          }
         }
         break;
 
@@ -540,7 +550,28 @@ function writeTemplate(id, type, output, content, templates, huron) {
 
   templates.set(key, `./${outputRelative}`, storeCb);
   fs.outputFileSync(outputPath, content);
-  console.log(`writing ${outputPath}`);
+  console.log(`Writing ${outputPath}`);
+}
+
+/**
+ * Copy an HTML file into the huron output directory.
+ * @param  {string} filename - The name of the file (without extension).
+ * @param  {string} output - The relative path to this file within the huron.kss directory.
+ * @param  {string} content - The content of the file to write.
+ * @param  {object} huron - The huron config object.
+ * @see writeTemplate()
+ * @todo We can look to this function to load the handlebars templates
+ *       through the webpack loader instead.
+ */
+function copyFile(filename, output, content, huron) {
+  const outputRelative = path.join(huron.templates, output, `${filename}.html`);
+  const outputPath = path.resolve(cwd, huron.root, outputRelative);
+  try {
+    fs.outputFileSync(outputPath, content);
+  } catch(e) {
+    console.log(filename, outputPath);
+  }
+  console.log(`Copying ${outputPath}`);
 }
 
 /**
