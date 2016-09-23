@@ -23,7 +23,7 @@ const sections = memStore.createStore();
 const templates = memStore.createStore();
 const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
 const extenstions = [
-  huron.kssExt,
+  huron.kssExtension,
   '.html',
   '.handlebars',
   '.hbs',
@@ -40,11 +40,11 @@ extenstions.forEach(ext => {
 });
 const gaze = new Gaze(gazeWatch);
 
-
 // Initialize all files watched by gaze
 initFiles(gaze.watched(), sections, templates, huron)
   .then(() => {
     requireTemplates(huron, templates, sections);
+    console.log(templates);
 
     if (!program.production) {
       // file changed

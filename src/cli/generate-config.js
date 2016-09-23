@@ -38,10 +38,7 @@ export default function generateConfig(config) {
   config.module.loaders.push(
     {
       test: /\.html?$/,
-      loaders: [
-        'dom?tag=dom-module',
-        'html',
-      ],
+      loaders: ['html'],
       include: [path.join(cwd, huron.root)]
     },
     {

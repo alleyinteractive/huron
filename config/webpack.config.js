@@ -45,7 +45,7 @@ export const defaultConfig = {
     entry: 'huron',
     js: [],
     kss: 'css/',
-    kssExt: '.css',
+    kssExtension: '.css',
     kssOptions: {
       multiline: true,
       markdown: true,
@@ -58,8 +58,13 @@ export const defaultConfig = {
     prototypes: ['index'],
     root: 'dist/',
     sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
-    templates: 'prototype/partials',
-    templateFormat: 'handlebars',
+    templates: {
+      loader: {
+        test: /\.hbs$/,
+        loader: 'handlebars-loader'
+      },
+      extension: '.hbs'
+    },
     window: {},
   }
 };

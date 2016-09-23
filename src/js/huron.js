@@ -3,7 +3,7 @@ if (module.hot) {
   module.hot.accept();
 }
 
-import { templates, addCallback, templateCallback } from './huron-requires';
+import { templates, modules, addCallback, templateCallback } from './huron-requires';
 const sections = require('./huron-sections.json');
 
 /* Method for inserting HTML snippets at particular insertion points
@@ -13,14 +13,14 @@ const sections = require('./huron-sections.json');
  */
 class InsertNodes {
 
-  constructor(templates) {
+  constructor(modules, templates) {
+    this._modules = modules;
     this._templates = templates;
-    this._templateIds = Object.keys(templates);
+    this._moduleIds = Object.keys(modules);
 
     // Inits
     this.cycleEls(document);
   }
-
 
   /**
    * Replace all template markers with the actual template markup.
@@ -30,23 +30,18 @@ class InsertNodes {
    * @param  {string} parentId The TemplateID of the tempkate that invoked this function.
    */
   cycleEls(context, parentId = null) {
-    for (const templateId in this._templates) {
-      console.log('templateID', templateId);
-      if (templateId !== null) {
+    for (let section in this._templates) {
+      // If key isn't a file path
+      if (section !== null && section.indexOf('.') === -1) {
         // Check if there's at least one instance of a template in this context
-        const templateMarker = context.querySelector(`[huron-id=${templateId}`);
+        const templateMarker = context.querySelector(`[data-huron-id=${section}]`);
+        const sectionComponents = this._templates[section];
 
-        if (templateMarker !== null && templateMarker.childNodes.length === 0) {
-          const template = this._templates[templateId];
-          console.log('template', template);
+        if (sectionComponents.template) {
+          const module = this._modules[sectionComponents.template];
 
-          if (!this.hasTemplate(template, parentId)) {
-            this.cycleEl(template, context, templateId);
-          } else {
-            throw [
-              'You have an infinite loop in your template parts!',
-              'This usually means you have two templates including each other.',
-            ].join(' ');
+          if (templateMarker !== null && templateMarker.childNodes.length === 0) {
+            this.cycleEl(sectionComponents.template, module, context, parentId);
           }
         }
       }
@@ -54,63 +49,88 @@ class InsertNodes {
   }
 
   /**
-   * Replace a single template marker with template content.
-   * This is called by HMR when templates are edited.
+   * Get markup from any type of module (html, json or template)
    *
+   * @param  {mixed} module
+   */
+  parseMarkup(module, key) {
+    let render = false;
+    let id = false;
+    let data = false;
+
+    if ('function' === typeof module) {
+      // It's a render function for a template
+      render = module;
+      data = modules[this._templates[key]];
+    } else if ('string' === typeof module) {
+      // it's straight HTML
+      render = () => module;
+    } else {
+      // It's a data file (.json)
+      render = modules[this._templates[key]];
+      data = module;
+    }
+
+    // Get ID from markup
+    // @todo make this accessible via templates object
+    let moduleContents = this.convertToElement(render());
+    let wrapper = moduleContents.querySelector('template');
+    id = wrapper.id;
+
+    if (id) {
+      return {render, data, id};
+    }
+
+    return false;
+  }
+
+  /**
+   * Get markup from any type of module (html, json or template)
+   *
+   * @param {string} content String corresponding to markup
+   */
+  convertToElement(content) {
+    let el = document.createElement('div');
+    el.innerHTML = content;
+    return el.firstElementChild;
+  }
+
+  /**
+   * Replace a single template marker with template content.
+   * This is called by HMR when modules are edited.
+   *
+   * @param  {string} key      Key of module in modules object
    * @param  {object} template The contents of the template file.
    * @param  {object} context  The context (e.g. document) that you will
    *                           query for the template ID to replace.
    */
-  cycleEl(template, context, templateId = false) {
+  cycleEl(key, module, context, parentId) {
     // If there is a templateId, use it to query for all the
     // matching tags within the context and replace them with the right
     // templateContents.
-    //
-    // @todo I don't believe that the hot module reloading will work
-    // with this function any more because there is no templateID passed
-    // to this function in the callback.
-    if(templateId) {
+    const moduleContents = this.parseMarkup(module, key);
 
-      // Initialize placeholder variable.
-      let templateContents = false;
+    if (moduleContents) {
+      const tags = context.querySelectorAll(`[data-huron-id=${moduleContents.id}`);
 
-      // Query the context for all matching template tags.
-      const tags = context.querySelectorAll(`[huron-id=${templateId}`);
-
-      // Cycle through results anre replace them.
+      // Cycle through results and replace them.
       for (let i = 0; i < tags.length; i++) {
-        const tag = tags.item(i);
+        let tag = tags.item(i);
+        let modifier = tag.dataset.huronModifier;
+        let rendered = null;
 
-        if (template instanceof HTMLElement) {
-          templateContents = template
-            .querySelector('template').innerHTML;
+        if (modifier && moduleContents.data) {
+          rendered = moduleContents.render(moduleContents.data[modifier]);
+        } else {
+          rendered = moduleContents.render();
         }
 
-        // If templateContents isn't set earlier above this query,
-        // search for data term and use callback to render
-        if (!templateContents) {
-          const data = tag.dataset.huronState;
+        tag.innerHTML = this.convertToElement(rendered)
+          .querySelector('template')
+          .innerHTML
 
-          // @todo consider the names of these template properties.
-          // Maybe shouldn't be so specific to Handlebars in case we want to
-          // use other kinds of templates in the future.
-          if (data && template['json'][data] && template['hbs']) {
-            templateContents = templateCallback(template['json'][data], template['hbs']);
-          }
-        }
-
-        tag.innerHTML = templateContents;
-        this.cycleEls(tag, templateId);
-
-        // Unset the templateContents variable so we can use it when we
-        // loop through the rest of the tags.
-        //
-        // @todo this will break instances which use the old
-        // reference system and appear multiple times on a pate.
-        templateContents = false;
+        this.cycleEls(tag, moduleContents.id);
       }
-    } else {
-      console.warn('TemplateId is missing in when cycling ', template);
     }
   }
 
@@ -118,11 +138,11 @@ class InsertNodes {
    * Check if a template contains a specific subtemplate.
    */
   hasTemplate(template, templateId) {
-    if (templateId !== null && template instanceof HTMLElement) {
+    if (templateId !== null) {
       const subTemplate = template
         .querySelector('template')
         .content
-        .querySelector(`[huron-id=${templateId}`);
+        .querySelector(`[data-huron-id=${templateId}`);
 
       if (subTemplate !== null) {
         return true;
@@ -133,11 +153,15 @@ class InsertNodes {
   }
 
   /*
-   * Set new templates object
+   * Set new modules object
    */
+  set modules(modules) {
+    this._modules = modules;
+    this._moduleIds = Object.keys(modules);
+  }
+
   set templates(templates) {
     this._templates = templates;
-    this._templateIds = Object.keys(templates);
   }
 }
 
@@ -165,7 +189,7 @@ function outputSections(sections, parent, el) {
 
     if (el) {
       wrapper = document.createElement('div');
-      wrapper.setAttribute('huron-id', templateString);
+      wrapper.dataset.huronId = templateString;
       el.appendChild(wrapper);
     }
 
@@ -173,7 +197,7 @@ function outputSections(sections, parent, el) {
       outputSections(
         sections[section],
         templateId,
-        document.querySelector(`[huron-id=${templateString}]`)
+        document.querySelector(`[data-huron-id=${templateString}]`)
       );
     }
   }
@@ -183,7 +207,7 @@ function outputSections(sections, parent, el) {
 /*eslint-disable*/
 // Create object for modifiying the templates on the page and
 // initial first templates.
-const insert = new InsertNodes(templates);
+const insert = new InsertNodes(modules, templates);
 const sectionsQuery = document.querySelector('[huron-sections]');
 
 if (sectionsQuery) {
@@ -192,9 +216,10 @@ if (sectionsQuery) {
 }
 
 // Cycle elements when a template is changed
-addCallback((template, templates) => {
-  console.log('add callback template', template);
+addCallback((key, module, modules, templates) => {
+  console.log('add callback template', module);
+  insert.modules = modules;
   insert.templates = templates;
-  insert.cycleEl(template, document);
+  insert.cycleEl(key, module, document);
 });
 /*eslint-enable*/
