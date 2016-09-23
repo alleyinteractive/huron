@@ -179,6 +179,7 @@ if (sectionsQuery) {
 
 // Cycle elements when a template is changed
 addCallback((template, templates) => {
+  console.log('add callback template', template);
   insert.templates = templates;
   insert.cycleEl(template, document);
 });

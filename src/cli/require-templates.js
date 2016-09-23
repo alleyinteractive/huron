@@ -36,6 +36,11 @@ export default function requireTemplates(huron, templates, sections) {
   const prependScript = [
     `export const templates = {};`,
     `export function addCallback(cb) {`,
+      // @todo currently HMR on hbs/json files is BROKEN
+      // This is because it will pass on the file that changed to reload
+      // (i.e. the hbs template or the JSON object) and not the the object pair.
+      // The following callback was a suggestion from Owen:
+      //
       // `renderCallback = ${huron.templates.callback.stringify()}`,
       `templateReplaceCallback = cb;`,
     `}`,
@@ -58,31 +63,18 @@ export default function requireTemplates(huron, templates, sections) {
         `}`,
       `);`,
     `}`,
-
-  // I have the files copying over, and I have the loader console logging with dummy data!
-  // Next I need to get the template to replace with the handlebars loader results and
-  // add then connect all the KSS properties back together again.
-  //
-  // Look through the templates object.
-  // If the path is to a hbs, then
-
-  `const data = require('./${huron.output}/components/archive/test-hb.json');
-  const hbsTemplate = require('./${huron.output}/components/archive/test-hb.hbs');`,
-  huron.templates.callback.toString()
-  ,`(data[Object.keys(data)[0]], hbsTemplate);
-
-  export const templateCallback = `,huron.templates.callback.toString(),`;
-  `
   ];
 
-  // Generate templates object using template IDs as keys
+  // Generate templates object using template IDs as keys.
+  // This will require the files, or create an object with keys and
+  // the required files.
   for (let template in templateObj) {
     prependScript.push(
       `templates['${template}'] =`
     );
 
     // @todo this seems pretty duplicative of the code that adds
-    // the stuff for hot module reloading and should be refactored.
+    // the stuff for hot module reloading above and should be refactored.
     if ('object' === typeof templateObj[template]) {
       prependScript.push(
       `{`
@@ -100,11 +92,13 @@ export default function requireTemplates(huron, templates, sections) {
     }
   };
 
+  // Write the contents of thsi script.
   fs.outputFileSync(
     path.join(outputPath, 'huron-requires.js'),
     prependScript.join('\n')
   );
 
+  // Save the sections information to a JSON file.
   fs.outputFileSync(
     path.join(outputPath, 'huron-sections.json'),
     JSON.stringify(sections._store)
