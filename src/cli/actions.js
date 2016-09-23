@@ -751,5 +751,4 @@ function buildTemplateObject(key, fileType, filePath, templates) {
 
   templateObject[fileType] = `./${filePath}`;
   templates.set(key, templateObject, storeCb);
-  // console.log('buildTemplatesObject', templates.get(key, storeCb));
 }

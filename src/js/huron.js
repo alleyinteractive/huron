@@ -41,7 +41,7 @@ class InsertNodes {
           console.log('template', template);
 
           if (!this.hasTemplate(template, parentId)) {
-            this.cycleEl(template, context);
+            this.cycleEl(template, context, templateId);
           } else {
             throw [
               'You have an infinite loop in your template parts!',
@@ -61,42 +61,56 @@ class InsertNodes {
    * @param  {object} context  The context (e.g. document) that you will
    *                           query for the template ID to replace.
    */
-  cycleEl(template, context) {
+  cycleEl(template, context, templateId = false) {
+    // If there is a templateId, use it to query for all the
+    // matching tags within the context and replace them with the right
+    // templateContents.
+    //
+    // @todo I don't believe that the hot module reloading will work
+    // with this function any more because there is no templateID passed
+    // to this function in the callback.
+    if(templateId) {
 
-    // In the compiled templates, it's looking for the contents
-    // inside the template tag.
-    // With the handlebars callback function, we should abstract this part
-    // and create a function with just the innter template to replace.
+      // Initialize placeholder variable.
+      let templateContents = false;
 
-    console.log('CycleEL template: ', template);
-    console.log('CycleEL context: ', context);
-
-
-    let templateWrapper = false;
-
-    if (template instanceof HTMLElement) {
-      templateWrapper = template
-        .querySelector('template');
-        console.log('its an element', templateWrapper, template);
-    } else {
-      console.log('its not an element', template);
-      const templateContents = templateCallback(template['json']['state-one'], template['hbs']);
-      const containerDiv = document.createElement('div');
-      containerDiv.innerHTML = templateContents;
-      templateWrapper = containerDiv.querySelector('template');
-      console.log('tempalte wrapper', templateWrapper);
-    }
-
-    if(templateWrapper) {
-      const templateId = templateWrapper.getAttribute('id');
+      // Query the context for all matching template tags.
       const tags = context.querySelectorAll(`[huron-id=${templateId}`);
-      const compiledTemplate = templateWrapper.innerHTML
 
+      // Cycle through results anre replace them.
       for (let i = 0; i < tags.length; i++) {
         const tag = tags.item(i);
-        tag.innerHTML = templateWrapper.innerHTML;
+
+        if (template instanceof HTMLElement) {
+          templateContents = template
+            .querySelector('template').innerHTML;
+        }
+
+        // If templateContents isn't set earlier above this query,
+        // search for data term and use callback to render
+        if (!templateContents) {
+          const data = tag.dataset.huronState;
+
+          // @todo consider the names of these template properties.
+          // Maybe shouldn't be so specific to Handlebars in case we want to
+          // use other kinds of templates in the future.
+          if (data && template['json'][data] && template['hbs']) {
+            templateContents = templateCallback(template['json'][data], template['hbs']);
+          }
+        }
+
+        tag.innerHTML = templateContents;
         this.cycleEls(tag, templateId);
+
+        // Unset the templateContents variable so we can use it when we
+        // loop through the rest of the tags.
+        //
+        // @todo this will break instances which use the old
+        // reference system and appear multiple times on a pate.
+        templateContents = false;
       }
+    } else {
+      console.warn('TemplateId is missing in when cycling ', template);
     }
   }
 

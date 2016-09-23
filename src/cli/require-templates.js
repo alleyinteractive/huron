@@ -62,8 +62,13 @@ export default function requireTemplates(huron, templates, sections) {
           `}`,
         `}`,
       `);`,
-    `}`,
+    `}`
   ];
+
+  // Add the function to render the templates
+  prependScript.push(
+    `export const templateCallback = ` + huron.templates.callback.toString() + `;`
+  );
 
   // Generate templates object using template IDs as keys.
   // This will require the files, or create an object with keys and
