@@ -53,6 +53,7 @@ export const defaultConfig = {
         'states',
       ]
     },
+    ouptut: 'partials',
     port: 8080,
     prototypes: ['index'],
     root: 'dist/',

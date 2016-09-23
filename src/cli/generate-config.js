@@ -21,7 +21,7 @@ export default function generateConfig(config) {
   config.entry = {};
   if (!program.production) {
     config.entry[huron.entry] = [
-      `webpack-dev-server/client?http://localhost:${huron.port}/`,
+      `webpack-dev-server/client?http://localhost:${huron.port}`,
       'webpack/hot/dev-server',
       path.join(cwd, huron.root, 'huron'),
     ].concat(entry);
@@ -30,6 +30,9 @@ export default function generateConfig(config) {
   }
 
   // Manage loaders
+  const templatesLoader = huron.templates.loader;
+  templatesLoader.include = [path.join(cwd, huron.root)];
+
   config.module = config.module || {};
   config.module.loaders = config.module.loaders || [];
   config.module.loaders.push(
@@ -45,7 +48,8 @@ export default function generateConfig(config) {
       test: /\.json?$/,
       loaders: ['json'],
       include: [path.join(cwd, huron.root)]
-    }
+    },
+    templatesLoader
   );
 
   // De-dupe HMR plugin
@@ -82,9 +86,9 @@ export default function generateConfig(config) {
   delete config.devServer;
 
   // Set publicPath
- config.output.publicPath = 'http://localhost:8080/static/prototype';
+  // config.output.publicPath = 'http://localhost:8080/static/prototype';
 
-  console.log(config);
+  // console.log(config);
 
   return config;
 }

@@ -3,7 +3,7 @@ if (module.hot) {
   module.hot.accept();
 }
 
-import { templates, addCallback } from './huron-requires';
+import { templates, addCallback, templateCallback } from './huron-requires';
 const sections = require('./huron-sections.json');
 
 /* Method for inserting HTML snippets at particular insertion points
@@ -21,18 +21,24 @@ class InsertNodes {
     this.cycleEls(document);
   }
 
-  /*
-   * Replace all template markers with the actual template markup,
-   * ensuring our prototypes look as close as possible to the final product.
+
+  /**
+   * Replace all template markers with the actual template markup.
+   *
+   * @param  {object} context  The context (e.g. document) that you will query
+   *                           for the template ID to replace
+   * @param  {string} parentId The TemplateID of the tempkate that invoked this function.
    */
   cycleEls(context, parentId = null) {
     for (const templateId in this._templates) {
+      console.log('templateID', templateId);
       if (templateId !== null) {
         // Check if there's at least one instance of a template in this context
         const templateMarker = context.querySelector(`[huron-id=${templateId}`);
 
         if (templateMarker !== null && templateMarker.childNodes.length === 0) {
           const template = this._templates[templateId];
+          console.log('template', template);
 
           if (!this.hasTemplate(template, parentId)) {
             this.cycleEl(template, context);
@@ -47,20 +53,50 @@ class InsertNodes {
     }
   }
 
-  /*
-   * Replace a single template marker with template content. This is called by HMR
-   * when templates are edited.
+  /**
+   * Replace a single template marker with template content.
+   * This is called by HMR when templates are edited.
+   *
+   * @param  {object} template The contents of the template file.
+   * @param  {object} context  The context (e.g. document) that you will
+   *                           query for the template ID to replace.
    */
   cycleEl(template, context) {
-    const templateWrapper = template
-      .querySelector('template');
-    const templateId = templateWrapper.getAttribute('id');
-    const tags = context.querySelectorAll(`[huron-id=${templateId}`);
 
-    for (let i = 0; i < tags.length; i++) {
-      const tag = tags.item(i);
-      tag.innerHTML = templateWrapper.innerHTML;
-      this.cycleEls(tag, templateId);
+    // In the compiled templates, it's looking for the contents
+    // inside the template tag.
+    // With the handlebars callback function, we should abstract this part
+    // and create a function with just the innter template to replace.
+
+    console.log('CycleEL template: ', template);
+    console.log('CycleEL context: ', context);
+
+
+    let templateWrapper = false;
+
+    if (template instanceof HTMLElement) {
+      templateWrapper = template
+        .querySelector('template');
+        console.log('its an element', templateWrapper, template);
+    } else {
+      console.log('its not an element', template);
+      const templateContents = templateCallback(template['json']['state-one'], template['hbs']);
+      const containerDiv = document.createElement('div');
+      containerDiv.innerHTML = templateContents;
+      templateWrapper = containerDiv.querySelector('template');
+      console.log('tempalte wrapper', templateWrapper);
+    }
+
+    if(templateWrapper) {
+      const templateId = templateWrapper.getAttribute('id');
+      const tags = context.querySelectorAll(`[huron-id=${templateId}`);
+      const compiledTemplate = templateWrapper.innerHTML
+
+      for (let i = 0; i < tags.length; i++) {
+        const tag = tags.item(i);
+        tag.innerHTML = templateWrapper.innerHTML;
+        this.cycleEls(tag, templateId);
+      }
     }
   }
 
@@ -68,7 +104,7 @@ class InsertNodes {
    * Check if a template contains a specific subtemplate.
    */
   hasTemplate(template, templateId) {
-    if (templateId !== null) {
+    if (templateId !== null && template instanceof HTMLElement) {
       const subTemplate = template
         .querySelector('template')
         .content
@@ -131,6 +167,8 @@ function outputSections(sections, parent, el) {
 
 // Create a new instance of the InsertNodes class
 /*eslint-disable*/
+// Create object for modifiying the templates on the page and
+// initial first templates.
 const insert = new InsertNodes(templates);
 const sectionsQuery = document.querySelector('[huron-sections]');
 

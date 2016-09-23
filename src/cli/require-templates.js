@@ -11,19 +11,32 @@ export default function requireTemplates(huron, templates, sections) {
   // Add the prototypes to the template array
   // These are copied from the huron.kss directory
   huron.prototypes.forEach(prototype => {
-    templateObj[`prototype-${prototype}`] = `./${huron.templates}/prototypes/prototype-${prototype}.html`;
+    templateObj[`prototype-${prototype}`] = `./${huron.output}/prototypes/prototype-${prototype}.html`;
   });
 
   // Generate a list of paths and IDs for all templates
   for (let template in templateObj) {
-    templatePathArray.push(`'${templateObj[template]}'`);
+
+    // Check if a template is an object or a string.
+    // If it's an object, go through it until
+    // and still push it into the path array.
+    //
+    // @todo This is only going to work for one-level arrays and
+    // most certainly can be refactored.
+    if ('object' === typeof templateObj[template]) {
+      for (let type in templateObj[template]) {
+         templatePathArray.push(`'${templateObj[template][type]}'`);
+      }
+    } else {
+      templatePathArray.push(`'${templateObj[template]}'`);
+    }
   };
 
   // Initialize templates, js, css and HMR acceptance logic
   const prependScript = [
     `export const templates = {};`,
     `export function addCallback(cb) {`,
-      `renderCallback = ${huron.templates.callback.stringify()}`,
+      // `renderCallback = ${huron.templates.callback.stringify()}`,
       `templateReplaceCallback = cb;`,
     `}`,
     `let templateReplaceCallback = null`,
@@ -45,13 +58,46 @@ export default function requireTemplates(huron, templates, sections) {
         `}`,
       `);`,
     `}`,
+
+  // I have the files copying over, and I have the loader console logging with dummy data!
+  // Next I need to get the template to replace with the handlebars loader results and
+  // add then connect all the KSS properties back together again.
+  //
+  // Look through the templates object.
+  // If the path is to a hbs, then
+
+  `const data = require('./${huron.output}/components/archive/test-hb.json');
+  const hbsTemplate = require('./${huron.output}/components/archive/test-hb.hbs');`,
+  huron.templates.callback.toString()
+  ,`(data[Object.keys(data)[0]], hbsTemplate);
+
+  export const templateCallback = `,huron.templates.callback.toString(),`;
+  `
   ];
 
   // Generate templates object using template IDs as keys
   for (let template in templateObj) {
     prependScript.push(
-      `templates['${template}'] = require('${templateObj[template]}');`
+      `templates['${template}'] =`
     );
+
+    // @todo this seems pretty duplicative of the code that adds
+    // the stuff for hot module reloading and should be refactored.
+    if ('object' === typeof templateObj[template]) {
+      prependScript.push(
+      `{`
+      );
+      for (let type in templateObj[template]) {
+         prependScript.push(`${type}: require('${templateObj[template][type]}'),`);
+      }
+      prependScript.push(
+      `};`
+      );
+    } else {
+      prependScript.push(
+        `require('${templateObj[template]}');`
+      );
+    }
   };
 
   fs.outputFileSync(
@@ -64,3 +110,4 @@ export default function requireTemplates(huron, templates, sections) {
     JSON.stringify(sections._store)
   );
 }
+
