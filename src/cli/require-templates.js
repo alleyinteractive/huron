@@ -9,17 +9,20 @@ export default function requireTemplates(huron, templates, sections) {
   const outputPath = path.join(cwd, huron.root);
 
   // Initialize templates, js, css and HMR acceptance logic
-  let prependScript = `export const modules = {};
-export const templates = ${JSON.stringify(templateObj)};
-export function addCallback(cb) {
-  templateReplaceCallback = cb;
-}
+  let prependScript = `
 let templateReplaceCallback = null;
 let assets = require.context(
   '${path.join(cwd, huron.root, huron.output)}',
   true,
   /\.(html|json|${huron.templates.extension.replace('.', '')})/
 );
+
+export function addCallback(cb) {
+  templateReplaceCallback = cb;
+}
+export const modules = {};
+export const templates = ${JSON.stringify(templateObj)};
+export const sections = assets('./huron-sections/sections.json');
 
 assets.keys().forEach(function(key) {
   modules[key] = assets(key);
@@ -58,7 +61,7 @@ if (module.hot) {
 
   // Save the sections information to a JSON file.
   fs.outputFileSync(
-    path.join(outputPath, 'huron-sections.json'),
+    path.join(outputPath, huron.output, 'huron-sections/sections.json'),
     JSON.stringify(sections._store)
   );
 }

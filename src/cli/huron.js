@@ -22,6 +22,7 @@ const huron = config.huron; // huron config
 const sections = memStore.createStore();
 const templates = memStore.createStore();
 const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
+const sectionTemplate = fs.readFileSync(path.resolve(__dirname, '../../templates/section.hbs'), 'utf8');
 const extenstions = [
   huron.kssExtension,
   '.html',
@@ -30,8 +31,12 @@ const extenstions = [
   '.json'
 ];
 
-// Move huron script into huron root
-fs.writeFileSync(path.join(cwd, huron.root, 'huron.js'), huronScript);
+// Move huron script and section template into huron root
+fs.outputFileSync(path.join(cwd, huron.root, 'huron.js'), huronScript);
+fs.outputFileSync(
+  path.join(cwd, huron.root, huron.output, 'huron-sections/sections.hbs'),
+  sectionTemplate
+);
 
 // Generate watch list for Gaze, start gaze
 const gazeWatch = [];
@@ -101,7 +106,7 @@ initFiles(gaze.watched(), sections, templates, huron)
     }
 
     // Start webpack or build for production
-    startWebpack(config);
+    // startWebpack(config);
   });
 
 

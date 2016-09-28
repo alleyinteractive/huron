@@ -76,13 +76,14 @@ export function updateFile(filepath, sections, templates, huron) {
   const output = path.relative(path.resolve(cwd, huron.kss), file.dir);
   let sectionRef = null;
   let section = null;
+  let outputPath = '';
 
   return new Promise((resolve, reject) => {
     switch (file.ext) {
       // Plain HTML template, external
       case '.html':
         let content = fs.readFileSync(filepath, 'utf8');
-        let outputPath = '';
+
         sectionRef = getSectionRef(file.name, sections);
         section = getSection(sectionRef, sections);
 
@@ -111,9 +112,9 @@ export function updateFile(filepath, sections, templates, huron) {
       // Handlebars template, external
       case huron.templates.extension:
         const statesPath = getStatesFromTemplate(file);
+
         sectionRef = getSectionRef(file.name, sections);
         section = getSection(sectionRef, sections);
-
         // console.log(chalk.bgBlue('Sections'), sections);
 
         if (statesPath && section) {
@@ -121,8 +122,8 @@ export function updateFile(filepath, sections, templates, huron) {
             fs.readFileSync(filepath, 'utf8'),
             section.referenceURI
           );
-          let outputPath = copyFile(file.base, output, content, huron);
 
+          outputPath = copyFile(file.base, output, content, huron);
           buildTemplateObject(section.referenceURI, 'template', outputPath, templates, huron, statesPath, output);
           resolve(section.referenceURI);
         } else {
@@ -134,15 +135,15 @@ export function updateFile(filepath, sections, templates, huron) {
       case '.json':
         let templatePath = getTemplateFromStates(file);
         const states = JSON.parse(fs.readFileSync(filepath, 'utf8'));
+
         sectionRef = getSectionRef(file.name, sections);
         section = getSection(sectionRef, sections);
-
         section.states = states;
 
         if (templatePath && section) {
           let content = fs.readFileSync(filepath, 'utf8');
-          let outputPath = copyFile(file.base, output, content, huron);
 
+          outputPath = copyFile(file.base, output, content, huron);
           buildTemplateObject(section.referenceURI, 'data', outputPath, templates, huron, templatePath, output);
           resolve(section.referenceURI);
         } else {
@@ -164,6 +165,7 @@ export function updateFile(filepath, sections, templates, huron) {
 
             if (styleguide.data.sections.length) {
               section = styleguide.data.sections[0];
+              // Check for any HTML tag in the markup section, which should indicate it's using inline HTML
               const isInline = section.data.markup.match(/<\/[^>]*>/) !== null;
               const outputName = section.data.referenceURI;
               const oldData = getSection(filepath, sections);
@@ -218,6 +220,7 @@ export function updateFile(filepath, sections, templates, huron) {
 export function deleteFile(filepath, sections, templates, huron) {
   const file = path.parse(filepath);
   const output = path.relative(path.resolve(cwd, huron.kss), file.dir);
+  let outputPath = '';
   let sectionRef = null;
   let section = null;
   let sectionStates = null;
@@ -229,36 +232,61 @@ export function deleteFile(filepath, sections, templates, huron) {
       section = getSection(sectionRef, sections);
 
       if (section) {
-        // Delete plain HTML template
-        deleteTemplate(section.referenceURI, 'template', output, templates, huron);
+        outputPath = removeFile(file.base, output, huron);
+        unbuildTemplateObject(section.referenceURI, outputPath, templates, huron);
+        resolve(section.referenceURI);
+      } else {
+        // Check if this is a prototype file.
+        const isPrototype =
+          file.dir.indexOf('prototypes') !== -1 &&
+          file.name.indexOf('prototype-') !== -1 ? true : false;
+
+        if(isPrototype) {
+          // If so, copy over to the huron directory.
+          outputPath = removeFile(file.base, output, content, huron);
+          unbuildTemplateObject(file.name, outputPath, templates, huron);
+        } else {
+          reject(`Rejected file: ${file.name}`);
+        }
       }
       break;
 
     case huron.templates.extension:
       const statesPath = getStatesFromTemplate(file);
+
       sectionRef = getSectionRef(file.name, sections);
       section = getSection(sectionRef, sections);
-      sectionStates = getSectionStates(file.name, sections);
+      sections.delete(`markup_${file.name}`, storeCb);
 
-      if (!statesPath) {
-        if (section) {
-          // Remove all states templates
-          deleteStateTemplates(section.referenceURI, filepath, section.states, output, templates, huron);
-        } else {
-          sections.delete(`markup_${file.name}`, storeCb);
-        }
-      }
+      console.log(sections);
+
+      // Remove partner
+      partner = path.parse(partnerPath);
+      outputPath = removeFile(partner.base, output, huron);
+      unbuildTemplateObject(partner.name, outputPath, templates, huron);
+
+      // Remove file
+      outputPath = removeFile(file.base, output, huron);
+      unbuildTemplateObject(file.name, outputPath, templates, huron);
       break;
 
     case '.json':
-      let templatePath = getTemplateFromStates(file);
+      const templatePath = getTemplateFromStates(file);
+
       sectionRef = getSectionRef(file.name, sections);
       section = getSection(sectionRef, sections);
+      sections.delete(`markup_${file.name}`, storeCb);
 
-      // Update section data and remove states if template also does not exist
-      if (!templatePath) {
-        sections.delete(`markup_${file.name}`, storeCb);
-      }
+      console.log(sections);
+
+      // Remove partner
+      partner = path.parse(partnerPath);
+      outputPath = removeFile(partner.base, output, huron);
+      unbuildTemplateObject(partner.name, outputPath, templates, huron);
+
+      // Remove file
+      outputPath = removeFile(file.base, output, huron);
+      unbuildTemplateObject(file.name, outputPath, templates, huron);
       break;
 
     case huron.kssExtension:
@@ -409,34 +437,6 @@ function updateMarkup(sections, section, sectionPath, isInline) {
 }
 
 /**
- * Update markup states in sections memory store
- *
- * @param {string} filename - name of markup file
- * @param {object} states - list of markup states
- * @param {object} sections - sections memory store
- */
-function updateMarkupStates(filename, states, sections) {
-  console.log('Run update markup states', states, sections);
-  const currentData = sections.get(`markup_${filename}`, (err, data) => {
-    if (err) {
-      throw err;
-    }
-
-    if (data) {
-      return data.states;
-    } else {
-      return false;
-    }
-  });
-  const newData = {};
-
-  if (currentData) {
-    newData.states = states;
-    sections.set(`markup_${filename}`, Object.assign({}, currentData, newData));
-  }
-}
-
-/**
  * Find a .json file containing state data from a handlebars template
  *
  * @param {object} file - file object from path.parse()
@@ -492,7 +492,6 @@ function storeCb(err, data) {
   }
 }
 
-
 /**
  * Normalize a section title for use as a filename
  *
@@ -504,6 +503,12 @@ function normalizeHeader(header) {
     .replace(/\s?\W\s?/g, '-');
 }
 
+/**
+ * Wrap html in required template tags
+ *
+ * @param {string} content - html or template markup
+ * @param {string} templateId - id of template (should be section referenceURI)
+ */
 function wrapMarkup(content, templateId) {
   return `<dom-module>
     <template id="${templateId}">
@@ -535,58 +540,6 @@ function writeTemplate(id, type, output, content, huron) {
 }
 
 /**
- * Copy an HTML file into the huron output directory.
- * @param  {string} filename - The name of the file (with extension).
- * @param  {string} output - The relative path to this file within the huron.kss directory.
- * @param  {string} content - The content of the file to write.
- * @param  {object} huron - The huron config object.
- * @see writeTemplate()
- * @todo We can look to this function to load the handlebars templates
- *       through the webpack loader instead.
- *
- * @return {string} The location where the file was saved.
- */
-function copyFile(filename, output, content, huron) {
-  const outputRelative = path.join(huron.output, output, `${filename}`);
-  const outputPath = path.resolve(cwd, huron.root, outputRelative);
-  try {
-    fs.outputFileSync(outputPath, content);
-  } catch(e) {
-    console.log(filename, outputPath);
-  }
-  return outputRelative;
-}
-
-/**
- * Output an HTML snippet for a template.
- *
- * @todo come back to this with .hbs because it is probably importnat
- * for the styelguide display.
- *
- * @param {object} section - section data
- * @param {object} templates - templates memory store
- * @param {object} huron - huron config object
- */
-function writeSection(section, templates, huron) {
-  // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
-  const key = `section-${section.referenceURI}`;
-  const outputRelative = path.join('sections', `${key}.html`);
-  const outputPath = path.resolve(cwd, huron.root, outputRelative);
-  const template = fs.readFileSync(path.resolve(__dirname, '../../templates/section.hbs'), 'utf8');
-  const render = handlebars.compile(template);
-
-  const content = [
-    `<template id="${key}">`,
-    render(section),
-    '</template>',
-  ].join('\n');
-
-  templates.set(key, `./${outputRelative}`, storeCb);
-  fs.outputFileSync(outputPath, content);
-  console.log(`Writing ${outputPath}`);
-}
-
-/**
  * Delete an HTML snippet for a template
  *
  * @param {string} id - key at which to store this template's path in the templates store
@@ -603,34 +556,54 @@ function deleteTemplate(id, type, output, templates, huron) {
   let outputPath = path.resolve(cwd, huron.root, outputRelative);
 
   try {
-    fs.accessSync(outputPath, fs.F_OK);
+    fs.unlinkSync(outputPath);
   } catch (e) {
-    return false;
+    console.log('Error deleting file:', key, outputPath);
   }
 
-  templates.delete(key, storeCb);
-  fs.unlinkSync(outputPath);
   console.log(`Deleting ${outputPath}`);
 }
 
 /**
- * Request for markup states based on filename
+ * Copy an HTML file into the huron output directory.
+ * @param  {string} filename - The name of the file (with extension).
+ * @param  {string} output - The relative path to this file within the huron.kss directory.
+ * @param  {string} content - The content of the file to write.
+ * @param  {object} huron - The huron config object.
  *
- * @param {string} filename - name of markup file that was changed or added
- * @param {obj} sections - sections memory store
+ * @return {string} The location where the file was saved.
  */
-function getSectionStates(filename, sections) {
-  return sections.get(`markup_${filename}`, (err, data) => {
-    if (err) {
-      throw err;
-    }
+function copyFile(filename, output, content, huron) {
+  const outputRelative = path.join(huron.output, output, `${filename}`);
+  const outputPath = path.resolve(cwd, huron.root, outputRelative);
 
-    if (data && data.states) {
-      return data.states;
-    } else {
-      return false;
-    }
-  });
+  try {
+    fs.outputFileSync(outputPath, content);
+  } catch(e) {
+    console.log(filename, outputPath);
+  }
+  return outputRelative;
+}
+
+/**
+ * Delete a file in the huron output directory
+ * @param  {string} filename - The name of the file (with extension).
+ * @param  {string} output - The relative path to this file within the huron.kss directory.
+ * @param  {object} huron - The huron config object.
+ *
+ * @return {string} The location where the file was saved.
+ */
+function removeFile(filename, output, huron) {
+  const outputRelative = path.join(huron.output, output, `${filename}`);
+  const outputPath = path.resolve(cwd, huron.root, outputRelative);
+
+  try {
+    fs.ulinkSync(outputPath);
+  } catch(e) {
+    console.log(filename, outputPath);
+  }
+
+  return outputRelative;
 }
 
 /**
@@ -697,4 +670,19 @@ function buildTemplateObject(key, type, filePath, templates, huron, partnerPath 
 
   templateObject[type] = requirePath;
   templates.set(key, templateObject, storeCb);
+}
+
+/**
+ * Remove template information
+ *
+ * @param  {string} key         The key that will hold this object.
+ * @param  {string} filePath    The path to the file.
+ * @param  {object} templates   Pointer to the templates store to modify.
+ * @param  {object} huron       Huron config
+ */
+function unbuildTemplateObject(key, filePath, templates, huron) {
+  const requirePath = `./${path.relative(path.resolve(cwd, huron.output), filePath)}`;
+
+  templates.delete(requirePath, storeCb);
+  templates.delete(key, storeCb);
 }
