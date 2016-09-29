@@ -2,7 +2,12 @@ const path = require('path');
 const fs = require('fs-extra');
 const cwd = process.cwd();
 
-export default function requireTemplates(huron, templates, sections) {
+import { storeCb } from './store-callback';
+
+export default function requireTemplates(store) {
+  const templates = store.get('templates', storeCb);
+  const sections = store.get('sections', storeCb);
+  const huron = store.get('config', storeCb);
   const templateObj = templates._store;
   const templatePathArray = [];
   const templateIds = [];
