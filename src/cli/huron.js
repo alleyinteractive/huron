@@ -54,6 +54,7 @@ const store = memStore.createStore();
 store.set('config', config.huron, storeCb);
 store.set('sections', memStore.createStore(), storeCb);
 store.set('templates', memStore.createStore(), storeCb);
+store.set('prototypes', memStore.createStore(), storeCb);
 
 // Move huron script and section template into huron root
 // @todo move to separate file/function
@@ -75,8 +76,6 @@ initFiles(gaze.watched(), store)
   .then(() => {
     requireTemplates(store);
 
-    console.log(store._store.templates._store);
-
     if (!program.production) {
       // file changed
       gaze.on('changed', (filepath) => {
@@ -91,7 +90,7 @@ initFiles(gaze.watched(), store)
             }
           );
 
-        console.log(store._store.templates._store);
+        console.log(store._store.templates._store, store._store.sections._store);
       });
 
       // file added
@@ -107,7 +106,7 @@ initFiles(gaze.watched(), store)
             }
           );
 
-        console.log(store._store.templates._store);
+        console.log(store._store.templates._store, store._store.sections._store);
       });
 
       // file renamed
@@ -124,7 +123,7 @@ initFiles(gaze.watched(), store)
             }
           );
 
-        console.log(store._store.templates._store);
+        console.log(store._store.templates._store, store._store.sections._store);
       });
 
       // file deleted
@@ -133,7 +132,7 @@ initFiles(gaze.watched(), store)
         requireTemplates(store);
         console.log(`${filepath} deleted`);
 
-        console.log(store._store.templates._store);
+        console.log(store._store.templates._store, store._store.sections._store);
       });
     } else {
       gaze.close();
