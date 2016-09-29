@@ -6,12 +6,12 @@ const kss = require('kss'); // node implementation of KSS: a methodology for doc
 const path = require('path');
 const fs = require('fs-extra');
 const Gaze = require('gaze').Gaze;
-const memStore = require('memory-store');
+const Immutable = require('immutable');
+const chalk = require('chalk'); // Colorize terminal output
 
 // Local imports
 import { program } from './parse-args';
 import { initFiles, updateFile, deleteFile } from './actions';
-import { storeCb } from './store-callback';
 import generateConfig from './generate-config';
 import requireTemplates from './require-templates';
 import startWebpack from './server';
@@ -30,31 +30,17 @@ const extenstions = [
   '.json'
 ];
 
-/* Create global memory store
- *
- * Sample structure:
- * {
- *  _store: {
- *    sections: {
- *      sectionsByPath: {}, Sections listed with path to file containing KSS as keys
- *      sorted: {}, Hierarchical representation of sections
- *    },
- *    templates: {
- *      templatesByPath: {}, List of corresponding information by path fo file containing KSS
- *      templateDataPairs: {}, pairs of relative paths to templates and data (relative to configured output path)
- *    },
- *    config: {...}, Huron configuration
- *  }
- * }
- */
-const store = memStore.createStore();
-
-// Init primary store fields
-// @todo move to separate file/function
-store.set('config', config.huron, storeCb);
-store.set('sections', memStore.createStore(), storeCb);
-store.set('templates', memStore.createStore(), storeCb);
-store.set('prototypes', memStore.createStore(), storeCb);
+// Create initial data structure
+const dataStructure = Immutable.Map({
+  config: Immutable.Map(config.huron),
+  sections: Immutable.Map({
+    sectionsByPath: Immutable.Map({}),
+    sorted: {},
+  }),
+  templates: Immutable.Map({}),
+  prototypes: Immutable.Map({})
+});
+let store = null; // All updates to store will be here
 
 // Move huron script and section template into huron root
 // @todo move to separate file/function
@@ -72,74 +58,44 @@ extenstions.forEach(ext => {
 const gaze = new Gaze(gazeWatch);
 
 // Initialize all files watched by gaze
-initFiles(gaze.watched(), store)
-  .then(() => {
-    requireTemplates(store);
+store = initFiles(gaze.watched(), dataStructure);
+requireTemplates(store);
 
-    if (!program.production) {
-      // file changed
-      gaze.on('changed', (filepath) => {
-        const file = path.parse(filepath);
-        updateFile(filepath, store)
-          .then(
-            (sectionURI) => {
-              console.log(`${filepath} updated!`);
-            },
-            (error) => {
-              console.error('changed', error);
-            }
-          );
-
-        console.log(store._store.templates._store, store._store.sections._store);
-      });
-
-      // file added
-      gaze.on('added', (filepath) => {
-        updateFile(filepath, store)
-          .then(
-            (sectionURI) => {
-              requireTemplates(store);
-              console.log(`${filepath} added!`);
-            },
-            (error) => {
-              console.error('update', error);
-            }
-          );
-
-        console.log(store._store.templates._store, store._store.sections._store);
-      });
-
-      // file renamed
-      gaze.on('renamed', (newPath, oldPath) => {
-        deleteFile(oldPath, store);
-        updateFile(newPath, store)
-          .then(
-            (sectionURI) => {
-              requireTemplates(store);
-              console.log(`${newPath} added!`);
-            },
-            (error) => {
-              console.error('renamed', error);
-            }
-          );
-
-        console.log(store._store.templates._store, store._store.sections._store);
-      });
-
-      // file deleted
-      gaze.on('deleted', (filepath) => {
-        deleteFile(filepath, store);
-        requireTemplates(store);
-        console.log(`${filepath} deleted`);
-
-        console.log(store._store.templates._store, store._store.sections._store);
-      });
-    } else {
-      gaze.close();
-    }
-
-    // Start webpack or build for production
-    // startWebpack(config);
+if (!program.production) {
+  // file changed
+  gaze.on('changed', (filepath) => {
+    const file = path.parse(filepath);
+    store = updateFile(filepath, store);
+    console.log(chalk.green(`${filepath} updated!`));
   });
+
+  // file added
+  gaze.on('added', (filepath) => {
+    store = updateFile(filepath, store);
+    requireTemplates(store);
+    console.log(chalk.blue(`${filepath} added!`));
+  });
+
+  // file renamed
+  gaze.on('renamed', (newPath, oldPath) => {
+    store = deleteFile(oldPath, store);
+    store = updateFile(newPath, store);
+    requireTemplates(store);
+    console.log(chalk.blue(`${newPath} added!`));
+  });
+
+  // file deleted
+  gaze.on('deleted', (filepath) => {
+    store = deleteFile(filepath, store);
+    console.log(store);
+    requireTemplates(store);
+    console.log(chalk.red(`${filepath} deleted`));
+  });
+} else {
+  gaze.close();
+}
+
+// Start webpack or build for production
+// startWebpack(config);
 
 
