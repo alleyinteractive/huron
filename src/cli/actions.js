@@ -5,6 +5,7 @@ const fs = require('fs-extra');
 const kss = require('kss');
 const handlebars = require('handlebars');
 const Promise = require('bluebird');
+const chalk = require('chalk'); // Colorize terminal output
 
 // Imports
 import requireTemplates from './require-templates';
@@ -12,7 +13,7 @@ import requireTemplates from './require-templates';
 // EXPORTED FUNCTIONS
 
 /**
- * Recursively loop through initial watched files list from Gaze
+ * Recursively loop through initial watched files list from Gaze.
  *
  * @param {object} data - object containing directory and file paths
  * @param {object} sections - sections memory store
@@ -65,7 +66,8 @@ export function initFiles(data, sections, templates, huron, depth = 0) {
  * Logic for updating and writing file information based on file type (extension)
  *
  * @param {string} filepath - path to updated file. usually passed in from Gaze
- * @param {object} sections - sections memory store
+ * @param {object} sections - sections memory store. Becomes an object that records all the
+ *                            values that exist from node kss.
  * @param {object} templates - templates memory store
  * @param {object} huron - huron configuration object
  */
@@ -80,11 +82,14 @@ export function updateFile(filepath, sections, templates, huron) {
       // Plain HTML template, external
       case '.html':
         let content = fs.readFileSync(filepath, 'utf8');
+        let outputPath = '';
         sectionRef = getSectionRef(file.name, sections);
         section = getSection(sectionRef, sections);
 
         if (section) {
-          writeTemplate(section.referenceURI, output, content, templates, huron);
+          content = wrapMarkup(content, section.referenceURI);
+          outputPath = copyFile(file.base, output, content, huron);
+          buildTemplateObject(section.referenceURI, 'template', outputPath, templates, huron);
           resolve(section.referenceURI);
         } else {
           // Check if this is a prototype file.
@@ -94,7 +99,9 @@ export function updateFile(filepath, sections, templates, huron) {
 
           if(isPrototype) {
             // If so, copy over to the huron directory.
-            copyFile(file.name, output, content, huron);
+            content = wrapMarkup(content, file.name);
+            outputPath = copyFile(file.base, output, content, huron);
+            buildTemplateObject(file.name, 'template', outputPath, templates, huron);
           } else {
             reject(`Rejected file: ${file.name}`);
           }
@@ -102,14 +109,21 @@ export function updateFile(filepath, sections, templates, huron) {
         break;
 
       // Handlebars template, external
-      case '.hbs':
-      case '.handlebars':
+      case huron.templates.extension:
         const statesPath = getStatesFromTemplate(file);
         sectionRef = getSectionRef(file.name, sections);
         section = getSection(sectionRef, sections);
 
+        // console.log(chalk.bgBlue('Sections'), sections);
+
         if (statesPath && section) {
-          writeStateTemplates(section.referenceURI, filepath, statesPath, output, templates, huron);
+          let content = wrapMarkup(
+            fs.readFileSync(filepath, 'utf8'),
+            section.referenceURI
+          );
+          let outputPath = copyFile(file.base, output, content, huron);
+
+          buildTemplateObject(section.referenceURI, 'template', outputPath, templates, huron, statesPath, output);
           resolve(section.referenceURI);
         } else {
           reject(`No .json data file was found for template ${filepath}`);
@@ -126,11 +140,10 @@ export function updateFile(filepath, sections, templates, huron) {
         section.states = states;
 
         if (templatePath && section) {
-          // Update section with states data
-          updateMarkupStates(file.name, states, sections);
+          let content = fs.readFileSync(filepath, 'utf8');
+          let outputPath = copyFile(file.base, output, content, huron);
 
-          // Write templates based on states
-          writeStateTemplates(section.referenceURI, templatePath, filepath, output, templates, huron);
+          buildTemplateObject(section.referenceURI, 'data', outputPath, templates, huron, templatePath, output);
           resolve(section.referenceURI);
         } else {
           reject(`No handlebars template was found for data ${filepath}`);
@@ -140,7 +153,7 @@ export function updateFile(filepath, sections, templates, huron) {
       // KSS documentation (default extension is `.css`)
       // Will also output a template if markup is inline
       // Note: inline markup does _not_ support handlebars currently
-      case huron.kssExt:
+      case huron.kssExtension:
         const kssSource = fs.readFileSync(filepath, 'utf8');
 
         if (kssSource) {
@@ -163,14 +176,14 @@ export function updateFile(filepath, sections, templates, huron) {
                 }
 
                 // Write new inline markup
-                writeTemplate(outputName, 'template', output, section.data.markup, templates, huron);
+                const inlineOutput = writeTemplate(outputName, 'template', output, section.data.markup, huron);
+                buildTemplateObject(section.data.referenceURI, 'template', inlineOutput, templates, huron);
               }
 
               if ((oldData && oldData.description !== section.data.description) || !oldData) {
-                writeTemplate(outputName, 'description', output, section.data.description, templates, huron);
+                const descriptionOutput = writeTemplate(outputName, 'description', output, section.data.description, huron);
+                buildTemplateObject(section.data.referenceURI, 'description', descriptionOutput, templates, huron);
               }
-
-              writeSection(section.data, templates, huron);
 
               // Write separate HTML snippet for description
               updateSection(sections, section, filepath);
@@ -178,6 +191,7 @@ export function updateFile(filepath, sections, templates, huron) {
               requireTemplates(huron, templates, sections);
 
               resolve(section.data.referenceURI);
+              console.log('KSS file changed', section.data.referenceURI);
             }
           });
         } else {
@@ -220,8 +234,7 @@ export function deleteFile(filepath, sections, templates, huron) {
       }
       break;
 
-    case '.hbs':
-    case '.handlebars':
+    case huron.templates.extension:
       const statesPath = getStatesFromTemplate(file);
       sectionRef = getSectionRef(file.name, sections);
       section = getSection(sectionRef, sections);
@@ -248,7 +261,7 @@ export function deleteFile(filepath, sections, templates, huron) {
       }
       break;
 
-    case huron.kssExt:
+    case huron.kssExtension:
       section = getSection(filepath, sections);
 
       if (section) {
@@ -285,6 +298,7 @@ function updateSection(sections, section, sectionPath) {
   const sorted = getSection('sorted', sections) || {};
   const newSort = sortSection(sorted, newData.referenceURI);
   let resetData = null;
+
 
   // Store section data based on filepath so we can garbage-collect references
   // in the future
@@ -402,6 +416,7 @@ function updateMarkup(sections, section, sectionPath, isInline) {
  * @param {object} sections - sections memory store
  */
 function updateMarkupStates(filename, states, sections) {
+  console.log('Run update markup states', states, sections);
   const currentData = sections.get(`markup_${filename}`, (err, data) => {
     if (err) {
       throw err;
@@ -464,13 +479,19 @@ function getTemplateFromStates(file) {
 /**
  * Default callback for store functions
  *
- * @param {Error} err - error passed in from memory-store
+ * @param   {Error} err - error passed in from memory-store
+ * @return  {multiple} - The data that was requested.
  */
-function storeCb(err) {
+function storeCb(err, data) {
   if (err) {
     throw err;
   }
+
+  if(data) {
+    return data;
+  }
 }
+
 
 /**
  * Normalize a section title for use as a filename
@@ -483,46 +504,12 @@ function normalizeHeader(header) {
     .replace(/\s?\W\s?/g, '-');
 }
 
-/**
- * Output an HTML snippet for each state listed in JSON data, using handlebars template
- *
- * @param {string} filename - name of file without extension (extension will always be `.html`)
- * @param {string} templatePath - path to handlebars template
- * @param {string} statesPath - path to JSON state data
- * @param {string} output - output path
- * @param {object} templates - templates memory store
- * @param {object} huron - huron config object
- */
-function writeStateTemplates(filename, templatePath, statesPath, output, templates, huron) {
-  const states = JSON.parse(fs.readFileSync(statesPath, 'utf8'));
-  const template = handlebars.compile(fs.readFileSync(templatePath, 'utf8'));
-
-  for (let state in states) {
-    writeTemplate(
-      `${filename}-${state}`,
-      'state',
-      output,
-      template(states[state]),
-      templates,
-      huron
-    );
-  };
-}
-
-/**
- * delete an HTML snippet for each state listed in JSON data, using handlebars template
- *
- * @param {string} filename - name of file without extension (extension will always be `.html`)
- * @param {string} templatePath - path to handlebars template
- * @param {string} statesPath - path to JSON state data
- * @param {string} output - output path
- * @param {object} templates - templates memory store
- * @param {object} huron - huron config object
- */
-function deleteStateTemplates(filename, templatePath, states, output, templates, huron) {
-  for (let state in states) {
-    deleteTemplate(`${filename}-${state}`, 'state', output, templates, huron);
-  };
+function wrapMarkup(content, templateId) {
+  return `<dom-module>
+    <template id="${templateId}">
+      ${content}
+    </template>
+  </dom-module>\n`;
 }
 
 /**
@@ -533,49 +520,48 @@ function deleteStateTemplates(filename, templatePath, states, output, templates,
  * @param {string} output - output path
  * @param {string} templatePath - path relative to huron.root for requiring template
  * @param {string} content - file content to write
- * @param {object} templates - templates memory store
  * @param {object} huron - huron config object
  */
-function writeTemplate(id, type, output, content, templates, huron) {
+function writeTemplate(id, type, output, content, huron) {
   // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
   let key = `${type}-${id}`;
-  let outputRelative = path.join(huron.templates, output, `${key}.html`);
+  let outputRelative = path.join(huron.output, output, `${key}.html`);
   let outputPath = path.resolve(cwd, huron.root, outputRelative);
 
-  content = [
-    `<template id="${key}">`,
-    content,
-    '</template>',
-  ].join('\n');
-
-  templates.set(key, `./${outputRelative}`, storeCb);
-  fs.outputFileSync(outputPath, content);
+  fs.outputFileSync(outputPath, wrapMarkup(content, id));
   console.log(`Writing ${outputPath}`);
+
+  return outputRelative;
 }
 
 /**
  * Copy an HTML file into the huron output directory.
- * @param  {string} filename - The name of the file (without extension).
+ * @param  {string} filename - The name of the file (with extension).
  * @param  {string} output - The relative path to this file within the huron.kss directory.
  * @param  {string} content - The content of the file to write.
  * @param  {object} huron - The huron config object.
  * @see writeTemplate()
  * @todo We can look to this function to load the handlebars templates
  *       through the webpack loader instead.
+ *
+ * @return {string} The location where the file was saved.
  */
 function copyFile(filename, output, content, huron) {
-  const outputRelative = path.join(huron.templates, output, `${filename}.html`);
+  const outputRelative = path.join(huron.output, output, `${filename}`);
   const outputPath = path.resolve(cwd, huron.root, outputRelative);
   try {
     fs.outputFileSync(outputPath, content);
   } catch(e) {
     console.log(filename, outputPath);
   }
-  console.log(`Copying ${outputPath}`);
+  return outputRelative;
 }
 
 /**
- * Output an HTML snippet for a template
+ * Output an HTML snippet for a template.
+ *
+ * @todo come back to this with .hbs because it is probably importnat
+ * for the styelguide display.
  *
  * @param {object} section - section data
  * @param {object} templates - templates memory store
@@ -597,14 +583,14 @@ function writeSection(section, templates, huron) {
 
   templates.set(key, `./${outputRelative}`, storeCb);
   fs.outputFileSync(outputPath, content);
-  console.log(`writing ${outputPath}`);
+  console.log(`Writing ${outputPath}`);
 }
 
 /**
  * Delete an HTML snippet for a template
  *
  * @param {string} id - key at which to store this template's path in the templates store
- * @param {string} type - type of file to output. Options are 'template', 'description', or 'state'
+ * @param {string} type - type of file to output. Options are 'template', 'description', 'data' or 'section'
  * @param {string} output - output path
  * @param {string} templatePath - path relative to huron.root for requiring template
  * @param {object} templates - templates memory store
@@ -613,7 +599,7 @@ function writeSection(section, templates, huron) {
 function deleteTemplate(id, type, output, templates, huron) {
   // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
   let key = `${id}-${type}`;
-  let outputRelative = path.join(huron.templates, output, `${key}.html`);
+  let outputRelative = path.join(huron.output, output, `${key}.html`);
   let outputPath = path.resolve(cwd, huron.root, outputRelative);
 
   try {
@@ -624,7 +610,7 @@ function deleteTemplate(id, type, output, templates, huron) {
 
   templates.delete(key, storeCb);
   fs.unlinkSync(outputPath);
-  console.log(`deleting ${outputPath}`);
+  console.log(`Deleting ${outputPath}`);
 }
 
 /**
@@ -685,4 +671,30 @@ function getSection(ref, sections) {
       return false;
     }
   });
+}
+
+/**
+ * Build object to store template information
+ *
+ * @param  {string} key         The key that will hold this object.
+ * @param  {string} type        The type of styleguide comonent this is (template, data, or description).
+ * @param  {string} filePath    The path to the file.
+ * @param  {object} templates   Pointer to the templates store to modify.
+ * @param  {object} huron       Huron config
+ * @param  {string} partnerPath Path to partner file (usually data file for a template)
+ * @param  {string} output      Output directory
+ */
+function buildTemplateObject(key, type, filePath, templates, huron, partnerPath = false, output = false) {
+  const templateObject = templates.get(key, storeCb) || {};
+  const requirePath = `./${path.relative(path.resolve(cwd, huron.output), filePath)}`;
+
+  if (partnerPath && output) {
+    const partnerInfo = path.parse(partnerPath);
+    const partnerRelative = path.join(output, partnerInfo.base);
+
+    templates.set(requirePath, `./${partnerRelative}`, storeCb);
+  }
+
+  templateObject[type] = requirePath;
+  templates.set(key, templateObject, storeCb);
 }

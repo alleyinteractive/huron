@@ -1,5 +1,6 @@
 var webpack = require('webpack'),
-    path = require('path');
+    path = require('path'),
+    cwd = process.cwd();
 
 export const defaultConfig = {
   entry: {},
@@ -31,6 +32,11 @@ export const defaultConfig = {
         test: /\.html?$/,
         loader: 'dom?tag=dom-module!html',
         // include: ['path/to/templates']
+      },
+      {
+        test: /\.json?$/,
+        loaders: ['json'],
+        // include: [path.join(cwd, huron.root)]
       }
     ]
   },
@@ -39,7 +45,7 @@ export const defaultConfig = {
     entry: 'huron',
     js: [],
     kss: 'css/',
-    kssExt: '.css',
+    kssExtension: '.css',
     kssOptions: {
       multiline: true,
       markdown: true,
@@ -47,11 +53,18 @@ export const defaultConfig = {
         'states',
       ]
     },
+    ouptut: 'partials',
     port: 8080,
     prototypes: ['index'],
     root: 'dist/',
     sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
-    templates: 'prototype/partials',
+    templates: {
+      loader: {
+        test: /\.hbs$/,
+        loader: 'handlebars-loader'
+      },
+      extension: '.hbs'
+    },
     window: {},
   }
 };

@@ -8,57 +8,58 @@ export default function requireTemplates(huron, templates, sections) {
   const templateIds = [];
   const outputPath = path.join(cwd, huron.root);
 
-  // Add the prototypes to the template array
-  // These are copied from the huron.kss directory
-  huron.prototypes.forEach(prototype => {
-    templateObj[`prototype-${prototype}`] = `./${huron.templates}/prototypes/prototype-${prototype}.html`;
-  });
-
-  // Generate a list of paths and IDs for all templates
-  for (let template in templateObj) {
-    templatePathArray.push(`'${templateObj[template]}'`);
-  };
-
   // Initialize templates, js, css and HMR acceptance logic
-  const prependScript = [
-    `export const templates = {};`,
-    `export function addCallback(cb) {`,
-      `templateReplaceCallback = cb;`,
-    `}`,
-    `let templateReplaceCallback = null`,
-    `if (module.hot) {`,
-      `module.hot.accept(`,
-        `[${templatePathArray}],`,
-        `update => {`,
-          `let updatedModules = Object.keys(update);`,
-          `if (updatedModules.length) {`,
-            `let templateModules = update[updatedModules[0]];`,
-            `if (templateModules.length) {`,
-              `templateModules.forEach( templateKey => {`,
-                `let template = __webpack_require__(templateKey);`,
-                `templateReplaceCallback(template, templates);`,
-              `});`,
-            `}`,
-          `}`,
-        `}`,
-      `);`,
-    `}`,
-  ];
+  let prependScript = `export const modules = {};
+export const templates = ${JSON.stringify(templateObj)};
+export function addCallback(cb) {
+  templateReplaceCallback = cb;
+}
+let templateReplaceCallback = null;
+let assets = require.context(
+  '${path.join(cwd, huron.root, huron.output)}',
+  true,
+  /\.(html|json|${huron.templates.extension.replace('.', '')})/
+);
 
-  // Generate templates object using template IDs as keys
-  for (let template in templateObj) {
-    prependScript.push(
-      `templates['${template}'] = require('${templateObj[template]}');`
-    );
-  };
+assets.keys().forEach(function(key) {
+  modules[key] = assets(key);
+});
 
+if (module.hot) {
+  module.hot.accept(
+    assets.id,
+    () => {
+      const newAssets = require.context(
+        '${path.join(cwd, huron.root, huron.output)}',
+        true,
+        /\.(html|json|${huron.templates.extension.replace('.', '')})/
+      );
+      const newModules = newAssets.keys()
+        .map((key) => {
+          return [key, newAssets(key)];
+        })
+        .filter((newModule) => {
+          return modules[newModule[0]] !== newModule[1];
+        });
+
+      newModules.forEach((module) => {
+        modules[module[0]] = module[1];
+        templateReplaceCallback(module[0], module[1], modules, templates);
+      });
+    }
+  );
+}\n`
+
+  // Write the contents of thsi script.
   fs.outputFileSync(
     path.join(outputPath, 'huron-requires.js'),
-    prependScript.join('\n')
+    prependScript
   );
 
+  // Save the sections information to a JSON file.
   fs.outputFileSync(
     path.join(outputPath, 'huron-sections.json'),
     JSON.stringify(sections._store)
   );
 }
+

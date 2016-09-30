@@ -16,7 +16,7 @@ export function updateFile(filepath, sections, huron) {
 
   switch (file.ext) {
     case '.html':
-      fs.writeFileSync(path.resolve(cwd, huron.root, huron.templates));
+      fs.writeFileSync(path.resolve(cwd, huron.root, huron.output));
       break;
 
     case '.hbs':
