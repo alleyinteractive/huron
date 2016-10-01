@@ -21,8 +21,6 @@ class InsertNodes {
     // Set store values
     this.store = store;
 
-    console.log(this._prototypes);
-
     // Inits
     this.cyclePrototypes();
     this.cycleEls(document);
