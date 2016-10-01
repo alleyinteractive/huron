@@ -49,9 +49,7 @@ export const defaultConfig = {
     kssOptions: {
       multiline: true,
       markdown: true,
-      custom: [
-        'states',
-      ]
+      custom: ['data'],
     },
     ouptut: 'partials',
     port: 8080,

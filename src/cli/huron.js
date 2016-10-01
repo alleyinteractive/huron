@@ -6,7 +6,8 @@ const kss = require('kss'); // node implementation of KSS: a methodology for doc
 const path = require('path');
 const fs = require('fs-extra');
 const Gaze = require('gaze').Gaze;
-const memStore = require('memory-store');
+const Immutable = require('immutable');
+const chalk = require('chalk'); // Colorize terminal output
 
 // Local imports
 import { program } from './parse-args';
@@ -18,10 +19,8 @@ import startWebpack from './server';
 // Set vars
 const localConfig = require(path.join(cwd, program.config));
 const config = generateConfig(localConfig);
-const huron = config.huron; // huron config
-const sections = memStore.createStore();
-const templates = memStore.createStore();
-const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
+const huron = config.huron;
+const sectionTemplate = fs.readFileSync(path.resolve(__dirname, '../../templates/section.hbs'), 'utf8');
 const extenstions = [
   huron.kssExtension,
   '.html',
@@ -30,8 +29,23 @@ const extenstions = [
   '.json'
 ];
 
-// Move huron script into huron root
-fs.writeFileSync(path.join(cwd, huron.root, 'huron.js'), huronScript);
+// Create initial data structure
+const dataStructure = Immutable.Map({
+  config: Immutable.Map(config.huron),
+  sections: Immutable.Map({
+    sectionsByPath: Immutable.Map({}),
+    sorted: {},
+  }),
+  templates: Immutable.Map({}),
+  prototypes: Immutable.Map({})
+});
+let store = null; // All updates to store will be here
+
+// Move huron script and section template into huron root
+fs.outputFileSync(
+  path.join(cwd, huron.root, huron.output, 'huron-sections/sections.hbs'),
+  sectionTemplate
+);
 
 // Generate watch list for Gaze, start gaze
 const gazeWatch = [];
@@ -41,67 +55,44 @@ extenstions.forEach(ext => {
 const gaze = new Gaze(gazeWatch);
 
 // Initialize all files watched by gaze
-initFiles(gaze.watched(), sections, templates, huron)
-  .then(() => {
-    requireTemplates(huron, templates, sections);
-    console.log(templates);
+store = initFiles(gaze.watched(), dataStructure);
+requireTemplates(store);
 
-    if (!program.production) {
-      // file changed
-      gaze.on('changed', (filepath) => {
-        const file = path.parse(filepath);
-        updateFile(filepath, sections, templates, huron)
-          .then(
-            (sectionURI) => {
-              console.log(`${filepath} updated!`);
-            },
-            (error) => {
-              console.error('changed', error);
-            }
-          );
-      });
-
-      // file added
-      gaze.on('added', (filepath) => {
-        updateFile(filepath, sections, templates, huron)
-          .then(
-            (sectionURI) => {
-              requireTemplates(huron, templates, sections);
-              console.log(`${filepath} added!`);
-            },
-            (error) => {
-              console.error('update', error);
-            }
-          );
-      });
-
-      // file renamed
-      gaze.on('renamed', (newPath, oldPath) => {
-        deleteFile(oldPath, sections, templates, huron);
-        updateFile(newPath, sections, templates, huron)
-          .then(
-            (sectionURI) => {
-              requireTemplates(huron, templates, sections);
-              console.log(`${newPath} added!`);
-            },
-            (error) => {
-              console.error('renamed', error);
-            }
-          );
-      });
-
-      // file deleted
-      gaze.on('deleted', (filepath) => {
-        deleteFile(filepath, sections, templates, huron);
-        requireTemplates(huron, templates, sections);
-        console.log(`${filepath} deleted`);
-      });
-    } else {
-      gaze.close();
-    }
-
-    // Start webpack or build for production
-    startWebpack(config);
+if (!program.production) {
+  // file changed
+  gaze.on('changed', (filepath) => {
+    const file = path.parse(filepath);
+    store = updateFile(filepath, store);
+    console.log(chalk.green(`${filepath} updated!`));
   });
+
+  // file added
+  gaze.on('added', (filepath) => {
+    store = updateFile(filepath, store);
+    requireTemplates(store);
+    console.log(chalk.blue(`${filepath} added!`));
+  });
+
+  // file renamed
+  gaze.on('renamed', (newPath, oldPath) => {
+    store = deleteFile(oldPath, store);
+    store = updateFile(newPath, store);
+    requireTemplates(store);
+    console.log(chalk.blue(`${newPath} added!`));
+  });
+
+  // file deleted
+  gaze.on('deleted', (filepath) => {
+    store = deleteFile(filepath, store);
+    console.log(store);
+    requireTemplates(store);
+    console.log(chalk.red(`${filepath} deleted`));
+  });
+} else {
+  gaze.close();
+}
+
+// Start webpack or build for production
+startWebpack(config);
 
 

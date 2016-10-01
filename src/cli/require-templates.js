@@ -1,25 +1,23 @@
 const path = require('path');
 const fs = require('fs-extra');
 const cwd = process.cwd();
+const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
 
-export default function requireTemplates(huron, templates, sections) {
-  const templateObj = templates._store;
+export default function requireTemplates(store) {
+  const huron = store.get('config');
   const templatePathArray = [];
   const templateIds = [];
-  const outputPath = path.join(cwd, huron.root);
+  const outputPath = path.join(cwd, huron.get('root'));
 
   // Initialize templates, js, css and HMR acceptance logic
-  let prependScript = `export const modules = {};
-export const templates = ${JSON.stringify(templateObj)};
-export function addCallback(cb) {
-  templateReplaceCallback = cb;
-}
-let templateReplaceCallback = null;
+  const prepend = `
 let assets = require.context(
-  '${path.join(cwd, huron.root, huron.output)}',
+  '${path.join(cwd, huron.get('root'), huron.get('output'))}',
   true,
-  /\.(html|json|${huron.templates.extension.replace('.', '')})/
+  /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
 );
+export const modules = {};
+export const store = ${JSON.stringify(store.toJSON())};
 
 assets.keys().forEach(function(key) {
   modules[key] = assets(key);
@@ -30,9 +28,9 @@ if (module.hot) {
     assets.id,
     () => {
       const newAssets = require.context(
-        '${path.join(cwd, huron.root, huron.output)}',
+        '${path.join(cwd, huron.get('root'), huron.get('output'))}',
         true,
-        /\.(html|json|${huron.templates.extension.replace('.', '')})/
+        /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
       );
       const newModules = newAssets.keys()
         .map((key) => {
@@ -44,22 +42,22 @@ if (module.hot) {
 
       newModules.forEach((module) => {
         modules[module[0]] = module[1];
-        templateReplaceCallback(module[0], module[1], modules, templates);
+        hotReplace(module[0], module[1], modules, store);
       });
     }
   );
 }\n`
 
+  const append = `
+  function hotReplace(key, module, modules, store) {
+    insert.store = store;
+    insert.cycleEl(key, module, document);
+  }`
+
   // Write the contents of thsi script.
   fs.outputFileSync(
-    path.join(outputPath, 'huron-requires.js'),
-    prependScript
-  );
-
-  // Save the sections information to a JSON file.
-  fs.outputFileSync(
-    path.join(outputPath, 'huron-sections.json'),
-    JSON.stringify(sections._store)
+    path.join(outputPath, 'huron.js'),
+    `${prepend}\n\n${huronScript}\n\n${append}`
   );
 }
 

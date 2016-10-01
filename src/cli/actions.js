@@ -16,345 +16,318 @@ import requireTemplates from './require-templates';
  * Recursively loop through initial watched files list from Gaze.
  *
  * @param {object} data - object containing directory and file paths
- * @param {object} sections - sections memory store
- * @param {object} templates - templates memory store
+ * @param {object} store - memory store
  * @param {object} huron - huron configuration options
  */
-export function initFiles(data, sections, templates, huron, depth = 0) {
+export function initFiles(data, store, depth = 0) {
+  const huron = store.get('config');
   const type = Object.prototype.toString.call( data );
   const currentDepth = depth++;
 
-  return new Promise((resolve, reject) => {
-    switch (type) {
-      case '[object Object]':
-        for (let file in data) {
-          initFiles(data[file], sections, templates, huron, depth)
-            .then(() => {
-              resolve(data);
-            });
-        }
-        break;
+  switch (type) {
+    case '[object Object]':
+      for (let file in data) {
+        store = initFiles(data[file], store, depth);
+      }
+      break;
 
-      case '[object Array]':
-        data.forEach(file => {
-          initFiles(file, sections, templates, huron, depth)
-            .then(() => {
-              resolve(data);
-            });
-        });
-        break;
+    case '[object Array]':
+      data.forEach(file => {
+        store = initFiles(file, store, depth);
+      });
+      break;
 
-      case '[object String]':
-        const info = path.parse(data);
-        if (info.ext) {
-          updateFile(data, sections, templates, huron)
-            .then(
-              (sectionURI) => {
-                resolve(data);
-              },
-              (error) => {
-                console.warn(error);
-              }
-            );
-        }
-        break;
-    }
-  });
+    case '[object String]':
+      const info = path.parse(data);
+      if (info.ext) {
+        store = updateFile(data, store)
+      }
+      break;
+  }
+
+  return store;
 }
 
 /**
  * Logic for updating and writing file information based on file type (extension)
  *
  * @param {string} filepath - path to updated file. usually passed in from Gaze
- * @param {object} sections - sections memory store. Becomes an object that records all the
- *                            values that exist from node kss.
- * @param {object} templates - templates memory store
- * @param {object} huron - huron configuration object
+ * @param {object} store - memory store
  */
-export function updateFile(filepath, sections, templates, huron) {
+export function updateFile(filepath, store) {
+  const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.kss), file.dir);
+  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
+  let newStore = store;
   let sectionRef = null;
   let section = null;
+  let outputPath = '';
 
-  return new Promise((resolve, reject) => {
-    switch (file.ext) {
-      // Plain HTML template, external
-      case '.html':
+  switch (file.ext) {
+    // Plain HTML template, external
+    case '.html':
+      section = getSection(file.base, 'markup', store);
+
+      if (section) {
+        content = wrapMarkup(
+          fs.readFileSync(filepath, 'utf8'),
+          section.referenceURI
+        );
+
+        section.markupPath = copyFile(file.base, output, content, huron);
+        newStore = store.setIn(
+          ['sections', 'sectionsByPath', section.sectionPath],
+          section
+        );
+      } else if (
+        file.dir.indexOf('prototypes') !== -1 &&
+        file.name.indexOf('prototype-') !== -1
+      ) {
+        // If so, copy over to the huron directory.
+        let content = wrapMarkup(fs.readFileSync(filepath, 'utf8'), file.name);
+        outputPath = copyFile(file.base, output, content, huron);
+
+        newStore = store.setIn(
+          ['prototypes', file.name],
+          outputPath
+        );
+      } else {
+        console.log(chalk.red(`Failed to write file: ${file.name}`));
+      }
+
+      break;
+
+    // Handlebars template, external
+    case huron.get('templates').extension:
+    case '.json':
+      const field = ('.json' === file.ext) ? 'data' : 'markup';
+
+      section = getSection(file.base, field, store);
+
+      if (section) {
+        const dest = path.resolve(cwd, huron.get('output'));
+        const pairPath = getTemplateDataPair(file, output, section);
         let content = fs.readFileSync(filepath, 'utf8');
-        let outputPath = '';
-        sectionRef = getSectionRef(file.name, sections);
-        section = getSection(sectionRef, sections);
 
-        if (section) {
+        if (huron.get('templates').extension === file.ext) {
           content = wrapMarkup(content, section.referenceURI);
-          outputPath = copyFile(file.base, output, content, huron);
-          buildTemplateObject(section.referenceURI, 'template', outputPath, templates, huron);
-          resolve(section.referenceURI);
-        } else {
-          // Check if this is a prototype file.
-          const isPrototype =
-            file.dir.indexOf('prototypes') !== -1 &&
-            file.name.indexOf('prototype-') !== -1 ? true : false;
+        };
 
-          if(isPrototype) {
-            // If so, copy over to the huron directory.
-            content = wrapMarkup(content, file.name);
-            outputPath = copyFile(file.base, output, content, huron);
-            buildTemplateObject(file.name, 'template', outputPath, templates, huron);
-          } else {
-            reject(`Rejected file: ${file.name}`);
-          }
-        }
-        break;
+        const requirePath = copyFile(file.base, output, content, huron);
 
-      // Handlebars template, external
-      case huron.templates.extension:
-        const statesPath = getStatesFromTemplate(file);
-        sectionRef = getSectionRef(file.name, sections);
-        section = getSection(sectionRef, sections);
-
-        // console.log(chalk.bgBlue('Sections'), sections);
-
-        if (statesPath && section) {
-          let content = wrapMarkup(
-            fs.readFileSync(filepath, 'utf8'),
-            section.referenceURI
+        section[`${field}Path`] = requirePath;
+        newStore = store
+          .setIn(
+            ['templates', requirePath],
+            pairPath
+          )
+          .setIn(
+            ['sections', 'sectionsByPath', section.sectionPath],
+            section
           );
-          let outputPath = copyFile(file.base, output, content, huron);
+      } else {
+        console.log(chalk.red(`No pairing (data or template) file was found for template ${filepath}`));
+      }
+      break;
 
-          buildTemplateObject(section.referenceURI, 'template', outputPath, templates, huron, statesPath, output);
-          resolve(section.referenceURI);
-        } else {
-          reject(`No .json data file was found for template ${filepath}`);
-        }
-        break;
+    // KSS documentation (default extension is `.css`)
+    // Will also output a template if markup is inline
+    // Note: inline markup does _not_ support handlebars currently
+    case huron.get('kssExtension'):
+      const kssSource = fs.readFileSync(filepath, 'utf8');
 
-      // JSON template state data
-      case '.json':
-        let templatePath = getTemplateFromStates(file);
-        const states = JSON.parse(fs.readFileSync(filepath, 'utf8'));
-        sectionRef = getSectionRef(file.name, sections);
-        section = getSection(sectionRef, sections);
+      if (kssSource) {
+        kss.parse(kssSource, huron.get('kssOptions'), (err, styleguide) => {
+          if (err) {
+            throw err;
+          }
 
-        section.states = states;
+          if (styleguide.data.sections.length) {
+            section = normalizeSectionData(styleguide.data.sections[0]);
+            // Check for any HTML tag in the markup section, which should indicate it's using inline HTML
+            const isInline = section.markup.match(/<\/[^>]*>/) !== null;
+            const outputName = section.referenceURI;
+            const oldData = getSection(filepath, false, store);
 
-        if (templatePath && section) {
-          let content = fs.readFileSync(filepath, 'utf8');
-          let outputPath = copyFile(file.base, output, content, huron);
-
-          buildTemplateObject(section.referenceURI, 'data', outputPath, templates, huron, templatePath, output);
-          resolve(section.referenceURI);
-        } else {
-          reject(`No handlebars template was found for data ${filepath}`);
-        }
-        break;
-
-      // KSS documentation (default extension is `.css`)
-      // Will also output a template if markup is inline
-      // Note: inline markup does _not_ support handlebars currently
-      case huron.kssExtension:
-        const kssSource = fs.readFileSync(filepath, 'utf8');
-
-        if (kssSource) {
-          kss.parse(kssSource, huron.kssOptions, (err, styleguide) => {
-            if (err) {
-              throw err;
-            }
-
-            if (styleguide.data.sections.length) {
-              section = styleguide.data.sections[0];
-              const isInline = section.data.markup.match(/<\/[^>]*>/) !== null;
-              const outputName = section.data.referenceURI;
-              const oldData = getSection(filepath, sections);
-
-              if (isInline) {
-                // If reference URI has changed, remove old templates
-                // and delete template indices from templates memory store
-                if (typeof oldData !== 'undefined' && oldData.referenceURI !== section.data.referenceURI) {
-                  deleteTemplate(`${oldData.referenceURI}`, 'template', output, templates, huron);
-                }
-
-                // Write new inline markup
-                const inlineOutput = writeTemplate(outputName, 'template', output, section.data.markup, huron);
-                buildTemplateObject(section.data.referenceURI, 'template', inlineOutput, templates, huron);
+            if (isInline) {
+              // If reference URI has changed, remove old templates
+              // and delete template indices from templates memory store
+              if (oldData && oldData.referenceURI !== section.referenceURI) {
+                deleteTemplate(`${oldData.referenceURI}`, 'template', output, store);
               }
 
-              if ((oldData && oldData.description !== section.data.description) || !oldData) {
-                const descriptionOutput = writeTemplate(outputName, 'description', output, section.data.description, huron);
-                buildTemplateObject(section.data.referenceURI, 'description', descriptionOutput, templates, huron);
-              }
-
-              // Write separate HTML snippet for description
-              updateSection(sections, section, filepath);
-              updateMarkup(sections, section, filepath, isInline);
-              requireTemplates(huron, templates, sections);
-
-              resolve(section.data.referenceURI);
-              console.log('KSS file changed', section.data.referenceURI);
+              // Write new inline markup
+              const inlineOutput = writeTemplate(outputName, 'template', output, section.markup, huron);
             }
-          });
-        } else {
-          reject(`No KSS source found in ${file.dir}`);
-        }
-        break;
 
-      // This should never happen if Gaze is working properly
-      default:
-        reject();
-        break;
-    }
-  });
+            if ((oldData && oldData.description !== section.description) || !oldData) {
+              const descriptionOutput = writeTemplate(outputName, 'description', output, section.description, huron);
+            }
+
+            // Write separate HTML snippet for description
+            newStore = updateSection(section, filepath, isInline, store);
+            requireTemplates(newStore);
+            console.log(chalk.green(`KSS file changed or added ${section.referenceURI}`));
+          } else {
+            console.log(chalk.magenta(`No KSS found in ${filepath}`));
+          }
+        });
+      } else {
+        console.log(chalk.red(`${filepath} does not exist or is empty`));
+      }
+      break;
+
+    // This should never happen if Gaze is working properly
+    default:
+      return newStore;
+      break;
+  }
+
+  return newStore;
 }
 
 /**
  * Logic for deleting file information and files based on file type (extension)
  *
  * @param {string} filepath - path to updated file. usually passed in from Gaze
- * @param {object} sections - sections memory store
- * @param {object} templates - templates memory store
- * @param {object} huron - huron configuration object
+ * @param {object} store - memory store
  */
-export function deleteFile(filepath, sections, templates, huron) {
+export function deleteFile(filepath, store) {
+  const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.kss), file.dir);
+  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
+  let outputPath = '';
   let sectionRef = null;
   let section = null;
   let sectionStates = null;
+  let newStore = store;
 
   switch (file.ext) {
     // Plain HTML template, external
     case '.html':
-      sectionRef = getSectionRef(file.name, sections);
-      section = getSection(sectionRef, sections);
+      section = getSection(file.base, 'markup', store);
 
       if (section) {
-        // Delete plain HTML template
-        deleteTemplate(section.referenceURI, 'template', output, templates, huron);
+        outputPath = removeFile(file.base, output, huron);
+      } else if (
+        file.dir.indexOf('prototypes') !== -1 &&
+        file.name.indexOf('prototype-') !== -1
+      ) {
+        outputPath = removeFile(file.base, output, content, huron);
       }
       break;
 
-    case huron.templates.extension:
-      const statesPath = getStatesFromTemplate(file);
-      sectionRef = getSectionRef(file.name, sections);
-      section = getSection(sectionRef, sections);
-      sectionStates = getSectionStates(file.name, sections);
-
-      if (!statesPath) {
-        if (section) {
-          // Remove all states templates
-          deleteStateTemplates(section.referenceURI, filepath, section.states, output, templates, huron);
-        } else {
-          sections.delete(`markup_${file.name}`, storeCb);
-        }
-      }
-      break;
-
+    case huron.get('templates').extension:
     case '.json':
-      let templatePath = getTemplateFromStates(file);
-      sectionRef = getSectionRef(file.name, sections);
-      section = getSection(sectionRef, sections);
+      const field = ('.json' === file.ext) ? 'data' : 'markup';
+      section = getSection(file.base, field, store);
 
-      // Update section data and remove states if template also does not exist
-      if (!templatePath) {
-        sections.delete(`markup_${file.name}`, storeCb);
+      if (section) {
+        const dest = path.resolve(cwd, huron.get('output'));
+        const pairPath = getTemplateDataPair(file, output, section);
+        const requirePath = `./${path.relative(dest, filepath)}`;
+
+        newStore = store.deleteIn(['templates', requirePath]);
+
+        // Remove partner
+        outputPath = removeFile(file.base, output, huron);
       }
       break;
 
-    case huron.kssExtension:
-      section = getSection(filepath, sections);
+    case huron.get('kssExtension'):
+      section = getSection(filepath, false, store);
 
       if (section) {
         const isInline = section.markup.match(/<\/[^>]*>/) !== null;
 
         // Remove associated inline template
         if (isInline) {
-          deleteTemplate(`${section.referenceURI}`, 'template', output, templates, huron);
+          deleteTemplate(`${section.referenceURI}`, 'template', output, store);
         }
 
         // Remove description template
-        deleteTemplate(`${section.referenceURI}`, 'description', output, templates, huron);
+        deleteTemplate(section.referenceURI, 'description', output, store);
 
         // Remove section data from memory store
         unsetSection(sections, section, filepath);
       }
       break;
+
+    default:
+      consle.log(`Could not delete: ${file.name}`);
+      return newStore;
+      break;
   }
+
+  return newStore;
 }
 
 // INTERNAL FUNCTIONS
 
+function normalizeSectionData(section) {
+  if (section.data) {
+    return section.data;
+  }
+
+  return section;
+}
+
 /**
  * Update the sections store with new data for a specific section
  *
- * @param {object} sections - sections memory store
  * @param {object} section - contains updated section data
  * @param {string} sectionPath - path to KSS section
+ * @param {bool} isInline - is the markup inline in KSS?
+ * @param {object} store - memory store
  */
-function updateSection(sections, section, sectionPath) {
-  const oldData = getSection(sectionPath, sections);
-  const newData = section.data ? section.data : section;
-  const sectionMarkup = section.data ? section.data.markup : section.markup;
-  const sorted = getSection('sorted', sections) || {};
-  const newSort = sortSection(sorted, newData.referenceURI);
+function updateSection(section, sectionPath, isInline, store) {
+  const oldData = getSection(sectionPath, false, store);
+  const sectionMarkup = section.markup;
+  const sectionFileInfo = path.parse(sectionPath);
   let resetData = null;
-
+  let newSort = sortSection(
+    store.getIn(['sections', 'sorted']),
+    section.referenceURI
+  );
 
   // Store section data based on filepath so we can garbage-collect references
   // in the future
   if (oldData) {
     // If section exists, merge section data
-    resetData = Object.assign({}, oldData, newData);
-    // Remove old section from sorted data
-    sections.delete(oldData.referenceURI, storeCb);
-    unsortSection(sorted, oldData.referenceURI);
+    resetData = Object.assign({}, oldData, section);
+    newSort = unsortSection(newSort, oldData.referenceURI);
   } else {
     // If section does not exist, set the new section
-    resetData = newData;
+    resetData = section;
   }
 
-  // Add entries to memory store for both filepath and reference URI
-  sections.set(sectionPath, resetData, storeCb);
-  sections.set(newData.referenceURI, resetData, storeCb);
+  // Required for reference from templates and data
+  resetData.sectionPath = sectionPath;
 
   // Update section sorting
-  sections.set('sorted', newSort, storeCb);
+  return store
+    .setIn(
+      ['sections', 'sectionsByPath', sectionPath],
+      resetData
+    )
+    .setIn(
+      ['sections', 'sorted'],
+      newSort
+    );
 }
 
 /**
  * Remove a section from the memory store
  *
- * @param {object} sections - sections memory store
  * @param {object} section - contains updated section data
  * @param {string} sectionPath - path to KSS section
+ * @param {object} store - memory store
  */
-function unsetSection(sections, section, sectionPath) {
-  const sorted = getSection('sorted', sections) || {};
-
-  sections.delete(sectionPath, storeCb);
-  sections.delete(section.referenceURI, storeCb);
-  unsortSection(sorted, section.referenceURI);
-}
-
-/**
- * Remove a section from the sorted sections
- *
- * @param {object} sorted - currently sorted sections
- * @param {string} reference - reference URI of section to sort
- */
-function unsortSection(sorted, reference) {
-  let parts = reference.split('-');
-
-  if (sorted[parts[0]]) {
-    if (parts.length > 1) {
-      let newParts = parts.filter((part, idx) => {
-        return idx !== 0;
-      });
-      unsortSection(sorted[parts[0]], newParts.join('-'));
-    } else {
-      delete sorted[parts[0]];
-    }
-  }
+function unsetSection(section, sectionPath, store) {
+  const newSort = unsortSection(sorted, section.referenceURI);
+  return store
+    .deleteIn(['sections', 'sectionsByPath', sectionPath])
+    .setIn(['sections', 'sorted'], newSort);
 }
 
 /**
@@ -380,118 +353,46 @@ function sortSection(sorted, reference) {
 }
 
 /**
- * Update markup field in sections memory store
+ * Remove a section from the sorted sections
  *
- * @param {object} sections - sections memory store
- * @param {object} section - contains updated section data
- * @param {string} sectionPath - path to KSS section
- * @param {bool} isInline - is the markup inline in the KSS docs, or external?
+ * @param {object} sorted - currently sorted sections
+ * @param {string} reference - reference URI of section to sort
  */
-function updateMarkup(sections, section, sectionPath, isInline) {
-  const sectionMarkup = section.data ? section.data.markup : section.markup;
-  // If markup is not inline, set a value for the markup filename
-  // to allow us to easily determine the section reference based on a Gaze
-  // 'changed' event to the markup file.
-  if (sectionMarkup && !isInline) {
-    let markup = {};
+function unsortSection(sorted, reference) {
+  let parts = reference.split('-');
 
-    markup.section = sectionPath;
-    markup.template = sectionMarkup;
-
-    let templateFile = path.parse(markup.template);
-
-    sections.set(
-      `markup_${templateFile.name}`,
-      markup,
-      storeCb
-    );
-  }
-}
-
-/**
- * Update markup states in sections memory store
- *
- * @param {string} filename - name of markup file
- * @param {object} states - list of markup states
- * @param {object} sections - sections memory store
- */
-function updateMarkupStates(filename, states, sections) {
-  console.log('Run update markup states', states, sections);
-  const currentData = sections.get(`markup_${filename}`, (err, data) => {
-    if (err) {
-      throw err;
-    }
-
-    if (data) {
-      return data.states;
+  if (sorted[parts[0]]) {
+    if (parts.length > 1) {
+      let newParts = parts.filter((part, idx) => {
+        return idx !== 0;
+      });
+      sorted = unsortSection(sorted[parts[0]], newParts.join('-'));
     } else {
-      return false;
-    }
-  });
-  const newData = {};
-
-  if (currentData) {
-    newData.states = states;
-    sections.set(`markup_${filename}`, Object.assign({}, currentData, newData));
-  }
-}
-
-/**
- * Find a .json file containing state data from a handlebars template
- *
- * @param {object} file - file object from path.parse()
- */
-function getStatesFromTemplate(file) {
-  const statePath = path.resolve(file.dir, `${file.name}.json`);
-
-  try {
-    fs.accessSync(statePath, fs.F_OK);
-  } catch (e) {
-    return false;
-  }
-
-  return statePath;
-}
-
-/**
- * Find a handlebars template a state data file
- *
- * @param {object} file - file object from path.parse()
- */
-function getTemplateFromStates(file) {
-  let templatePath = false;
-
-  try {
-    templatePath = path.resolve(file.dir, `${file.name}.hbs`);
-    fs.accessSync(templatePath, fs.F_OK);
-  } catch (e) {
-    try {
-      templatePath = path.resolve(file.dir, `${file.name}.handlebars`);
-      fs.accessSync(templatePath, fs.F_OK);
-    } catch(e) {
-      return false;
+      delete sorted[parts[0]];
     }
   }
 
-  return templatePath;
+  return sorted;
 }
 
 /**
- * Default callback for store functions
+ * Find .json from a template file or vice versa
  *
- * @param   {Error} err - error passed in from memory-store
- * @return  {multiple} - The data that was requested.
+ * @param {object} file - file object from path.parse()
+ * @param {string} output - relative output path
+ * @param {object} section - KSS section data
  */
-function storeCb(err, data) {
-  if (err) {
-    throw err;
+function getTemplateDataPair(file, output, section) {
+  let pairPath = false;
+
+  if ('.json' === file.ext) {
+    pairPath = path.join(output, section.markup);
+  } else {
+    pairPath = path.join(output, section.data);
   }
 
-  if(data) {
-    return data;
-  }
+  return `./${pairPath}`;
 }
-
 
 /**
  * Normalize a section title for use as a filename
@@ -504,6 +405,12 @@ function normalizeHeader(header) {
     .replace(/\s?\W\s?/g, '-');
 }
 
+/**
+ * Wrap html in required template tags
+ *
+ * @param {string} content - html or template markup
+ * @param {string} templateId - id of template (should be section referenceURI)
+ */
 function wrapMarkup(content, templateId) {
   return `<dom-module>
     <template id="${templateId}">
@@ -525,65 +432,14 @@ function wrapMarkup(content, templateId) {
 function writeTemplate(id, type, output, content, huron) {
   // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
   let key = `${type}-${id}`;
-  let outputRelative = path.join(huron.output, output, `${key}.html`);
-  let outputPath = path.resolve(cwd, huron.root, outputRelative);
+  let outputRelative = path.join(huron.get('output'), output, `${key}.html`);
+  let outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
 
   fs.outputFileSync(outputPath, wrapMarkup(content, id));
-  console.log(`Writing ${outputPath}`);
 
-  return outputRelative;
-}
+  console.log(chalk.green(`Writing ${outputRelative}`));
 
-/**
- * Copy an HTML file into the huron output directory.
- * @param  {string} filename - The name of the file (with extension).
- * @param  {string} output - The relative path to this file within the huron.kss directory.
- * @param  {string} content - The content of the file to write.
- * @param  {object} huron - The huron config object.
- * @see writeTemplate()
- * @todo We can look to this function to load the handlebars templates
- *       through the webpack loader instead.
- *
- * @return {string} The location where the file was saved.
- */
-function copyFile(filename, output, content, huron) {
-  const outputRelative = path.join(huron.output, output, `${filename}`);
-  const outputPath = path.resolve(cwd, huron.root, outputRelative);
-  try {
-    fs.outputFileSync(outputPath, content);
-  } catch(e) {
-    console.log(filename, outputPath);
-  }
-  return outputRelative;
-}
-
-/**
- * Output an HTML snippet for a template.
- *
- * @todo come back to this with .hbs because it is probably importnat
- * for the styelguide display.
- *
- * @param {object} section - section data
- * @param {object} templates - templates memory store
- * @param {object} huron - huron config object
- */
-function writeSection(section, templates, huron) {
-  // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
-  const key = `section-${section.referenceURI}`;
-  const outputRelative = path.join('sections', `${key}.html`);
-  const outputPath = path.resolve(cwd, huron.root, outputRelative);
-  const template = fs.readFileSync(path.resolve(__dirname, '../../templates/section.hbs'), 'utf8');
-  const render = handlebars.compile(template);
-
-  const content = [
-    `<template id="${key}">`,
-    render(section),
-    '</template>',
-  ].join('\n');
-
-  templates.set(key, `./${outputRelative}`, storeCb);
-  fs.outputFileSync(outputPath, content);
-  console.log(`Writing ${outputPath}`);
+  return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
 }
 
 /**
@@ -596,105 +452,88 @@ function writeSection(section, templates, huron) {
  * @param {object} templates - templates memory store
  * @param {object} huron - huron config object
  */
-function deleteTemplate(id, type, output, templates, huron) {
+function deleteTemplate(id, type, output, store) {
   // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
+  const huron = store.get('config');
   let key = `${id}-${type}`;
-  let outputRelative = path.join(huron.output, output, `${key}.html`);
-  let outputPath = path.resolve(cwd, huron.root, outputRelative);
+  let outputRelative = path.join(huron.get('output'), output, `${key}.html`);
+  let outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
 
   try {
-    fs.accessSync(outputPath, fs.F_OK);
+    fs.unlinkSync(outputPath);
+    console.log(chalk.green(`Deleting ${outputRelative}`));
   } catch (e) {
-    return false;
+    console.log(chalk.red(`Error deleting file: ${key} ${outputRelative}`));
   }
 
-  templates.delete(key, storeCb);
-  fs.unlinkSync(outputPath);
-  console.log(`Deleting ${outputPath}`);
+  return outputPath;
 }
 
 /**
- * Request for markup states based on filename
+ * Copy an HTML file into the huron output directory.
+ * @param  {string} filename - The name of the file (with extension).
+ * @param  {string} output - The relative path to this file within the huron.kss directory.
+ * @param  {string} content - The content of the file to write.
+ * @param  {object} huron - The huron config object.
  *
- * @param {string} filename - name of markup file that was changed or added
- * @param {obj} sections - sections memory store
+ * @return {string} The location where the file was saved.
  */
-function getSectionStates(filename, sections) {
-  return sections.get(`markup_${filename}`, (err, data) => {
-    if (err) {
-      throw err;
-    }
+function copyFile(filename, output, content, huron) {
+  const outputRelative = path.join(huron.get('output'), output, `${filename}`);
+  const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
 
-    if (data && data.states) {
-      return data.states;
-    } else {
-      return false;
-    }
-  });
+  try {
+    fs.outputFileSync(outputPath, content);
+    console.log(chalk.green(`Writing ${outputRelative}`));
+  } catch(e) {
+    console.log(chalk.red(`Failed to write ${outputRelative}`));
+  }
+
+  return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;;
 }
 
 /**
- * Request for section reference based on filename
+ * Delete a file in the huron output directory
+ * @param  {string} filename - The name of the file (with extension).
+ * @param  {string} output - The relative path to this file within the huron.kss directory.
+ * @param  {object} huron - The huron config object.
  *
- * @param {string} filename - name of markup file that was changed or added
- * @param {obj} sections - sections memory store
+ * @return {string} The location where the file was saved.
  */
-function getSectionRef(filename, sections) {
-  return sections.get(`markup_${filename}`, (err, data) => {
-    if (err) {
-      throw err;
-    }
+function removeFile(filename, output, huron) {
+  const outputRelative = path.join(huron.get('output'), output, `${filename}`);
+  const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
 
-    if (data && data.section) {
-      return data.section;
-    } else {
-      return false;
-    }
-  });
+  try {
+    fs.removeSync(outputPath);
+    console.log(chalk.green(`Removing ${outputRelative}`));
+  } catch(e) {
+    console.log(chalk.red(`${outputRelative} does not exist`));
+  }
+
+  return outputRelative;
 }
 
 /**
  * Request for section data based on section reference
  *
- * @param {string} ref - reference key for section in memory store (filepath in this case)
+ * @param {string} search - key on which to match section
+ * @param {field} string - field in which to look to determine section
  * @param {obj} sections - sections memory store
  */
-function getSection(ref, sections) {
-  return sections.get(ref, (err, section) => {
-    if (err) {
-      throw err;
-    }
+function getSection(search, field, store) {
+  const sectionValues = store
+    .getIn(['sections', 'sectionsByPath'])
+    .valueSeq();
+  let selectedSection = false;
 
-    if (section) {
-      return section;
-    } else {
-      return false;
-    }
-  });
-}
-
-/**
- * Build object to store template information
- *
- * @param  {string} key         The key that will hold this object.
- * @param  {string} type        The type of styleguide comonent this is (template, data, or description).
- * @param  {string} filePath    The path to the file.
- * @param  {object} templates   Pointer to the templates store to modify.
- * @param  {object} huron       Huron config
- * @param  {string} partnerPath Path to partner file (usually data file for a template)
- * @param  {string} output      Output directory
- */
-function buildTemplateObject(key, type, filePath, templates, huron, partnerPath = false, output = false) {
-  const templateObject = templates.get(key, storeCb) || {};
-  const requirePath = `./${path.relative(path.resolve(cwd, huron.output), filePath)}`;
-
-  if (partnerPath && output) {
-    const partnerInfo = path.parse(partnerPath);
-    const partnerRelative = path.join(output, partnerInfo.base);
-
-    templates.set(requirePath, `./${partnerRelative}`, storeCb);
+  if (field) {
+    selectedSection = sectionValues
+      .filter(value => value[field] === search)
+      .get(0);
+  } else {
+    selectedSection = store.getIn(['sections', 'sectionsByPath', search]);
   }
 
-  templateObject[type] = requirePath;
-  templates.set(key, templateObject, storeCb);
+  return selectedSection;
 }

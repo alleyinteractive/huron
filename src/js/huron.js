@@ -3,9 +3,6 @@ if (module.hot) {
   module.hot.accept();
 }
 
-import { templates, modules, addCallback, templateCallback } from './huron-requires';
-const sections = require('./huron-sections.json');
-
 /* Method for inserting HTML snippets at particular insertion points
  *
  * Uses require() to grab html partials, then inserts that html
@@ -13,13 +10,31 @@ const sections = require('./huron-sections.json');
  */
 class InsertNodes {
 
-  constructor(modules, templates) {
+  constructor(modules, store) {
     this._modules = modules;
-    this._templates = templates;
     this._moduleIds = Object.keys(modules);
+    this._config = null;
+    this._sections = null;
+    this._templates = null;
+    this._prototypes = null;
+
+    // Set store values
+    this.store = store;
 
     // Inits
+    this.cyclePrototypes();
     this.cycleEls(document);
+  }
+
+  cyclePrototypes() {
+    for (let prototype in this._prototypes) {
+      const protoPath = this._prototypes[prototype];
+      const templateMarker = document.querySelector(`[data-huron-id=${prototype}]`);
+
+      if (templateMarker !== null && templateMarker.childNodes.length === 0) {
+        this.cycleEl(protoPath, this._modules[protoPath], document);
+      }
+    }
   }
 
   /**
@@ -30,19 +45,24 @@ class InsertNodes {
    * @param  {string} parentId The TemplateID of the tempkate that invoked this function.
    */
   cycleEls(context, parentId = null) {
-    for (let section in this._templates) {
+    for (let section in this._sections.sectionsByPath) {
+      const currentSection = this._sections.sectionsByPath[section];
       // If key isn't a file path
-      if (section !== null && section.indexOf('.') === -1) {
+      if (currentSection !== null) {
         // Check if there's at least one instance of a template in this context
-        const templateMarker = context.querySelector(`[data-huron-id=${section}]`);
-        const sectionComponents = this._templates[section];
+        const templateId = currentSection.referenceURI;
+        const templateMarker = context.querySelector(`[data-huron-id=${templateId}]`);
 
-        if (sectionComponents.template) {
-          const module = this._modules[sectionComponents.template];
-
-          if (templateMarker !== null && templateMarker.childNodes.length === 0) {
-            this.cycleEl(sectionComponents.template, module, context, parentId);
-          }
+        if (
+          currentSection.markupPath &&
+          templateMarker !== null &&
+          templateMarker.childNodes.length === 0
+        ) {
+          this.cycleEl(
+            currentSection.markupPath,
+            this._modules[currentSection.markupPath],
+            context
+          );
         }
       }
     }
@@ -104,7 +124,7 @@ class InsertNodes {
    * @param  {object} context  The context (e.g. document) that you will
    *                           query for the template ID to replace.
    */
-  cycleEl(key, module, context, parentId) {
+  cycleEl(key, module, context) {
     // If there is a templateId, use it to query for all the
     // matching tags within the context and replace them with the right
     // templateContents.
@@ -160,8 +180,12 @@ class InsertNodes {
     this._moduleIds = Object.keys(modules);
   }
 
-  set templates(templates) {
-    this._templates = templates;
+  set store(store) {
+    this._store = store;
+    this._config = store.config;
+    this._sections = store.sections;
+    this._templates = store.templates;
+    this._prototypes = store.prototypes;
   }
 }
 
@@ -207,19 +231,11 @@ function outputSections(sections, parent, el) {
 /*eslint-disable*/
 // Create object for modifiying the templates on the page and
 // initial first templates.
-const insert = new InsertNodes(modules, templates);
+const insert = new InsertNodes(modules, store);
 const sectionsQuery = document.querySelector('[huron-sections]');
 
 if (sectionsQuery) {
   outputSections(sections.sorted, null, sectionsQuery);
   insert.cycleEls(document);
 }
-
-// Cycle elements when a template is changed
-addCallback((key, module, modules, templates) => {
-  console.log('add callback template', module);
-  insert.modules = modules;
-  insert.templates = templates;
-  insert.cycleEl(key, module, document);
-});
 /*eslint-enable*/
