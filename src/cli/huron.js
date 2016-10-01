@@ -20,7 +20,6 @@ import startWebpack from './server';
 const localConfig = require(path.join(cwd, program.config));
 const config = generateConfig(localConfig);
 const huron = config.huron;
-const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
 const sectionTemplate = fs.readFileSync(path.resolve(__dirname, '../../templates/section.hbs'), 'utf8');
 const extenstions = [
   huron.kssExtension,
@@ -43,8 +42,6 @@ const dataStructure = Immutable.Map({
 let store = null; // All updates to store will be here
 
 // Move huron script and section template into huron root
-// @todo move to separate file/function
-fs.outputFileSync(path.join(cwd, huron.root, 'huron.js'), huronScript);
 fs.outputFileSync(
   path.join(cwd, huron.root, huron.output, 'huron-sections/sections.hbs'),
   sectionTemplate
@@ -96,6 +93,6 @@ if (!program.production) {
 }
 
 // Start webpack or build for production
-// startWebpack(config);
+startWebpack(config);
 
 

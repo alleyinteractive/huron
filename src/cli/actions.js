@@ -73,16 +73,18 @@ export function updateFile(filepath, store) {
           fs.readFileSync(filepath, 'utf8'),
           section.referenceURI
         );
-        outputPath = copyFile(file.base, output, content, huron);
 
-        section.templatePath = filepath;
-        newStore = store;
+        section.markupPath = copyFile(file.base, output, content, huron);
+        newStore = store.setIn(
+          ['sections', 'sectionsByPath', section.sectionPath],
+          section
+        );
       } else if (
         file.dir.indexOf('prototypes') !== -1 &&
         file.name.indexOf('prototype-') !== -1
       ) {
         // If so, copy over to the huron directory.
-        let content = wrapMarkup(content, file.name);
+        let content = wrapMarkup(fs.readFileSync(filepath, 'utf8'), file.name);
         outputPath = copyFile(file.base, output, content, huron);
 
         newStore = store.setIn(
@@ -104,21 +106,25 @@ export function updateFile(filepath, store) {
 
       if (section) {
         const dest = path.resolve(cwd, huron.get('output'));
-        const pairPath = getTemplateDataPair(file, section);
-        const pairRelative = `./${path.relative(dest, pairPath)}`;
-        const requirePath = `./${path.relative(dest, filepath)}`;
+        const pairPath = getTemplateDataPair(file, output, section);
         let content = fs.readFileSync(filepath, 'utf8');
 
         if (huron.get('templates').extension === file.ext) {
           content = wrapMarkup(content, section.referenceURI);
         };
 
-        outputPath = copyFile(file.base, output, content, huron);
-        newStore = store.setIn(
-          ['templates', requirePath],
-          pairRelative
-        );
-        section[`${field}Path`] = filepath;
+        const requirePath = copyFile(file.base, output, content, huron);
+
+        section[`${field}Path`] = requirePath;
+        newStore = store
+          .setIn(
+            ['templates', requirePath],
+            pairPath
+          )
+          .setIn(
+            ['sections', 'sectionsByPath', section.sectionPath],
+            section
+          );
       } else {
         console.log(chalk.red(`No pairing (data or template) file was found for template ${filepath}`));
       }
@@ -218,7 +224,7 @@ export function deleteFile(filepath, store) {
 
       if (section) {
         const dest = path.resolve(cwd, huron.get('output'));
-        const statesPath = getTemplateDataPair(file, section);
+        const pairPath = getTemplateDataPair(file, output, section);
         const requirePath = `./${path.relative(dest, filepath)}`;
 
         newStore = store.deleteIn(['templates', requirePath]);
@@ -373,18 +379,19 @@ function unsortSection(sorted, reference) {
  * Find .json from a template file or vice versa
  *
  * @param {object} file - file object from path.parse()
+ * @param {string} output - relative output path
  * @param {object} section - KSS section data
  */
-function getTemplateDataPair(file, section) {
+function getTemplateDataPair(file, output, section) {
   let pairPath = false;
 
   if ('.json' === file.ext) {
-    pairPath = path.join(file.dir, section.markup);
+    pairPath = path.join(output, section.markup);
   } else {
-    pairPath = path.join(file.dir, section.data);
+    pairPath = path.join(output, section.data);
   }
 
-  return pairPath;
+  return `./${pairPath}`;
 }
 
 /**
@@ -432,7 +439,7 @@ function writeTemplate(id, type, output, content, huron) {
 
   console.log(chalk.green(`Writing ${outputRelative}`));
 
-  return outputRelative;
+  return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
 }
 
 /**
@@ -482,7 +489,7 @@ function copyFile(filename, output, content, huron) {
     console.log(chalk.red(`Failed to write ${outputRelative}`));
   }
 
-  return outputRelative;
+  return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;;
 }
 
 /**

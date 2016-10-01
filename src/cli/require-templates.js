@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs-extra');
 const cwd = process.cwd();
+const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
 
 export default function requireTemplates(store) {
   const huron = store.get('config');
@@ -9,20 +10,14 @@ export default function requireTemplates(store) {
   const outputPath = path.join(cwd, huron.get('root'));
 
   // Initialize templates, js, css and HMR acceptance logic
-  let prependScript = `
-let templateReplaceCallback = null;
+  const prepend = `
 let assets = require.context(
   '${path.join(cwd, huron.get('root'), huron.get('output'))}',
   true,
   /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
 );
-
-export function addCallback(cb) {
-  templateReplaceCallback = cb;
-}
 export const modules = {};
-export const templates = ${JSON.stringify(store.get('templates').toJSON())};
-export const sections = assets('./huron-sections/sections.json');
+export const store = ${JSON.stringify(store.toJSON())};
 
 assets.keys().forEach(function(key) {
   modules[key] = assets(key);
@@ -47,22 +42,22 @@ if (module.hot) {
 
       newModules.forEach((module) => {
         modules[module[0]] = module[1];
-        templateReplaceCallback(module[0], module[1], modules, templates);
+        hotReplace(module[0], module[1], modules, store);
       });
     }
   );
 }\n`
 
+  const append = `
+  function hotReplace(key, module, modules, store) {
+    insert.store = store;
+    insert.cycleEl(key, module, document);
+  }`
+
   // Write the contents of thsi script.
   fs.outputFileSync(
-    path.join(outputPath, 'huron-requires.js'),
-    prependScript
-  );
-
-  // Save the sections information to a JSON file.
-  fs.outputFileSync(
-    path.join(outputPath, huron.get('output'), 'huron-sections/sections.json'),
-    JSON.stringify(store.get('sections').toJSON())
+    path.join(outputPath, 'huron.js'),
+    `${prepend}\n\n${huronScript}\n\n${append}`
   );
 }
 
