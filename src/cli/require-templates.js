@@ -50,8 +50,21 @@ if (module.hot) {
 
   const append = `
   function hotReplace(key, module, modules, store) {
-    insert.store = store;
-    insert.cycleEl(key, module, document);
+    const moduleInfo = insert.getIdFromPath(key);
+
+    if (moduleInfo) {
+      const type = moduleInfo.type;
+      const data = moduleInfo.data;
+      insert.store = store;
+
+      if ('prototype' !== moduleInfo.type) {
+        const normalizeModule = insert.normalizeModule(data.referenceURI, type, key, module, data);
+        insert.replaceTemplate(data.referenceURI, type, normalizeModule, document);
+      } else {
+        const normalizeModule = insert.normalizeModule(data, type, key, module);
+        insert.replaceTemplate(data, type, normalizeModule, document);
+      }
+    }
   }`
 
   // Write the contents of thsi script.

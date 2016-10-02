@@ -29,6 +29,15 @@ kssHandler.updateKSS = function(filepath, store) {
       const isInline = section.markup.match(/<\/[^>]*>/) !== null;
       const oldData = utils.getSection(filepath, false, store);
 
+      // Copy over section template
+      section.sectionPath = utils.writeFile(
+        section.referenceURI,
+        'section',
+        fs.readFileSync(huron.get('templates').sectionTemplate, 'utf8'),
+        store
+      );
+
+      // If we have inline markup
       if (isInline) {
         // If reference URI has changed, remove old templates
         // and delete template indices from templates memory store
@@ -41,6 +50,7 @@ kssHandler.updateKSS = function(filepath, store) {
         section.templatePath = inlineOutput;
       }
 
+      // If we don't have previous KSS or the KSS has been updated
       if ((oldData && oldData.description !== section.description) || !oldData) {
         const descriptionOutput = utils.writeFile(section.referenceURI, 'description', section.description, store);
         section.descriptionPath = descriptionOutput;

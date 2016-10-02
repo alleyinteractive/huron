@@ -17,6 +17,13 @@ class InsertNodes {
     this._sections = null;
     this._templates = null;
     this._prototypes = null;
+    this.types = [
+      'template',
+      'data',
+      'description',
+      'section',
+      'prototype',
+    ];
 
     // Set store values
     this.store = store;
@@ -51,57 +58,133 @@ class InsertNodes {
     // Query any element with huron id
     const huronPartials = context.querySelector('[data-huron-id]');
     const sections = this._sections.sectionsByPath;
+    const prototypes = this._prototypes;
 
     if (null !== huronPartials) {
       for (let i = 0; i < huronPartials.length; i++) {
         const currentPartial = huronPartials.item(i);
         const type = this.validateType(currentPartial);
         const id = currentPartial.dataset.huronId;
-        const field = `${type}Path`;
+        const field = `${type}Path`; // Custom field in section data containing require path to partial
+        let requirePath = false;
+        let currentSection = false;
 
-        if ('template' === type || 'description' === type) {
-          for (section in sections) {
-            const currentSection = sections[section];
-
-            if (
-              currentSection.templatePath &&
-              currentPartial.childNodes.length === 0
-            ) {
-              this.replaceTemplate(
-                currentSection.templatePath,
-                this._modules[currentSection.templatePath],
-                context
-              );
+        // Only replace if the partial does not have children
+        if (currentPartial.childNodes.length === 0) {
+          // Find require path based on huron type
+          if ('template' === type || 'description' === type || 'section' === type ) {
+            for (section in sections) {
+              if (id === sections[section].referenceURI) {
+                const currentSection = sections[section];
+                requirePath = currentSection[field];
+                break;
+              }
+            }
+          } else if ('prototype' === type) {
+            for (prototype in prototypes) {
+              if (id === prototype) {
+                requirePath = currentSection[field];
+              }
             }
           }
-        } else if ('prototype' === type)
-      }
 
-      for (let section in this._sections.sectionsByPath) {
-        const currentSection =
-        // If key isn't a file path
-        if (currentSection !== null) {
-          // Check if there's at least one instance of a template in this context
-          const templateId = currentSection.referenceURI;
-          const templateMarker = context.querySelector(`[data-huron-id=${templateId}]`);
+          // Normalize module and replace template marker
+          if (requirePath) {
+            const normalizedModule = this.normalizeModule(id, type, key, this._modules[requirePath], currentSection);
 
-
+            if (normalizedModule) {
+              this.replaceTemplate(id, type, normalizedModule, context);
+            }
+          }
         }
       }
     }
   }
 
+  /**
+   * Replace a single template marker with template content.
+   * This is called by HMR when modules are edited.
+   *
+   * @param  {string} id              Huron id (referenceURI)
+   * @param  {string} key             Key of module in modules object
+   * @param  {mixed}  currentModule   Normalized module, from normalizeModule function
+   * @param  {string} type            Module type
+   * @param  {object} context         The context (e.g. document) that you will
+   *                                   query for the template ID to replace.
+   */
+  replaceTemplate(id, type, currentModule, context) {
+    const tags = context.querySelectorAll(`[data-huron-id=${currentModule.id}`);
+
+    // Cycle through results and replace them.
+    for (let i = 0; i < tags.length; i++) {
+      let tag = tags.item(i);
+      let modifier = tag.dataset.huronModifier;
+      let rendered = null;
+
+      if (modifier && currentModule.data) {
+        rendered = currentModule.render(currentModule.data[modifier]);
+      } else {
+        rendered = currentModule.render();
+      }
+
+      tag.innerHTML = this.convertToElement(rendered)
+        .querySelector('template')
+        .innerHTML
+
+      this.cycleEls(tag, currentModule.id);
+    }
+  }
+
+  /**
+   * Check if module path matches any of templatePath, dataPath, sectionPath, or descriptionPath
+   * Use for webpack HMR logic
+   *
+   * @param  {string} path - Module require path
+   *
+   * @return {object} - section: KSS section data
+   *                    type: huron type
+   */
+  getIdFromPath(path) {
+    const sections = this._sections.sectionsByPath;
+    const templateTypes = this.types.filter((type) => type !== 'prototype');
+
+    if (path.indexOf('prototypes') === -1) {
+      for (section in sections) {
+        const testPath = this.templateTypes.filter((type) => section[`${type}Path`] === path);
+
+        if (testPath.length) {
+          return {
+            data: section,
+            type: type
+          };
+        }
+      }
+    } else {
+      const prototype = Object.keys(this._prototypes)
+        .filter((key) => this._prototypes[key] === path);
+
+      if (prototype.length) {
+        return {
+          data: prototype,
+          type: 'prototype'
+        };
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Verify specified element is using an acceptable huron type
+   *
+   * @param  {HTMLElement} element - Html element to check huron type
+   *
+   * @return {string} - huron type or 'template' if invalid
+   */
   validateType(element) {
     const type = element.dataset.huronType;
-    const types = [
-      'template',
-      'data',
-      'description',
-      'section',
-      'prototype',
-    ];
 
-    if (!types.includes(type)) {
+    if (!this.types.includes(type)) {
       return 'template';
     }
 
@@ -109,35 +192,46 @@ class InsertNodes {
   }
 
   /**
-   * Get markup from any type of module (html, json or template)
+   * Transform every module into a predictable object
    *
-   * @param  {mixed} module
+   * @param  {string} key             Key of module in modules object
+   * @param  {mixed}  module          The contents of the module
+   * @param  {string} type            Module type
+   * @param  {object} currentSection  KSS section data
+   *
+   * @return {object} render: render function
+   *                  data: original module contents
+   *                  id: id of partial
    */
-  parseMarkup(module, key) {
+  normalizeModule(id, type, key, module, currentSection = false) {
     let render = false;
-    let id = false;
     let data = false;
 
-    if ('function' === typeof module) {
-      // It's a render function for a template
-      render = module;
-      data = modules[this._templates[key]];
-    } else if ('string' === typeof module) {
-      // it's straight HTML
-      render = () => module;
-    } else {
-      // It's a data file (.json)
-      render = modules[this._templates[key]];
-      data = module;
-    }
-
-    // Get ID from markup
-    // @todo make this accessible via templates object
-    let moduleContents = this.convertToElement(render());
-    let wrapper = moduleContents.querySelector('template');
-    id = wrapper.id;
-
     if (id) {
+      if ('template' === type && 'function' === typeof module) {
+        // It's a render function for a template
+        render = module;
+        data = modules[this._templates[key]];
+      } else if (
+        'section' === type &&
+        'function' === typeof module &&
+        currentSection
+      ) {
+        // It's a full KSS section
+        render = module;
+        data = currentSection;
+      } else if (
+        ('template' === type || 'description' === type) &&
+        'string' === typeof module
+      ) {
+        // it's straight HTML
+        render = () => module;
+      } else if ('data' === type) {
+        // It's a data file (.json)
+        render = modules[this._templates[key]];
+        data = module;
+      }
+
       return {render, data, id};
     }
 
@@ -153,45 +247,6 @@ class InsertNodes {
     let el = document.createElement('div');
     el.innerHTML = content;
     return el.firstElementChild;
-  }
-
-  /**
-   * Replace a single template marker with template content.
-   * This is called by HMR when modules are edited.
-   *
-   * @param  {string} key      Key of module in modules object
-   * @param  {object} template The contents of the template file.
-   * @param  {object} context  The context (e.g. document) that you will
-   *                           query for the template ID to replace.
-   */
-  replaceTemplate(key, module, context) {
-    // If there is a templateId, use it to query for all the
-    // matching tags within the context and replace them with the right
-    // templateContents.
-    const moduleContents = this.parseMarkup(module, key);
-
-    if (moduleContents) {
-      const tags = context.querySelectorAll(`[data-huron-id=${moduleContents.id}`);
-
-      // Cycle through results and replace them.
-      for (let i = 0; i < tags.length; i++) {
-        let tag = tags.item(i);
-        let modifier = tag.dataset.huronModifier;
-        let rendered = null;
-
-        if (modifier && moduleContents.data) {
-          rendered = moduleContents.render(moduleContents.data[modifier]);
-        } else {
-          rendered = moduleContents.render();
-        }
-
-        tag.innerHTML = this.convertToElement(rendered)
-          .querySelector('template')
-          .innerHTML
-
-        this.cycleEls(tag, moduleContents.id);
-      }
-    }
   }
 
   /*
@@ -220,6 +275,9 @@ class InsertNodes {
     this._moduleIds = Object.keys(modules);
   }
 
+  /*
+   * Set store
+   */
   set store(store) {
     this._store = store;
     this._config = store.config;
