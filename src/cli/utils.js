@@ -25,16 +25,17 @@ utils.normalizeSectionData = function(section) {
  * Find .json from a template file or vice versa
  *
  * @param {object} file - file object from path.parse()
- * @param {string} output - relative output path
  * @param {object} section - KSS section data
  */
-utils.getTemplateDataPair = function(file, output, section) {
+utils.getTemplateDataPair = function(file, section, store) {
+  const huron = store.get('config');
+  const componentPath = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
   let pairPath = false;
 
   if ('.json' === file.ext) {
-    pairPath = path.join(output, section.markup);
+    pairPath = path.join(componentPath, section.markup);
   } else {
-    pairPath = path.join(output, section.data);
+    pairPath = path.join(componentPath, section.data);
   }
 
   return `./${pairPath}`;
@@ -65,68 +66,44 @@ utils.wrapMarkup = function(content, templateId) {
   </dom-module>\n`;
 }
 
-/**
- * Output an HTML snippet for a template
- *
- * @param {string} id - key at which to store this template's path in the templates store
- * @param {string} type - type of file to output. Options are 'template', 'description', or 'state'
- * @param {string} output - output path
- * @param {string} templatePath - path relative to huron.root for requiring template
- * @param {string} content - file content to write
- * @param {object} huron - huron config object
- */
-utils.writeTemplate = function(id, type, output, content, huron) {
-  // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
-  let key = `${type}-${id}`;
-  let outputRelative = path.join(huron.get('output'), output, `${key}.html`);
-  let outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
-
-  fs.outputFileSync(outputPath, utils.wrapMarkup(content, id));
-
-  console.log(chalk.green(`Writing ${outputRelative}`));
-
-  return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
-}
-
-/**
- * Delete an HTML snippet for a template
- *
- * @param {string} id - key at which to store this template's path in the templates store
- * @param {string} type - type of file to output. Options are 'template', 'description', 'data' or 'section'
- * @param {string} output - output path
- * @param {string} templatePath - path relative to huron.root for requiring template
- * @param {object} templates - templates memory store
- * @param {object} huron - huron config object
- */
-utils.deleteTemplate = function(id, type, output, store) {
-  // Create absolute and relative output paths. Relative path will be used to require the template for HMR.
+utils.generateFilename = function(id, type, store) {
   const huron = store.get('config');
-  let key = `${id}-${type}`;
-  let outputRelative = path.join(huron.get('output'), output, `${key}.html`);
-  let outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+  // Type of file and its corresponding extension(s)
+  const types = {
+    template: ['.html', huron.get('templates').extension],
+    data: ['.json'],
+    description: ['.html'],
+    section: ['.html'],
+    prototype: ['.html'],
+  };
 
-  try {
-    fs.unlinkSync(outputPath);
-    console.log(chalk.green(`Deleting ${outputRelative}`));
-  } catch (e) {
-    console.log(chalk.red(`Error deleting file: ${key} ${outputRelative}`));
+  if (!types.hasOwnProperty(type)) {
+    console.log(`Huron data ${type} does not exist`);
+    return false;
   }
 
-  return outputPath;
+  return `${id}-${key}${types[type]}`;
 }
 
 /**
  * Copy an HTML file into the huron output directory.
- * @param  {string} filename - The name of the file (with extension).
- * @param  {string} output - The relative path to this file within the huron.kss directory.
+ * @param  {string} id - The name of the file (with extension).
  * @param  {string} content - The content of the file to write.
- * @param  {object} huron - The huron config object.
+ * @param  {string} type - the type of file output
+ * @param  {object} store - The data store
  *
- * @return {string} The location where the file was saved.
+ * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
  */
-utils.copyFile = function(filename, output, content, huron) {
-  const outputRelative = path.join(huron.get('output'), output, `${filename}`);
+utils.writeFile = function(id, type, content, store) {
+  const huron = store.get('config');
+  const filename = utils.generateFilename(id, type, store);
+  const componentPath = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
+  const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
   const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+
+  if ('data' !=== type) {
+    content = utils.wrapMarkup(content, id);
+  }
 
   try {
     fs.outputFileSync(outputPath, content);
@@ -141,23 +118,25 @@ utils.copyFile = function(filename, output, content, huron) {
 /**
  * Delete a file in the huron output directory
  * @param  {string} filename - The name of the file (with extension).
- * @param  {string} output - The relative path to this file within the huron.kss directory.
- * @param  {object} huron - The huron config object.
+ * @param  {object} store - The data store
  *
- * @return {string} The location where the file was saved.
+ * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
  */
-utils.removeFile = function(filename, output, huron) {
-  const outputRelative = path.join(huron.get('output'), output, `${filename}`);
+utils.removeFile = function(id, type, store) {
+  const huron = store.get('config');
+  const filename = utils.generateFilename(id, type, store);
+  const componentPath = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
+  const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
   const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
 
   try {
     fs.removeSync(outputPath);
     console.log(chalk.green(`Removing ${outputRelative}`));
   } catch(e) {
-    console.log(chalk.red(`${outputRelative} does not exist`));
+    console.log(chalk.red(`${outputRelative} does not exist or cannot be deleted`));
   }
 
-  return outputRelative;
+  return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;;
 }
 
 /**

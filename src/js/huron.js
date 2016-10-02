@@ -26,6 +26,9 @@ class InsertNodes {
     this.cycleEls(document);
   }
 
+  /**
+   * Replace all prototype markers with prototype contents
+   */
   cyclePrototypes() {
     for (let prototype in this._prototypes) {
       const protoPath = this._prototypes[prototype];
@@ -45,27 +48,64 @@ class InsertNodes {
    * @param  {string} parentId The TemplateID of the tempkate that invoked this function.
    */
   cycleEls(context, parentId = null) {
-    for (let section in this._sections.sectionsByPath) {
-      const currentSection = this._sections.sectionsByPath[section];
-      // If key isn't a file path
-      if (currentSection !== null) {
-        // Check if there's at least one instance of a template in this context
-        const templateId = currentSection.referenceURI;
-        const templateMarker = context.querySelector(`[data-huron-id=${templateId}]`);
+    // Query any element with huron id
+    const huronPartials = context.querySelector('[data-huron-id]');
+    const sections = this._sections.sectionsByPath;
 
-        if (
-          currentSection.markupPath &&
-          templateMarker !== null &&
-          templateMarker.childNodes.length === 0
-        ) {
-          this.cycleEl(
-            currentSection.markupPath,
-            this._modules[currentSection.markupPath],
-            context
-          );
+    if (null !== huronPartials) {
+      for (let i = 0; i < huronPartials.length; i++) {
+        const currentPartial = huronPartials.item(i);
+        const type = this.validateType(currentPartial);
+        const id = currentPartial.dataset.huronId;
+        const field = `${type}Path`;
+
+        if ('template' === type || 'description' === type) {
+          for (section in sections) {
+            const currentSection = sections[section];
+
+            if (
+              currentSection.templatePath &&
+              currentPartial.childNodes.length === 0
+            ) {
+              this.replaceTemplate(
+                currentSection.templatePath,
+                this._modules[currentSection.templatePath],
+                context
+              );
+            }
+          }
+        } else if ('prototype' === type)
+      }
+
+      for (let section in this._sections.sectionsByPath) {
+        const currentSection =
+        // If key isn't a file path
+        if (currentSection !== null) {
+          // Check if there's at least one instance of a template in this context
+          const templateId = currentSection.referenceURI;
+          const templateMarker = context.querySelector(`[data-huron-id=${templateId}]`);
+
+
         }
       }
     }
+  }
+
+  validateType(element) {
+    const type = element.dataset.huronType;
+    const types = [
+      'template',
+      'data',
+      'description',
+      'section',
+      'prototype',
+    ];
+
+    if (!types.includes(type)) {
+      return 'template';
+    }
+
+    return type;
   }
 
   /**
@@ -124,7 +164,7 @@ class InsertNodes {
    * @param  {object} context  The context (e.g. document) that you will
    *                           query for the template ID to replace.
    */
-  cycleEl(key, module, context) {
+  replaceTemplate(key, module, context) {
     // If there is a templateId, use it to query for all the
     // matching tags within the context and replace them with the right
     // templateContents.

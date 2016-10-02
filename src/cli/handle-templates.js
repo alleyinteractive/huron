@@ -16,19 +16,14 @@ export const templateHandler = {};
 templateHandler.updateTemplate = function(filepath, section, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
-  const field = ('.json' === file.ext) ? 'data' : 'markup';
   const dest = path.resolve(cwd, huron.get('output'));
   const pairPath = utils.getTemplateDataPair(file, output, section);
+  const type = '.json' === file.ext ? 'data' : 'template';
   let content = fs.readFileSync(filepath, 'utf8');
 
-  if (huron.get('templates').extension === file.ext) {
-    content = utils.wrapMarkup(content, section.referenceURI);
-  };
+  let requirePath = utils.writeFile(section.referenceURI, type, content, store);
+  section[`${type}Path`] = requirePath;
 
-  const requirePath = utils.copyFile(file.base, output, content, huron);
-
-  section[`${field}Path`] = requirePath;
   return store
     .setIn(
       ['templates', requirePath],
@@ -50,15 +45,12 @@ templateHandler.updateTemplate = function(filepath, section, store) {
 templateHandler.deleteTemplate = function(filepath, section, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
-  const field = ('.json' === file.ext) ? 'data' : 'markup';
   const dest = path.resolve(cwd, huron.get('output'));
-  const pairPath = utils.getTemplateDataPair(file, output, section);
-  const requirePath = `./${path.relative(dest, filepath)}`;
+  const type = '.json' === file.ext ? 'data' : 'template';
 
   // Remove partner
-  outputPath = utils.removeFile(file.base, output, huron);
-  delete section[`${field}Path`];
+  let requirePath = utils.removeFile(section.referenceURI, type, huron);
+  delete section[`${type}Path`];
 
   return store
     .deleteIn(['templates', requirePath])

@@ -71,7 +71,7 @@ export function updateFile(filepath, store) {
         file.dir.indexOf('prototypes') !== -1 &&
         file.name.indexOf('prototype-') !== -1
       ) {
-        return htmlHandler.updatePrototype(filepath, section, store);
+        return htmlHandler.updatePrototype(filepath, store);
       } else {
         console.log(chalk.red(`Failed to write file: ${file.name}`));
       }
@@ -129,7 +129,7 @@ export function deleteFile(filepath, store) {
         file.dir.indexOf('prototypes') !== -1 &&
         file.name.indexOf('prototype-') !== -1
       ) {
-        return htmlHandler.deletePrototype(filepath, section, store);
+        return htmlHandler.deletePrototype(filepath, store);
       }
       break;
 

@@ -19,7 +19,6 @@ kssHandler.updateKSS = function(filepath, store) {
   const kssSource = fs.readFileSync(filepath, 'utf8');
   const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
 
   if (kssSource) {
     const styleguide = parse(kssSource, huron.get('kssOptions'));
@@ -28,24 +27,23 @@ kssHandler.updateKSS = function(filepath, store) {
       const section = utils.normalizeSectionData(styleguide.data.sections[0]);
       // Check for any HTML tag in the markup section, which should indicate it's using inline HTML
       const isInline = section.markup.match(/<\/[^>]*>/) !== null;
-      const outputName = section.referenceURI;
       const oldData = utils.getSection(filepath, false, store);
-
-      console.log(section);
 
       if (isInline) {
         // If reference URI has changed, remove old templates
         // and delete template indices from templates memory store
         if (oldData && oldData.referenceURI !== section.referenceURI) {
-          utils.deleteTemplate(`${oldData.referenceURI}`, 'template', output, store);
+          utils.removeFile(oldData.referenceURI, 'template', store);
         }
 
         // Write new inline markup
-        const inlineOutput = utils.writeTemplate(outputName, 'template', output, section.markup, huron);
+        const inlineOutput = utils.writeFile(section.referenceURI, 'template', section.markup, store);
+        section.templatePath = inlineOutput;
       }
 
       if ((oldData && oldData.description !== section.description) || !oldData) {
-        const descriptionOutput = utils.writeTemplate(outputName, 'description', output, section.description, huron);
+        const descriptionOutput = utils.writeFile(section.referenceURI, 'description', section.description, store);
+        section.descriptionPath = descriptionOutput;
       }
 
       const newStore = kssHandler.updateSection(section, filepath, isInline, store);
@@ -73,15 +71,14 @@ kssHandler.deleteKSS = function(filepath, section, store) {
   const isInline = section.markup.match(/<\/[^>]*>/) !== null;
   const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
 
   // Remove associated inline template
   if (isInline) {
-    utils.deleteTemplate(`${section.referenceURI}`, 'template', output, store);
+    utils.removeFile(section.referenceURI, 'template', store);
   }
 
   // Remove description template
-  utils.deleteTemplate(section.referenceURI, 'description', output, store);
+  utils.removeFile(section.referenceURI, 'description', store);
 
   // Remove section data from memory store
   return unsetSection(sections, section, filepath);

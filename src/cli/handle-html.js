@@ -16,19 +16,19 @@ export const htmlHandler = {};
 htmlHandler.updateTempate = function(filepath, section, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
+  const content = fs.readFileSync(filepath, 'utf8');
 
-  const content = utils.wrapMarkup(
-    fs.readFileSync(filepath, 'utf8'),
-    section.referenceURI
-  );
+  if (content) {
+    section.templatePath = utils.writeFile(section.referenceURI, 'template', content, store);
 
-  section.markupPath = utils.copyFile(file.base, output, content, huron);
-
-  return store.setIn(
-      ['sections', 'sectionsByPath', section.sectionPath],
-      section
-    );
+    return store.setIn(
+        ['sections', 'sectionsByPath', section.sectionPath],
+        section
+      );
+  } else {
+    console.log(`File ${file.base} could not be read`);
+    return store;
+  }
 }
 
 /**
@@ -41,11 +41,9 @@ htmlHandler.updateTempate = function(filepath, section, store) {
 htmlHandler.deleteTempate = function(filepath, section, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
 
-  outputPath = utils.removeFile(file.base, output, huron);
-
-  delete section.markupPath;
+  requirePath = utils.removeFile(section.referenceURI, 'template', store);
+  delete section.templatePath;
 
   return store.deleteIn(
       ['sections', 'sectionsByPath', section.sectionPath],
@@ -57,38 +55,40 @@ htmlHandler.deleteTempate = function(filepath, section, store) {
  * Handle update for a prototype file
  *
  * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} section - contains KSS section data
  * @param {object} store - memory store
  */
-htmlHandler.updatePrototype = function(filepath, section, store) {
+htmlHandler.updatePrototype = function(filepath, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
-  const content = utils.wrapMarkup(fs.readFileSync(filepath, 'utf8'), file.name);
-  const outputPath = utils.copyFile(file.base, output, content, huron);
+  const content = fs.readFileSync(filepath, 'utf8');
 
-  return store.setIn(
-      ['prototypes', file.name],
-      outputPath
-    );
+  if (content) {
+    const requirePath = utils.writeFile(file.base, content, 'prototype', store);
+
+    return store.setIn(
+        ['prototypes', file.name],
+        requirePath
+      );
+  } else {
+    console.log(`File ${file.base} could not be read`);
+    return store;
+  }
 }
 
 /**
  * Handle removal of a prototype file
  *
  * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} section - contains KSS section data
  * @param {object} store - memory store
  */
-htmlHandler.deletePrototype = function(filepath, section, store) {
+htmlHandler.deletePrototype = function(filepath, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
-  const output = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
 
-  outputPath = utils.removeFile(file.base, output, content, huron);
+  requirePath = utils.removeFile(file.base, 'prototype', store);
 
   return store.setIn(
       ['prototypes', file.name],
-      outputPath
+      requirePath
     );
 }
