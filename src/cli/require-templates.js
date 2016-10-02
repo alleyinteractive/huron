@@ -3,7 +3,7 @@ const fs = require('fs-extra');
 const cwd = process.cwd();
 const huronScript = fs.readFileSync(path.resolve(__dirname, '../js/huron.js'), 'utf8');
 
-export default function requireTemplates(store) {
+export const requireTemplates = function(store) {
   const huron = store.get('config');
   const templatePathArray = [];
   const templateIds = [];
@@ -11,13 +11,14 @@ export default function requireTemplates(store) {
 
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
+import { store } from './huron-store.js';
+
 let assets = require.context(
   '${path.join(cwd, huron.get('root'), huron.get('output'))}',
   true,
   /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
 );
-export const modules = {};
-export const store = ${JSON.stringify(store.toJSON())};
+const modules = {};
 
 assets.keys().forEach(function(key) {
   modules[key] = assets(key);
@@ -50,27 +51,30 @@ if (module.hot) {
 
   const append = `
   function hotReplace(key, module, modules, store) {
-    const moduleInfo = insert.getIdFromPath(key);
-
-    if (moduleInfo) {
-      const type = moduleInfo.type;
-      const data = moduleInfo.data;
-      insert.store = store;
-
-      if ('prototype' !== moduleInfo.type) {
-        const normalizeModule = insert.normalizeModule(data.referenceURI, type, key, module, data);
-        insert.replaceTemplate(data.referenceURI, type, normalizeModule, document);
-      } else {
-        const normalizeModule = insert.normalizeModule(data, type, key, module);
-        insert.replaceTemplate(data, type, normalizeModule, document);
-      }
-    }
+    insert.store = store;
+    insert.modules = modules;
+    insert.reloadModule(key, module);
   }`
 
   // Write the contents of thsi script.
   fs.outputFileSync(
     path.join(outputPath, 'huron.js'),
     `${prepend}\n\n${huronScript}\n\n${append}`
+  );
+}
+
+export const writeStore = function(store) {
+  const huron = store.get('config');
+  const outputPath = path.join(cwd, huron.get('root'));
+
+  // Write updated data store
+  fs.outputFileSync(
+    path.join(outputPath, 'huron-store.js'),
+    ` if (module.hot) {
+        module.hot.accept();
+      }
+      export const store = ${JSON.stringify(store.toJSON())}
+    `
   );
 }
 

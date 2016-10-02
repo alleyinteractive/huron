@@ -5,7 +5,7 @@ const parse = require('kss').parse;
 const chalk = require('chalk'); // Colorize terminal output
 
 import { utils } from './utils';
-import requireTemplates from './require-templates';
+import { writeStore }  from './require-templates';
 
 export const kssHandler = {};
 
@@ -29,35 +29,30 @@ kssHandler.updateKSS = function(filepath, store) {
       const isInline = section.markup.match(/<\/[^>]*>/) !== null;
       const oldData = utils.getSection(filepath, false, store);
 
-      // Copy over section template
-      section.sectionPath = utils.writeFile(
-        section.referenceURI,
-        'section',
-        fs.readFileSync(huron.get('templates').sectionTemplate, 'utf8'),
-        store
-      );
-
       // If we have inline markup
       if (isInline) {
-        // If reference URI has changed, remove old templates
-        // and delete template indices from templates memory store
+        // Remove old template if referenceURI has changed
         if (oldData && oldData.referenceURI !== section.referenceURI) {
-          utils.removeFile(oldData.referenceURI, 'template', store);
+          utils.removeFile(oldData.referenceURI, 'template', filepath, store);
         }
-
         // Write new inline markup
-        const inlineOutput = utils.writeFile(section.referenceURI, 'template', section.markup, store);
+        const inlineOutput = utils.writeFile(section.referenceURI, 'template', filepath, section.markup, store);
         section.templatePath = inlineOutput;
       }
 
       // If we don't have previous KSS or the KSS has been updated
       if ((oldData && oldData.description !== section.description) || !oldData) {
-        const descriptionOutput = utils.writeFile(section.referenceURI, 'description', section.description, store);
+        // Remove old description if referenceURI has changed
+        if (oldData && oldData.referenceURI !== section.referenceURI) {
+           utils.removeFile(oldData.referenceURI, 'description', filepath, store);
+        }
+        // Write new description
+        const descriptionOutput = utils.writeFile(section.referenceURI, 'description', filepath, section.description, store);
         section.descriptionPath = descriptionOutput;
       }
 
       const newStore = kssHandler.updateSection(section, filepath, isInline, store);
-      requireTemplates(newStore);
+      writeStore(newStore);
       console.log(chalk.green(`KSS section ${section.referenceURI} file ${filepath} changed or added`));
       return newStore;
     } else {
@@ -84,11 +79,11 @@ kssHandler.deleteKSS = function(filepath, section, store) {
 
   // Remove associated inline template
   if (isInline) {
-    utils.removeFile(section.referenceURI, 'template', store);
+    utils.removeFile(section.referenceURI, 'template', filepath, store);
   }
 
   // Remove description template
-  utils.removeFile(section.referenceURI, 'description', store);
+  utils.removeFile(section.referenceURI, 'description', filepath, store);
 
   // Remove section data from memory store
   return unsetSection(sections, section, filepath);
@@ -98,14 +93,15 @@ kssHandler.deleteKSS = function(filepath, section, store) {
  * Update the sections store with new data for a specific section
  *
  * @param {object} section - contains updated section data
- * @param {string} sectionPath - path to KSS section
+ * @param {string} kssPath - path to KSS section
  * @param {bool} isInline - is the markup inline in KSS?
  * @param {object} store - memory store
  */
-kssHandler.updateSection = function(section, sectionPath, isInline, store) {
-  const oldData = utils.getSection(sectionPath, false, store);
+kssHandler.updateSection = function(section, kssPath, isInline, store) {
+  const huron = store.get('config');
+  const oldData = utils.getSection(kssPath, false, store);
   const sectionMarkup = section.markup;
-  const sectionFileInfo = path.parse(sectionPath);
+  const sectionFileInfo = path.parse(kssPath);
   let resetData = null;
   let newSort = kssHandler.sortSection(
     store.getIn(['sections', 'sorted']),
@@ -124,12 +120,12 @@ kssHandler.updateSection = function(section, sectionPath, isInline, store) {
   }
 
   // Required for reference from templates and data
-  resetData.sectionPath = sectionPath;
+  resetData.kssPath = kssPath;
 
   // Update section sorting
   return store
     .setIn(
-      ['sections', 'sectionsByPath', sectionPath],
+      ['sections', 'sectionsByPath', kssPath],
       resetData
     )
     .setIn(
@@ -142,13 +138,13 @@ kssHandler.updateSection = function(section, sectionPath, isInline, store) {
  * Remove a section from the memory store
  *
  * @param {object} section - contains updated section data
- * @param {string} sectionPath - path to KSS section
+ * @param {string} kssPath - path to KSS section
  * @param {object} store - memory store
  */
-kssHandler.unsetSection = function(section, sectionPath, store) {
+kssHandler.unsetSection = function(section, kssPath, store) {
   const newSort = kssHandler.unsortSection(sorted, section.referenceURI);
   return store
-    .deleteIn(['sections', 'sectionsByPath', sectionPath])
+    .deleteIn(['sections', 'sectionsByPath', kssPath])
     .setIn(['sections', 'sorted'], newSort);
 }
 

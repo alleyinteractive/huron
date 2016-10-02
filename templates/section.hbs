@@ -1,9 +1,11 @@
 <section class="{{ referenceURI }}">
-	<h1><span>{{ reference }}</span>{{ header }}</h1>
+	<h1><span>{{ reference }}: </span>{{ header }}</h1>
 
 	<!-- description -->
-	<div huron-id="description-{{ referenceURI }}"></div>
+	<div data-huron-id="{{ referenceURI }}" data-huron-type="description"></div>
 
 	<!-- markup -->
-	<div huron-id="template-{{ referenceURI }}"></div>
+	{{#each modifiers}}
+		<div data-huron-id="{{ ../referenceURI }}" data-huron-modifier="{{ this.name }}" class="{{ this.className }}"></div>
+	{{/each}}
 </section>

@@ -19,10 +19,10 @@ htmlHandler.updateTempate = function(filepath, section, store) {
   const content = fs.readFileSync(filepath, 'utf8');
 
   if (content) {
-    section.templatePath = utils.writeFile(section.referenceURI, 'template', content, store);
+    section.templatePath = utils.writeFile(section.referenceURI, 'template', filepath, content, store);
 
     return store.setIn(
-        ['sections', 'sectionsByPath', section.sectionPath],
+        ['sections', 'sectionsByPath', section.kssPath],
         section
       );
   } else {
@@ -42,11 +42,11 @@ htmlHandler.deleteTempate = function(filepath, section, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
 
-  requirePath = utils.removeFile(section.referenceURI, 'template', store);
+  requirePath = utils.removeFile(section.referenceURI, 'template', filepath, store);
   delete section.templatePath;
 
   return store.deleteIn(
-      ['sections', 'sectionsByPath', section.sectionPath],
+      ['sections', 'sectionsByPath', section.kssPath],
       section
     );
 }
@@ -63,7 +63,7 @@ htmlHandler.updatePrototype = function(filepath, store) {
   const content = fs.readFileSync(filepath, 'utf8');
 
   if (content) {
-    const requirePath = utils.writeFile(file.base, content, 'prototype', store);
+    const requirePath = utils.writeFile(file.base, 'prototype', filepath, content, store);
 
     return store.setIn(
         ['prototypes', file.name],
@@ -85,7 +85,7 @@ htmlHandler.deletePrototype = function(filepath, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
 
-  requirePath = utils.removeFile(file.base, 'prototype', store);
+  requirePath = utils.removeFile(file.base, 'prototype', filepath, store);
 
   return store.setIn(
       ['prototypes', file.name],
