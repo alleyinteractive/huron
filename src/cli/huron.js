@@ -45,6 +45,7 @@ const dataStructure = Immutable.Map({
   config: Immutable.Map(config.huron),
   sections: Immutable.Map({
     sectionsByPath: Immutable.Map({}),
+    sectionsByURI: Immutable.Map({}),
     sorted: {},
   }),
   templates: Immutable.Map({}),
@@ -75,6 +76,7 @@ if (!program.production) {
   gaze.on('changed', (filepath) => {
     const file = path.parse(filepath);
     store = updateFile(filepath, store);
+    console.log(filepath);
     console.log(chalk.green(`${filepath} updated!`));
   });
 

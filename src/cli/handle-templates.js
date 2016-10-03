@@ -32,6 +32,10 @@ templateHandler.updateTemplate = function(filepath, section, store) {
     .setIn(
       ['sections', 'sectionsByPath', section.kssPath],
       section
+    )
+    .setIn(
+      ['sections', 'sectionsByURI', section.referenceURI],
+      section
     );
 }
 
@@ -56,6 +60,10 @@ templateHandler.deleteTemplate = function(filepath, section, store) {
     .deleteIn(['templates', requirePath])
     .setIn(
       ['sections', 'sectionsByPath', section.kssPath],
+      section
+    )
+    .setIn(
+      ['sections', 'sectionsByURI', section.referenceURI],
       section
     );
 }

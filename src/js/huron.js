@@ -24,6 +24,21 @@ class InsertNodes {
 
     // Inits
     this.cycleEls(document);
+
+    // Sections
+    const sectionsQuery = document.querySelector('[huron-sections]');
+    if (sectionsQuery) {
+      sectionsQuery.innerHTML = '';
+      this.outputSections(null, sectionsQuery);
+      this.cycleEls(document);
+    }
+
+    // Menu
+    const menuQuery = document.querySelector('[huron-menu]');
+    if (menuQuery) {
+      menuQuery.innerHTML = '';
+      this.outputMenu(null, menuQuery);
+    }
   }
 
   /**
@@ -45,19 +60,27 @@ class InsertNodes {
         // Only replace if the partial does not have children
         if (currentTag.childNodes.length === 0) {
           const meta = this.getMetaFromTag(currentTag);
-          if (meta) {
+
+          if (meta.key) {
             this.replaceTemplate(meta);
           } else {
-            console.warn(`Could not find module ${meta.key} or this module cannot be hot reloaded`);
+            console.warn(`Could not find module for ${meta.id} or this module cannot be hot reloaded`);
           }
         }
       }
     }
   }
 
+  /**
+   * Replace all sections. For hot reloading use when the section template has changed.
+   *
+   * @param {string} key     Module require path
+   * @param {mixed}  module  Module contents
+   */
   loadModule(key, module) {
     const meta = this.getMetaFromPath(key);
-    if (meta) {
+
+    if (meta.id) {
       // Use a special function if we've updated the template used for all sections
       if ('sections-template' !== meta.type) {
         this.replaceTemplate(meta);
@@ -65,10 +88,13 @@ class InsertNodes {
         this.replaceSections();
       }
     } else {
-      console.warn(`Could not find module ${key} or this module cannot be hot reloaded`);
+      console.warn(`Could not find module ${meta.id} or this module cannot be hot reloaded`);
     }
   }
 
+  /**
+   * Replace all sections. For hot reloading use when the section template has changed.
+   */
   replaceSections() {
     const sectionTags = document.querySelectorAll('[data-huron-type="section"]');
 
@@ -77,15 +103,21 @@ class InsertNodes {
         const currentSection = sectionTags.item(i);
         const meta = this.getMetaFromTag(currentSection);
 
-        if (meta) {
+        if (meta.key) {
           this.replaceTemplate(meta);
         } else {
-          console.warn(`Could not find module ${key} or this module cannot be hot reloaded`);
+          console.warn(`Could not find module ${meta.id} or this module cannot be hot reloaded`);
         }
       }
     }
   }
 
+  /**
+   * Hot reload section markup when section data with no corresponding submodule has changed
+   * Example: section title, reference URI
+   *
+   * @param  {string} sectionPath - path to KSS section for accessing section data
+   */
   updateChangedSection(sectionPath) {
     const changed = this._sections.sectionsByPath[sectionPath];
     const sectionTemplate = './huron-sections/sections.hbs';
@@ -160,18 +192,17 @@ class InsertNodes {
     const type = this.validateType(tag);
     const id = tag.dataset.huronId;
     const field = `${type}Path`; // Custom field in section data containing require path to partial
-    const sections = this._sections.sectionsByPath;
+    const sections = this._sections.sectionsByURI;
     let key = false;
     let currentSection = false;
     let data = false;
 
     // Find require path based on huron type
     if ('template' === type || 'description' === type ) {
-      for (let section in sections) {
-        if (id === sections[section].referenceURI) {
-          key = sections[section][field];
-          break;
-        }
+      if (sections[id] && sections[id].hasOwnProperty(field)) {
+        key = sections[id][field];
+      } else {
+        console.log(`Failed to find template or section '${id}' does not exist`);
       }
     } else if ('prototype' === type) {
       for (let prototype in this._prototypes) {
@@ -181,14 +212,12 @@ class InsertNodes {
         }
       }
     } else if ('section' === type) {
-      for (let section in sections) {
-        if (id === sections[section].referenceURI) {
-          data = sections[section];
-          break;
-        }
+      if (sections[id]) {
+        data = sections[id];
+        key = `./huron-sections/sections.hbs`;
+      } else {
+        console.log(`Section '${id}' does not exist`);
       }
-
-      key = `./huron-sections/sections.hbs`;
     }
 
     if (key) {
@@ -198,7 +227,7 @@ class InsertNodes {
       return Object.assign({id, type, key, module}, renderData);
     }
 
-    return false;
+    return {id};
   }
 
   /**
@@ -239,14 +268,14 @@ class InsertNodes {
       }
     }
 
-    if ( id && type ) {
+    if (id && type) {
       const module = this._modules[key];
       const renderData = this.getModuleRender(type, key, module);
 
       return Object.assign({id, type, key, module}, renderData);
     }
 
-    return false;
+    return {key};
   }
 
   /**
@@ -346,12 +375,9 @@ class InsertNodes {
    * [huron-id] equal to the section template name.
    *
    * @todo: figure out how to handle added/removed sections with HMR
-   * @todo: incorporate this function into the InsertNodes class
    */
-  outputSections(sections, parent, el) {
-    const sectionsQuery = document.querySelector('[huron-sections]');
+  outputSections(parent, el, sections = this._sections.sorted) {
     let templateId = null;
-    let templateString = null;
     let wrapper = null;
 
     for (let section in sections) {
@@ -361,19 +387,18 @@ class InsertNodes {
         templateId = section;
       }
 
-      templateString = `section-${templateId}`;
-
       if (el) {
         wrapper = document.createElement('div');
-        wrapper.dataset.huronId = templateString;
+        wrapper.dataset.huronId = templateId;
+        wrapper.dataset.huronType = 'section';
         el.appendChild(wrapper);
       }
 
-      if (sections[section] && wrapper) {
-        outputSections(
-          sections[section],
+      if (Object.keys(sections[section]).length && wrapper) {
+        this.outputSections(
           templateId,
-          document.querySelector(`[data-huron-id=${templateString}]`)
+          wrapper,
+          sections[section]
         );
       }
     }
@@ -385,12 +410,9 @@ class InsertNodes {
    * [huron-id] equal to the section template name.
    *
    * @todo: figure out how to handle added/removed sections with HMR
-   * @todo: incorporate this function into the InsertNodes class
    */
-  outputMenu(sections, parent, el) {
-    const menuQuery = document.querySelector('[huron-menu]');
+  outputMenu(parent, el, sections = this._sections.sorted) {
     let templateId = null;
-    let templateString = null;
     let wrapper = null;
 
     for (let section in sections) {
@@ -400,19 +422,18 @@ class InsertNodes {
         templateId = section;
       }
 
-      templateString = `section-${templateId}`;
-
       if (el) {
-        wrapper = document.createElement('div');
-        wrapper.dataset.huronId = templateString;
+        wrapper = document.createElement('ul');
+        wrapper.classList.add('sections-menu');
+        wrapper.innerHTML = `<li class="meu-item"><a href="#${templateId}">test</a></li>`;
         el.appendChild(wrapper);
       }
 
       if (sections[section] && wrapper) {
-        outputSections(
-          sections[section],
+        this.outputMenu(
           templateId,
-          document.querySelector(`[data-huron-id=${templateString}]`)
+          wrapper,
+          sections[section]
         );
       }
     }

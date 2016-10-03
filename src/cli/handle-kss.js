@@ -221,6 +221,10 @@ kssHandler.updateSection = function(section, kssPath, isInline, store) {
       resetData
     )
     .setIn(
+      ['sections', 'sectionsByURI', section.referenceURI],
+      section
+    )
+    .setIn(
       ['sections', 'sorted'],
       newSort
     );
@@ -237,6 +241,7 @@ kssHandler.unsetSection = function(section, kssPath, store) {
   const newSort = kssHandler.unsortSection(sorted, section.referenceURI);
   return store
     .deleteIn(['sections', 'sectionsByPath', kssPath])
+    .deleteIn(['sections', 'sectionsByURI', section.referenceURI])
     .setIn(['sections', 'sorted'], newSort);
 }
 
@@ -251,9 +256,7 @@ kssHandler.sortSection = function(sorted, reference) {
   let newSort = sorted[parts[0]] || {};
 
   if (parts.length > 1) {
-    let newParts = parts.filter((part, idx) => {
-      return idx !== 0;
-    });
+    let newParts = parts.filter((part, idx) => idx !== 0);
     sorted[parts[0]] = kssHandler.sortSection(newSort, newParts.join('-'));
   } else {
     sorted[parts[0]] = newSort;
@@ -273,9 +276,7 @@ kssHandler.unsortSection = function(sorted, reference) {
 
   if (sorted[parts[0]]) {
     if (parts.length > 1) {
-      let newParts = parts.filter((part, idx) => {
-        return idx !== 0;
-      });
+      let newParts = parts.filter((part, idx) => idx !== 0);
       sorted = kssHandler.unsortSection(sorted[parts[0]], newParts.join('-'));
     } else {
       delete sorted[parts[0]];
