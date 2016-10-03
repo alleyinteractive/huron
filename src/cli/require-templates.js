@@ -11,7 +11,7 @@ export const requireTemplates = function(store) {
 
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
-import { store } from './huron-store.js';
+import { store, changed } from './huron-store.js';
 
 let assets = require.context(
   '${path.join(cwd, huron.get('root'), huron.get('output'))}',
@@ -47,6 +47,15 @@ if (module.hot) {
       });
     }
   );
+
+  module.hot.accept(
+    '${path.join(outputPath, 'huron-store.js')}',
+    () => {
+      if (changed) {
+        insert.updateChangedSection(changed);
+      }
+    }
+  );
 }\n`
 
   const append = `
@@ -63,18 +72,21 @@ if (module.hot) {
   );
 }
 
-export const writeStore = function(store) {
+/**
+ * Output entire data store to a JS object and handle if any KSS data has changed
+ *
+ * @param {object} store - memory store
+ * @param {string} changed - filepath of changed KSS section, if applicable
+ */
+export const writeStore = function(store, changed) {
   const huron = store.get('config');
   const outputPath = path.join(cwd, huron.get('root'));
 
   // Write updated data store
   fs.outputFileSync(
     path.join(outputPath, 'huron-store.js'),
-    ` if (module.hot) {
-        module.hot.accept();
-      }
-      export const store = ${JSON.stringify(store.toJSON())}
-    `
+    `export const store = ${JSON.stringify(store.toJSON())}
+    export const changed = ${changed}\n`
   );
 }
 

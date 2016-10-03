@@ -25,34 +25,26 @@ kssHandler.updateKSS = function(filepath, store) {
 
     if (styleguide.data.sections.length) {
       const section = utils.normalizeSectionData(styleguide.data.sections[0]);
-      // Check for any HTML tag in the markup section, which should indicate it's using inline HTML
-      const isInline = section.markup.match(/<\/[^>]*>/) !== null;
       const oldData = utils.getSection(filepath, false, store);
+      const inline = kssHandler.inlineTemplate(oldData, section);
+      const description = kssHandler.description;
+      const changed = false;
 
-      // If we have inline markup
-      if (isInline) {
-        // Remove old template if referenceURI has changed
-        if (oldData && oldData.referenceURI !== section.referenceURI) {
-          utils.removeFile(oldData.referenceURI, 'template', filepath, store);
-        }
-        // Write new inline markup
-        const inlineOutput = utils.writeFile(section.referenceURI, 'template', filepath, section.markup, store);
-        section.templatePath = inlineOutput;
+      // Set section value if inlineTempalte() returned a path
+      if (inline) {
+        section.inlineTemplate = inline;
       }
 
-      // If we don't have previous KSS or the KSS has been updated
-      if ((oldData && oldData.description !== section.description) || !oldData) {
-        // Remove old description if referenceURI has changed
-        if (oldData && oldData.referenceURI !== section.referenceURI) {
-           utils.removeFile(oldData.referenceURI, 'description', filepath, store);
-        }
-        // Write new description
-        const descriptionOutput = utils.writeFile(section.referenceURI, 'description', filepath, section.description, store);
-        section.descriptionPath = descriptionOutput;
+      if (description) {
+        section.descriptionPath = description;
+      }
+
+      if (oldData && oldData !== section) {
+        changed = filepath;
       }
 
       const newStore = kssHandler.updateSection(section, filepath, isInline, store);
-      writeStore(newStore);
+      writeStore(newStore, changed);
       console.log(chalk.green(`KSS section ${section.referenceURI} file ${filepath} changed or added`));
       return newStore;
     } else {
@@ -87,6 +79,53 @@ kssHandler.deleteKSS = function(filepath, section, store) {
 
   // Remove section data from memory store
   return unsetSection(sections, section, filepath);
+}
+
+/**
+ * Handle detection and output of inline templates, which is
+ * markup written in the KSS documentation itself as opposed to an external file
+ *
+ * @param {string} oldData - previous iteration of KSS data, if updated
+ * @param {object} section - KSS section data
+ *
+ * @return {mixed} output template path or false
+ */
+kssHandler.inlineTemplate = function(oldData, section) {
+  const isInline = section.markup.match(/<\/[^>]*>/) !== null;
+
+  // If we have inline markup
+  if (isInline) {
+    // Remove old template if referenceURI has changed
+    if (oldData && oldData.referenceURI !== section.referenceURI) {
+      utils.removeFile(oldData.referenceURI, 'template', filepath, store);
+    }
+
+    return utils.writeFile(section.referenceURI, 'template', filepath, section.markup, store);;
+  }
+
+  return false;
+}
+
+/**
+ * Handle output of section description
+ *
+ * @param {string} oldData - previous iteration of KSS data, if updated
+ * @param {object} section - KSS section data
+ *
+ * @return {mixed} output description path or false
+ */
+kssHandler.description = function(oldData, section) {
+  // If we don't have previous KSS or the KSS has been updated
+  if ((oldData && oldData.description !== section.description) || !oldData) {
+    // Remove old description if referenceURI has changed
+    if (oldData && oldData.referenceURI !== section.referenceURI) {
+       utils.removeFile(oldData.referenceURI, 'description', filepath, store);
+    }
+    // Write new description
+    return utils.writeFile(section.referenceURI, 'description', filepath, section.description, store);
+  }
+
+  return false;
 }
 
 /**
