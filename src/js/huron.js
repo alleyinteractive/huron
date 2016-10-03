@@ -424,7 +424,7 @@ class InsertNodes {
       if (el) {
         wrapper = document.createElement('ul');
         wrapper.classList.add('sections-menu');
-        wrapper.innerHTML = `<li class="meu-item"><a href="#${templateId}">test</a></li>`;
+        wrapper.innerHTML = `<li class="menu-item"><a href="#${templateId}">${templateId}</a></li>`;
         el.appendChild(wrapper);
       }
 
