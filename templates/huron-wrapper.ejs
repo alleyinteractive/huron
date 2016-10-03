@@ -39,7 +39,7 @@
     <div id="<%= htmlWebpackPlugin.options.appMountIds[index]%>"></div>
   <% } %>
 <% } %>
-<div data-huron-id="prototype-<%= htmlWebpackPlugin.options.title %>"></div>
+<div data-huron-id="prototype-<%= htmlWebpackPlugin.options.title %>" data-huron-type="prototype"></div>
 <% for (var chunk in htmlWebpackPlugin.files.chunks) { %>
   <script type="text/javascript" src="<%= htmlWebpackPlugin.files.chunks[chunk].entry %>"></script>
 <% } %>

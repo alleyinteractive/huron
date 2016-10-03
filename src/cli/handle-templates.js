@@ -17,11 +17,11 @@ templateHandler.updateTemplate = function(filepath, section, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
   const dest = path.resolve(cwd, huron.get('output'));
-  const pairPath = utils.getTemplateDataPair(file, output, section);
+  const pairPath = utils.getTemplateDataPair(file, section, store);
   const type = '.json' === file.ext ? 'data' : 'template';
   let content = fs.readFileSync(filepath, 'utf8');
 
-  let requirePath = utils.writeFile(section.referenceURI, type, content, store);
+  let requirePath = utils.writeFile(section.referenceURI, type, filepath, content, store);
   section[`${type}Path`] = requirePath;
 
   return store
@@ -30,7 +30,11 @@ templateHandler.updateTemplate = function(filepath, section, store) {
       pairPath
     )
     .setIn(
-      ['sections', 'sectionsByPath', section.sectionPath],
+      ['sections', 'sectionsByPath', section.kssPath],
+      section
+    )
+    .setIn(
+      ['sections', 'sectionsByURI', section.referenceURI],
       section
     );
 }
@@ -49,13 +53,17 @@ templateHandler.deleteTemplate = function(filepath, section, store) {
   const type = '.json' === file.ext ? 'data' : 'template';
 
   // Remove partner
-  let requirePath = utils.removeFile(section.referenceURI, type, huron);
+  let requirePath = utils.removeFile(section.referenceURI, type, filepath, store);
   delete section[`${type}Path`];
 
   return store
     .deleteIn(['templates', requirePath])
     .setIn(
-      ['sections', 'sectionsByPath', section.sectionPath],
+      ['sections', 'sectionsByPath', section.kssPath],
+      section
+    )
+    .setIn(
+      ['sections', 'sectionsByURI', section.referenceURI],
       section
     );
 }
