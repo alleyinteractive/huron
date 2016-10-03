@@ -44,18 +44,18 @@ class InsertNodes {
 
         // Only replace if the partial does not have children
         if (currentTag.childNodes.length === 0) {
-          const meta = getMetaFromTag(tag);
+          const meta = this.getMetaFromTag(currentTag);
           if (meta) {
             this.replaceTemplate(meta);
           } else {
-            console.warn(`Could not find module ${key} or this module cannot be hot reloaded`);
+            console.warn(`Could not find module ${meta.key} or this module cannot be hot reloaded`);
           }
         }
       }
     }
   }
 
-  loadModule(key) {
+  loadModule(key, module) {
     const meta = this.getMetaFromPath(key);
     if (meta) {
       // Use a special function if we've updated the template used for all sections
@@ -75,7 +75,7 @@ class InsertNodes {
     if (sectionTags) {
       for (let i = 0; i < sectionTags.length; i++) {
         const currentSection = sectionTags.item(i);
-        const meta = getMetaFromTag(currentSection);
+        const meta = this.getMetaFromTag(currentSection);
 
         if (meta) {
           this.replaceTemplate(meta);
@@ -91,7 +91,13 @@ class InsertNodes {
     const sectionTemplate = './huron-sections/sections.hbs';
 
     if (changed) {
-      const renderData = getModuleRender(sectionTemplate, this._modules[sectionTemplate], changed);
+      const renderData = this.getModuleRender(
+        'section',
+        sectionTemplate,
+        this._modules[sectionTemplate],
+        changed
+      );
+
       this.replaceTemplate(Object.assign({
         id: changed.referenceURI,
         type: 'section',
@@ -107,11 +113,17 @@ class InsertNodes {
    * @param  {object} meta  Module metadata
    */
   replaceTemplate(meta) {
-    const tags = document.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`);
+    let tags = document.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`);
+
+    // Look for implicit type of "template"
+    if (!tags || !tags.length) {
+      tags = document.querySelectorAll(`[data-huron-id="${meta.id}"]:not([data-huron-type])`);
+    }
 
     if (tags) {
       for (let i = 0; i < tags.length; i++) {
-        let modifier = tag.dataset.huronModifier;
+        let currentTag = tags.item(i);
+        let modifier = currentTag.dataset.huronModifier;
         let rendered = null;
 
         if (meta.data) {
@@ -125,11 +137,11 @@ class InsertNodes {
           rendered = meta.render();
         }
 
-        tag.innerHTML = this.convertToElement(rendered)
+        currentTag.innerHTML = this.convertToElement(rendered)
           .querySelector('template')
           .innerHTML
 
-        this.cycleEls(tag, meta.id);
+        this.cycleEls(currentTag, meta.id);
       }
     }
   }
@@ -148,6 +160,7 @@ class InsertNodes {
     const type = this.validateType(tag);
     const id = tag.dataset.huronId;
     const field = `${type}Path`; // Custom field in section data containing require path to partial
+    const sections = this._sections.sectionsByPath;
     let key = false;
     let currentSection = false;
     let data = false;
@@ -180,7 +193,7 @@ class InsertNodes {
 
     if (key) {
       const module = this._modules[key];
-      const renderData = this.getModuleRender(type, module, data);
+      const renderData = this.getModuleRender(type, key, module, data);
 
       return Object.assign({id, type, key, module}, renderData);
     }
@@ -201,23 +214,23 @@ class InsertNodes {
   getMetaFromPath(key) {
     const sections = this._sections.sectionsByPath;
     const templateTypes = this._types.filter((type) => type !== 'prototype');
-    const id = false;
-    const type = false;
+    let id = false;
+    let type = false;
 
-    if (path.indexOf(`${this._config.output}/prototypes`) !== -1) {
+    if (key.indexOf(`./prototypes`) !== -1) {
       const prototype = Object.keys(this._prototypes)
-        .filter((key) => this._prototypes[key] === path);
+        .filter((name) => this._prototypes[name] === key);
 
       if (prototype.length) {
         id = prototype;
         type = 'prototype';
       }
-    } else if (path.indexOf('sections.hbs') !== -1) {
+    } else if (key.indexOf('sections.hbs') !== -1) {
       id = 'sections-template',
       type = 'sections-template';
     } else {
       for (let section in sections) {
-        const testTypes = templateTypes.filter((type) => sections[section][`${type}Path`] === path);
+        const testTypes = templateTypes.filter((type) => sections[section][`${type}Path`] === key);
 
         if (testTypes.length) {
           id = sections[section].referenceURI;
@@ -228,7 +241,7 @@ class InsertNodes {
 
     if ( id && type ) {
       const module = this._modules[key];
-      const renderData = this.getModuleRender(type, module);
+      const renderData = this.getModuleRender(type, key, module);
 
       return Object.assign({id, type, key, module}, renderData);
     }
@@ -247,7 +260,7 @@ class InsertNodes {
    *                  data: original module contents
    *                  id: id of partial
    */
-  getModuleRender(type, module, data = false) {
+  getModuleRender(type, key, module, data = false) {
     let render = false;
 
     if ('template' === type && 'function' === typeof module) {
@@ -431,9 +444,4 @@ class InsertNodes {
 // Create object for modifiying the templates on the page and
 // initial first templates.
 const insert = new InsertNodes(modules, store);
-
-if (sectionsQuery) {
-  outputSections(sections.sorted, null, sectionsQuery);
-  insert.cycleEls(document);
-}
 /*eslint-enable*/

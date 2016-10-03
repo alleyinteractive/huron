@@ -24,18 +24,24 @@ kssHandler.updateKSS = function(filepath, store) {
     const styleguide = parse(kssSource, huron.get('kssOptions'));
 
     if (styleguide.data.sections.length) {
-      const section = utils.normalizeSectionData(styleguide.data.sections[0]);
+      let section = utils.normalizeSectionData(styleguide.data.sections[0]);
       const oldData = utils.getSection(filepath, false, store);
-      const inline = kssHandler.inlineTemplate(oldData, section);
-      const description = kssHandler.description(oldData, section);
       let changed = false;
       let referenceUpdated = false;
 
-      // Output new version of other related files
-      if (oldData.referenceURI !== section.referenceURI) {
-        console.log(section);
-        section = kssHandler.updateAssets(section, store);
+      // Tell HMR the section data has changed
+      if (oldData && oldData !== section) {
+        changed = filepath;
       }
+
+      // Output new version of other related files
+      if (oldData && oldData.referenceURI !== section.referenceURI) {
+        section = kssHandler.updateAssets(oldData, section, store);
+      }
+
+      // update inline and description
+      const inline = kssHandler.updateInlineTemplate(filepath, oldData, section, store);
+      const description = kssHandler.updateDescription(filepath, oldData, section, store);
 
       // Set section value if inlineTempalte() returned a path
       if (inline) {
@@ -47,12 +53,7 @@ kssHandler.updateKSS = function(filepath, store) {
         section.descriptionPath = description;
       }
 
-      // Tell HMR the section data has changed
-      if (oldData && oldData !== section) {
-        changed = filepath;
-      }
-
-      const newStore = kssHandler.updateSection(section, filepath, isInline, store);
+      const newStore = kssHandler.updateSection(section, filepath, inline, store);
       writeStore(newStore, changed);
       console.log(chalk.green(`KSS section ${section.referenceURI} file ${filepath} changed or added`));
       return newStore;
@@ -99,7 +100,7 @@ kssHandler.deleteKSS = function(filepath, section, store) {
  *
  * @return {mixed} output template path or false
  */
-kssHandler.inlineTemplate = function(oldData, section) {
+kssHandler.updateInlineTemplate = function(filepath, oldData, section, store) {
   const isInline = section.markup.match(/<\/[^>]*>/) !== null;
 
   // If we have inline markup
@@ -123,13 +124,19 @@ kssHandler.inlineTemplate = function(oldData, section) {
  *
  * @return {mixed} output description path or false
  */
-kssHandler.description = function(oldData, section) {
+kssHandler.updateDescription = function(filepath, oldData, section, store) {
+  // Remove old description if referenceURI has changed
+  if (oldData && oldData.referenceURI !== section.referenceURI) {
+     utils.removeFile(oldData.referenceURI, 'description', filepath, store);
+  }
+
   // If we don't have previous KSS or the KSS has been updated
-  if ((oldData && oldData.description !== section.description) || !oldData) {
-    // Remove old description if referenceURI has changed
-    if (oldData && oldData.referenceURI !== section.referenceURI) {
-       utils.removeFile(oldData.referenceURI, 'description', filepath, store);
-    }
+  if ((oldData &&
+        (oldData.description !== section.description ||
+          oldData.referenceURI !== section.referenceURI)
+    ) ||
+    !oldData
+  ) {
     // Write new description
     return utils.writeFile(section.referenceURI, 'description', filepath, section.description, store);
   }
@@ -145,19 +152,29 @@ kssHandler.description = function(oldData, section) {
  *
  * @return {object} KSS section data with updated asset paths
  */
-kssHandler.updateAssets = function(section, store) {
+kssHandler.updateAssets = function(oldData, section, store) {
   const huron = store.get('config');
-  const types = store.get('types');
+  // Don't use description, as that will be updated separately
+  const types = store.get('types').filter((type) => type !== 'description');
   const newSection = section;
 
   types.forEach((type) => {
     const typeKey = `${type}Path`;
-    const typePath = section[typeKey];
+    const typePath = oldData[typeKey];
 
     if (typePath) {
-      const output = path.join(huron.root, huron.output, typePath);
-      const content = fs.readFileSync(output, 'utf8');
-      newSection[typeKey] = utils.writeFile(section.referenceURI, type, output, content, store);
+      const output = path.resolve(cwd, huron.get('root'), huron.get('output'));
+      const oldFile = path.join(output, typePath);
+      const oldFileData = path.parse(oldFile);
+      const content = fs.readFileSync(oldFile, 'utf8');
+      const newFileName = utils.generateFilename(section.referenceURI, type, oldFileData.ext, store);
+      const newFile = path.format({
+        dir: oldFileData.dir,
+        base: newFileName
+      });
+      fs.removeSync(oldFile);
+      fs.outputFileSync(newFile, content);
+      newSection[typeKey] = `./${path.relative(output, newFile)}`;
     }
   });
 

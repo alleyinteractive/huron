@@ -63,7 +63,7 @@ htmlHandler.updatePrototype = function(filepath, store) {
   const content = fs.readFileSync(filepath, 'utf8');
 
   if (content) {
-    const requirePath = utils.writeFile(file.base, 'prototype', filepath, content, store);
+    const requirePath = utils.writeFile(file.name, 'prototype', filepath, content, store);
 
     return store.setIn(
         ['prototypes', file.name],
@@ -85,7 +85,7 @@ htmlHandler.deletePrototype = function(filepath, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
 
-  requirePath = utils.removeFile(file.base, 'prototype', filepath, store);
+  requirePath = utils.removeFile(file.name, 'prototype', filepath, store);
 
   return store.setIn(
       ['prototypes', file.name],

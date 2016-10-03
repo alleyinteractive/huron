@@ -11,7 +11,9 @@ export const requireTemplates = function(store) {
 
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
-import { store, changed } from './huron-store.js';
+let huronData = require('./huron-store.js');
+let store = huronData.store;
+let changed = huronData.changed;
 
 let assets = require.context(
   '${path.join(cwd, huron.get('root'), huron.get('output'))}',
@@ -41,6 +43,8 @@ if (module.hot) {
           return modules[newModule[0]] !== newModule[1];
         });
 
+      updateStore(require('./huron-store.js'));
+
       newModules.forEach((module) => {
         modules[module[0]] = module[1];
         hotReplace(module[0], module[1], modules, store);
@@ -49,11 +53,9 @@ if (module.hot) {
   );
 
   module.hot.accept(
-    '${path.join(outputPath, 'huron-store.js')}',
+    './huron-store.js',
     () => {
-      if (changed) {
-        insert.updateChangedSection(changed);
-      }
+      updateStore(require('./huron-store.js'));
     }
   );
 }\n`
@@ -62,8 +64,19 @@ if (module.hot) {
   function hotReplace(key, module, modules, store) {
     insert.store = store;
     insert.modules = modules;
-    insert.reloadModule(key, module);
-  }`
+    insert.loadModule(key, module);
+  }
+
+  function updateStore(data) {
+    store = data.store;
+    changed = data.changed;
+    insert.store = store;
+
+    if (changed) {
+      insert.updateChangedSection(changed);
+    }
+  }
+  `
 
   // Write the contents of thsi script.
   fs.outputFileSync(
@@ -78,15 +91,15 @@ if (module.hot) {
  * @param {object} store - memory store
  * @param {string} changed - filepath of changed KSS section, if applicable
  */
-export const writeStore = function(store, changed) {
+export const writeStore = function(store, changed = false) {
   const huron = store.get('config');
   const outputPath = path.join(cwd, huron.get('root'));
 
   // Write updated data store
   fs.outputFileSync(
     path.join(outputPath, 'huron-store.js'),
-    `export const store = ${JSON.stringify(store.toJSON())}
-    export const changed = ${changed}\n`
+    `module.exports.store = ${JSON.stringify(store.toJSON())}
+    module.exports.changed = '${changed}'\n`
   );
 }
 
