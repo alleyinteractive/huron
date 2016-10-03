@@ -27,18 +27,27 @@ kssHandler.updateKSS = function(filepath, store) {
       const section = utils.normalizeSectionData(styleguide.data.sections[0]);
       const oldData = utils.getSection(filepath, false, store);
       const inline = kssHandler.inlineTemplate(oldData, section);
-      const description = kssHandler.description;
-      const changed = false;
+      const description = kssHandler.description(oldData, section);
+      let changed = false;
+      let referenceUpdated = false;
+
+      // Output new version of other related files
+      if (oldData.referenceURI !== section.referenceURI) {
+        console.log(section);
+        section = kssHandler.updateAssets(section, store);
+      }
 
       // Set section value if inlineTempalte() returned a path
       if (inline) {
         section.inlineTemplate = inline;
       }
 
+      // Output section description
       if (description) {
         section.descriptionPath = description;
       }
 
+      // Tell HMR the section data has changed
       if (oldData && oldData !== section) {
         changed = filepath;
       }
@@ -126,6 +135,33 @@ kssHandler.description = function(oldData, section) {
   }
 
   return false;
+}
+
+/**
+ * Handle output of section description
+ *
+ * @param {object} section - KSS section data
+ * @param {object} store - memory store
+ *
+ * @return {object} KSS section data with updated asset paths
+ */
+kssHandler.updateAssets = function(section, store) {
+  const huron = store.get('config');
+  const types = store.get('types');
+  const newSection = section;
+
+  types.forEach((type) => {
+    const typeKey = `${type}Path`;
+    const typePath = section[typeKey];
+
+    if (typePath) {
+      const output = path.join(huron.root, huron.output, typePath);
+      const content = fs.readFileSync(output, 'utf8');
+      newSection[typeKey] = utils.writeFile(section.referenceURI, type, output, content, store);
+    }
+  });
+
+  return newSection;
 }
 
 /**
