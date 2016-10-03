@@ -61,22 +61,20 @@ if (module.hot) {
 }\n`
 
   const append = `
-  function hotReplace(key, module, modules, store) {
-    insert.store = store;
-    insert.modules = modules;
-    insert.loadModule(key, module);
-  }
+function hotReplace(key, module, modules, store) {
+  insert.modules = modules;
+  insert.loadModule(key, module);
+}
 
-  function updateStore(data) {
-    store = data.store;
-    changed = data.changed;
-    insert.store = store;
+function updateStore(data) {
+  store = data.store;
+  changed = data.changed;
+  insert.store = store;
 
-    if (changed) {
-      insert.updateChangedSection(changed);
-    }
+  if (changed) {
+    insert.updateChangedSection(changed);
   }
-  `
+}\n`
 
   // Write the contents of thsi script.
   fs.outputFileSync(
@@ -99,7 +97,7 @@ export const writeStore = function(store, changed = false) {
   fs.outputFileSync(
     path.join(outputPath, 'huron-store.js'),
     `module.exports.store = ${JSON.stringify(store.toJSON())}
-    module.exports.changed = '${changed}'\n`
+module.exports.changed = '${changed}'\n`
   );
 }
 

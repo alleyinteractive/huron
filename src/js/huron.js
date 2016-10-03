@@ -24,7 +24,10 @@ class InsertNodes {
 
     // Inits
     this.cycleEls(document);
+    this.cycleStyleguide();
+  }
 
+  cycleStyleguide() {
     // Sections
     const sectionsQuery = document.querySelector('[huron-sections]');
     if (sectionsQuery) {
@@ -146,7 +149,7 @@ class InsertNodes {
       tags = document.querySelectorAll(`[data-huron-id="${meta.id}"]:not([data-huron-type])`);
     }
 
-    if (tags) {
+    if (tags && meta.render) {
       for (let i = 0; i < tags.length; i++) {
         let currentTag = tags.item(i);
         let modifier = currentTag.dataset.huronModifier;
@@ -169,6 +172,12 @@ class InsertNodes {
 
         this.cycleEls(currentTag, meta.id);
       }
+    } else {
+      console.warn(
+        `Could not render module
+        section: ${meta.id}
+        type: ${meta.type}`
+      );
     }
   }
 
@@ -196,7 +205,7 @@ class InsertNodes {
       if (sections[id] && sections[id].hasOwnProperty(field)) {
         key = sections[id][field];
       } else {
-        console.log(`Failed to find template or section '${id}' does not exist`);
+        console.warn(`Failed to find template or section '${id}' does not exist`);
       }
     } else if ('prototype' === type) {
       for (let prototype in this._prototypes) {
@@ -210,7 +219,7 @@ class InsertNodes {
         data = sections[id];
         key = `./huron-sections/sections.hbs`;
       } else {
-        console.log(`Section '${id}' does not exist`);
+        console.warn(`Section '${id}' does not exist`);
       }
     }
 

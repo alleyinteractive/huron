@@ -5,6 +5,7 @@ const parse = require('kss').parse;
 const chalk = require('chalk'); // Colorize terminal output
 
 import { utils } from './utils';
+import { templateHandler } from './handle-templates';
 import { writeStore }  from './require-templates';
 
 export const kssHandler = {};
@@ -19,29 +20,30 @@ kssHandler.updateKSS = function(filepath, store) {
   const kssSource = fs.readFileSync(filepath, 'utf8');
   const huron = store.get('config');
   const file = path.parse(filepath);
+  let newStore = store;
 
   if (kssSource) {
     const styleguide = parse(kssSource, huron.get('kssOptions'));
 
     if (styleguide.data.sections.length) {
       let section = utils.normalizeSectionData(styleguide.data.sections[0]);
-      const oldData = utils.getSection(filepath, false, store);
+      const oldData = utils.getSection(filepath, false, newStore);
       let changed = false;
-      let referenceUpdated = false;
 
       // Tell HMR the section data has changed
       if (oldData && oldData !== section) {
         changed = filepath;
       }
 
-      // Output new version of other related files
+      // Output new version of non-inline templates and data
+      // if section URI was changed (as those files are written using referenceURI)
       if (oldData && oldData.referenceURI !== section.referenceURI) {
-        section = kssHandler.updateAssets(oldData, section, store);
+        newStore = kssHandler.updateAssets(file, oldData, section, store);
       }
 
-      // update inline and description
-      const inline = kssHandler.updateInlineTemplate(filepath, oldData, section, store);
-      const description = kssHandler.updateDescription(filepath, oldData, section, store);
+      // Update inline and description
+      const inline = kssHandler.updateInlineTemplate(filepath, oldData, section, newStore);
+      const description = kssHandler.updateDescription(filepath, oldData, section, newStore);
 
       // Set section value if inlineTempalte() returned a path
       if (inline) {
@@ -53,17 +55,18 @@ kssHandler.updateKSS = function(filepath, store) {
         section.descriptionPath = description;
       }
 
-      const newStore = kssHandler.updateSection(section, filepath, inline, store);
+      newStore = kssHandler.updateSection(section, filepath, inline, newStore);
+
       writeStore(newStore, changed);
       console.log(chalk.green(`KSS section ${section.referenceURI} file ${filepath} changed or added`));
       return newStore;
     } else {
       console.log(chalk.magenta(`No KSS found in ${filepath}`));
-      return store;
+      return newStore;
     }
   } else {
     console.log(chalk.red(`${filepath} not found or empty`));
-    return store;
+    return newStore;
   }
 }
 
@@ -147,38 +150,28 @@ kssHandler.updateDescription = function(filepath, oldData, section, store) {
 /**
  * Handle output of section description
  *
+ * @param {string} file - File data for KSS file from path.parse()
+ * @param {object} oldData - outdate KSS data
  * @param {object} section - KSS section data
  * @param {object} store - memory store
  *
  * @return {object} KSS section data with updated asset paths
  */
-kssHandler.updateAssets = function(oldData, section, store) {
+kssHandler.updateAssets = function(file, oldData, section, store) {
   const huron = store.get('config');
-  // Don't use description, as that will be updated separately
-  const types = store.get('types').filter((type) => type !== 'description');
   const newSection = section;
+  let newStore = store;
 
-  types.forEach((type) => {
-    const typeKey = `${type}Path`;
-    const typePath = oldData[typeKey];
+  ['data', 'markup'].forEach((field) => {
+    if (oldData[field]) {
+      const filepath = path.join(file.dir, oldData[field]);
 
-    if (typePath) {
-      const output = path.resolve(cwd, huron.get('root'), huron.get('output'));
-      const oldFile = path.join(output, typePath);
-      const oldFileData = path.parse(oldFile);
-      const content = fs.readFileSync(oldFile, 'utf8');
-      const newFileName = utils.generateFilename(section.referenceURI, type, oldFileData.ext, store);
-      const newFile = path.format({
-        dir: oldFileData.dir,
-        base: newFileName
-      });
-      fs.removeSync(oldFile);
-      fs.outputFileSync(newFile, content);
-      newSection[typeKey] = `./${path.relative(output, newFile)}`;
+      newStore = templateHandler.deleteTemplate(filepath, oldData, newStore);
+      newStore = templateHandler.updateTemplate(filepath, section, newStore);
     }
   });
 
-  return newSection;
+  return newStore;
 }
 
 /**
@@ -222,7 +215,7 @@ kssHandler.updateSection = function(section, kssPath, isInline, store) {
     )
     .setIn(
       ['sections', 'sectionsByURI', section.referenceURI],
-      section
+      resetData
     )
     .setIn(
       ['sections', 'sorted'],
@@ -273,14 +266,13 @@ kssHandler.sortSection = function(sorted, reference) {
  */
 kssHandler.unsortSection = function(sorted, reference) {
   let parts = reference.split('-');
+  let newSort = sorted[parts[0]];
 
-  if (sorted[parts[0]]) {
-    if (parts.length > 1) {
-      let newParts = parts.filter((part, idx) => idx !== 0);
-      sorted = kssHandler.unsortSection(sorted[parts[0]], newParts.join('-'));
-    } else {
-      delete sorted[parts[0]];
-    }
+  if (parts.length > 1 && newSort) {
+    let newParts = parts.filter((part, idx) => idx !== 0);
+    sorted[parts[0]] = kssHandler.unsortSection(newSort, newParts.join('-'));
+  } else {
+    delete sorted[parts[0]];
   }
 
   return sorted;
