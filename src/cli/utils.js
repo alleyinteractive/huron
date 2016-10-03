@@ -146,6 +146,23 @@ utils.removeFile = function(id, type, filepath, store) {
   return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;;
 }
 
+utils.writeSectionTemplate = function(filepath, store) {
+  const huron = store.get('config');
+  const sectionTemplate = utils.wrapMarkup(fs.readFileSync(filepath, 'utf8'));
+  const output = path.join(
+    cwd,
+    huron.get('root'),
+    huron.get('output'),
+    'huron-sections/sections.hbs'
+  );
+
+  // Move huron script and section template into huron root
+  fs.outputFileSync(output, sectionTemplate);
+  console.log(chalk.green(`writing section template to ${output}`));
+
+  return store.set('sectionTemplatePath', './huron-sections/section.hbs');;
+}
+
 /**
  * Request for section data based on section reference
  *

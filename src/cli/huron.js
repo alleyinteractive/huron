@@ -21,10 +21,6 @@ import startWebpack from './server';
 const localConfig = require(path.join(cwd, program.config));
 const config = generateConfig(localConfig);
 const huron = config.huron;
-const sectionTemplate = utils.wrapMarkup(
-  fs.readFileSync(path.resolve(__dirname, huron.sectionTemplate), 'utf8'),
-  'section'
-);
 const extenstions = [
   huron.kssExtension,
   '.html',
@@ -53,14 +49,9 @@ const dataStructure = Immutable.Map({
 });
 let store = null; // All updates to store will be here
 
-// Move huron script and section template into huron root
-fs.outputFileSync(
-  path.join(cwd, huron.root, huron.output, 'huron-sections/sections.hbs'),
-  sectionTemplate
-);
-
 // Generate watch list for Gaze, start gaze
 const gazeWatch = [];
+gazeWatch.push(path.resolve(__dirname, huron.sectionTemplate));
 extenstions.forEach(ext => {
   gazeWatch.push(`${huron.kss}/**/*${ext}`);
 });

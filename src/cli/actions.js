@@ -60,6 +60,10 @@ export function updateFile(filepath, store) {
   const file = path.parse(filepath);
   let section = null;
 
+  if (filepath.indexOf(huron.get('sectionTemplate')) !== -1) {
+      return utils.writeSectionTemplate(filepath, store);
+  }
+
   switch (file.ext) {
     // Plain HTML template, external
     case '.html':

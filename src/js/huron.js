@@ -61,10 +61,8 @@ class InsertNodes {
         if (currentTag.childNodes.length === 0) {
           const meta = this.getMetaFromTag(currentTag);
 
-          if (meta.key) {
+          if (meta) {
             this.replaceTemplate(meta);
-          } else {
-            console.warn(`Could not find module for ${meta.id} or this module cannot be hot reloaded`);
           }
         }
       }
@@ -80,15 +78,13 @@ class InsertNodes {
   loadModule(key, module) {
     const meta = this.getMetaFromPath(key);
 
-    if (meta.id) {
+    if (meta) {
       // Use a special function if we've updated the template used for all sections
       if ('sections-template' !== meta.type) {
         this.replaceTemplate(meta);
       } else {
         this.replaceSections();
       }
-    } else {
-      console.warn(`Could not find module ${meta.id} or this module cannot be hot reloaded`);
     }
   }
 
@@ -103,10 +99,8 @@ class InsertNodes {
         const currentSection = sectionTags.item(i);
         const meta = this.getMetaFromTag(currentSection);
 
-        if (meta.key) {
+        if (meta) {
           this.replaceTemplate(meta);
-        } else {
-          console.warn(`Could not find module ${meta.id} or this module cannot be hot reloaded`);
         }
       }
     }
@@ -227,7 +221,11 @@ class InsertNodes {
       return Object.assign({id, type, key, module}, renderData);
     }
 
-    return {id};
+    console.warn(`Could not find module or this module cannot be hot reloaded
+      type: '${type}'
+      section: '${id}'
+    `);
+    return false;
   }
 
   /**
@@ -275,7 +273,8 @@ class InsertNodes {
       return Object.assign({id, type, key, module}, renderData);
     }
 
-    return {key};
+    console.warn(`Could not find module '${key}' or this module cannot be hot reloaded`);
+    return false;
   }
 
   /**
