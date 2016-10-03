@@ -30,13 +30,13 @@ utils.normalizeSectionData = function(section) {
 utils.getTemplateDataPair = function(file, section, store) {
   const huron = store.get('config');
   const componentPath = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
-  let pairPath = false;
+  const partnerType = '.json' === file.ext ? 'template' : 'data';
+  const partnerExt = '.json' === file.ext ? huron.get('templates').extension : '.json';
 
-  if ('.json' === file.ext) {
-    pairPath = path.join(componentPath, section.markup);
-  } else {
-    pairPath = path.join(componentPath, section.data);
-  }
+  const pairPath = path.join(
+    componentPath,
+    utils.generateFilename(section.referenceURI, partnerType, partnerExt, store)
+  );
 
   return `./${pairPath}`;
 }
@@ -66,23 +66,28 @@ utils.wrapMarkup = function(content, templateId) {
   </dom-module>\n`;
 }
 
-utils.generateFilename = function(id, type, store) {
+/**
+ * Generate a filename based on referenceURI, type and file object
+ *
+ * @param  {string} id - The name of the file (with extension).
+ * @param  {string} type - the type of file output
+ * @param  {object} ext - file extension
+ * @param  {store} store - data store
+ *
+ * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
+ */
+utils.generateFilename = function(id, type, ext, store) {
   const huron = store.get('config');
   // Type of file and its corresponding extension(s)
-  const types = {
-    template: ['.html', huron.get('templates').extension],
-    data: ['.json'],
-    description: ['.html'],
-    section: ['.html'],
-    prototype: ['.html'],
-  };
+  const types = store.get('types');
+  const outputExt = ext !== '.scss' ? ext : '.html';
 
-  if (!types.hasOwnProperty(type)) {
+  if (types.indexOf(type) === -1) {
     console.log(`Huron data ${type} does not exist`);
     return false;
   }
 
-  return `${id}-${key}${types[type]}`;
+  return `${id}-${type}${outputExt}`;
 }
 
 /**
@@ -94,14 +99,15 @@ utils.generateFilename = function(id, type, store) {
  *
  * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
  */
-utils.writeFile = function(id, type, content, store) {
+utils.writeFile = function(id, type, filepath, content, store) {
   const huron = store.get('config');
-  const filename = utils.generateFilename(id, type, store);
+  const file = path.parse(filepath);
+  const filename = utils.generateFilename(id, type, file.ext, store);
   const componentPath = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
   const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
   const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
 
-  if ('data' !=== type) {
+  if ('data' !== type) {
     content = utils.wrapMarkup(content, id);
   }
 
@@ -122,9 +128,10 @@ utils.writeFile = function(id, type, content, store) {
  *
  * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
  */
-utils.removeFile = function(id, type, store) {
+utils.removeFile = function(id, type, filepath, store) {
   const huron = store.get('config');
-  const filename = utils.generateFilename(id, type, store);
+  const file = path.parse(filepath);
+  const filename = utils.generateFilename(id, type, file.ext, store);
   const componentPath = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
   const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
   const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
