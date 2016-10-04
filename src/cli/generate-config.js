@@ -60,7 +60,7 @@ export default function generateConfig(config) {
   }
 
   // Init HTML webpack plugin
-  fs.writeFileSync(path.join(cwd, huron.root, 'huron-wrapper.ejs'), wrapperTemplate);
+  fs.outputFileSync(path.join(cwd, huron.root, 'huron-wrapper.ejs'), wrapperTemplate);
   huron.prototypes.forEach(prototype => {
     config.plugins.push(
       new HTMLWebpackPlugin({
@@ -83,9 +83,7 @@ export default function generateConfig(config) {
   delete config.devServer;
 
   // Set publicPath
-  // config.output.publicPath = 'http://localhost:8080/static/prototype';
-
-  // console.log(config);
+  config.output.publicPath = 'http://localhost:8080/static/prototype';
 
   return config;
 }
