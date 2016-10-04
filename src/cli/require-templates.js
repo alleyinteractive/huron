@@ -61,12 +61,8 @@ if (module.hot) {
   const append = `
 function hotReplace(key, module, modules) {
   insert.modules = modules;
-  if (module === store.sectionTemplatePath) {
-    insert.cycleModules(document, false, {
-      property: 'type',
-      values: ['section'],
-      include: true,
-    });
+  if (key === store.sectionTemplatePath) {
+    insert.cycleSections();
   } else {
     insert.loadModule(document, key, module);
   }

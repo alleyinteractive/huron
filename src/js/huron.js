@@ -27,24 +27,7 @@ class InsertNodes {
 
     // Inits
     this.cycleModules(document);
-    // this.cycleStyleguide();
-  }
-
-  cycleStyleguide() {
-    // Sections
-    const sectionsQuery = document.querySelector('[huron-sections]');
-    if (sectionsQuery) {
-      sectionsQuery.innerHTML = '';
-      this.outputSections(null, sectionsQuery);
-      this.cycleEls(document);
-    }
-
-    // Menu
-    const menuQuery = document.querySelector('[huron-menu]');
-    if (menuQuery) {
-      menuQuery.innerHTML = '';
-      this.outputMenu(null, menuQuery);
-    }
+    this.cycleStyleguide();
   }
 
   /**
@@ -59,6 +42,37 @@ class InsertNodes {
     for (let module in this._modules) {
       this.loadModule(context, module, this._modules[module], cached, filter);
     }
+  }
+
+  /**
+   * Reload styleguide sections and menu helpers
+   */
+  cycleStyleguide() {
+    // Sections
+    const sectionsQuery = document.querySelector('[huron-sections]');
+    if (sectionsQuery) {
+      sectionsQuery.innerHTML = '';
+      this.outputSections(null, sectionsQuery);
+      this.cycleSections();
+    }
+
+    // Menu
+    const menuQuery = document.querySelector('[huron-menu]');
+    if (menuQuery) {
+      menuQuery.innerHTML = '';
+      this.outputMenu(null, menuQuery);
+    }
+  }
+
+  /**
+   * Helper for reloading sections only
+   */
+  cycleSections() {
+    this.cycleModules(document, false, {
+      property: 'type',
+      values: ['section'],
+      include: true,
+    });
   }
 
   /**
@@ -324,8 +338,6 @@ class InsertNodes {
    *
    * Recurses over sorted styleguide sections and inserts a <section> tag with
    * [huron-id] equal to the section template name.
-   *
-   * @todo: figure out how to handle added/removed sections with HMR
    */
   outputSections(parent, el, sections = this._sections.sorted) {
     let templateId = null;
@@ -357,10 +369,7 @@ class InsertNodes {
 
   /* Helper function for inserting styleguide sections.
    *
-   * Recurses over sorted styleguide sections and inserts a <section> tag with
-   * [huron-id] equal to the section template name.
-   *
-   * @todo: figure out how to handle added/removed sections with HMR
+   * Recurses over sorted styleguide sections and inserts a <ul> to be used as a menu for each section
    */
   outputMenu(parent, el, sections = this._sections.sorted) {
     let templateId = null;
@@ -374,10 +383,32 @@ class InsertNodes {
       }
 
       if (el) {
-        wrapper = document.createElement('ul');
-        wrapper.classList.add('sections-menu');
-        wrapper.innerHTML = `<li class="meu-item"><a href="#${templateId}">test</a></li>`;
-        el.appendChild(wrapper);
+        const title = this._sections
+            .sectionsByURI[templateId] ?
+          this._sections
+            .sectionsByURI[templateId]
+            .referenceURI :
+          templateId;
+        const link = `<a href="#${templateId}">${title}</a>`;
+        const submenu = el.querySelector('ul');
+
+        if (Object.keys(sections[section]).length) {
+          wrapper = document.createElement('ul');
+          wrapper.classList.add('sections-menu');
+          wrapper.innerHTML = `<li class="menu-item">
+            ${link}
+            <ul></ul>
+          </li>`;
+        } else {
+          wrapper = document.createElement('li');
+          wrapper.innerHTML = link;
+        }
+
+        if (submenu) {
+          submenu.appendChild(wrapper);
+        } else {
+          el.appendChild(wrapper);
+        }
       }
 
       if (sections[section] && wrapper) {
