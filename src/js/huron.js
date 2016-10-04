@@ -19,12 +19,15 @@ class InsertNodes {
     this._prototypes = null;
     this._types = null;
 
+    // Module meta
+    this.meta = {};
+
     // Set store values
     this.store = store;
 
     // Inits
-    this.cycleEls(document);
-    this.cycleStyleguide();
+    this.cycleModules(document);
+    // this.cycleStyleguide();
   }
 
   cycleStyleguide() {
@@ -47,107 +50,90 @@ class InsertNodes {
   /**
    * Replace all template markers with the actual template markup.
    *
-   * @param  {object} context  The context (e.g. document) that you will query
-   *                           for the template ID to replace
-   * @param  {string} parentId The TemplateID of the tempkate that invoked this function.
+   * @param  {object} context    The context (e.g. document) that you will query
+   *                             for the template ID to replace
+   * @param  {bool}   cached     Whether or not to use cached values for module replacement
+   * @param  {object} filter     Filter for modules. Fields explained in the filterModules() function docs
    */
-  cycleEls(context, parentId = null) {
-    // Query any element with huron id
-    const huronPartials = context.querySelectorAll('[data-huron-id]');
-    const sections = this._sections.sectionsByPath;
-
-    if (null !== huronPartials) {
-      for (let i = 0; i < huronPartials.length; i++) {
-        const currentTag = huronPartials.item(i);
-
-        // Only replace if the partial does not have children
-        if (currentTag.childNodes.length === 0) {
-          const meta = this.getMetaFromTag(currentTag);
-
-          if (meta) {
-            this.replaceTemplate(meta);
-          }
-        }
-      }
+  cycleModules(context, cached = false, filter = false) {
+    for (let module in this._modules) {
+      this.loadModule(context, module, this._modules[module], cached, filter);
     }
   }
 
   /**
    * Replace all sections. For hot reloading use when the section template has changed.
    *
-   * @param {string} key     Module require path
-   * @param {mixed}  module  Module contents
+   * @param {object} context     The context (e.g. document) that you will query
+   *                             for the template ID to replace
+   * @param {string}  key        Module require path
+   * @param {mixed}   module     Module contents
+   * @param {bool}    chached    Whether or not to use cached values for module replacement
+   * @param {object}  filter     Filter for modules. Fields explained in the filterModules() function docs
    */
-  loadModule(key, module) {
-    const meta = this.getMetaFromPath(key);
+  loadModule(context, key, module, cached = false, filter = false) {
+    let moduleMeta = null;
+    let shouldLoad = true;
 
-    if (meta) {
-      // Use a special function if we've updated the template used for all sections
-      if ('sections-template' !== meta.type) {
-        this.replaceTemplate(meta);
-      } else {
-        this.replaceSections();
+    // Check if we should load from internal module metadata cache
+    if (cached) {
+      moduleMeta = this.meta[key];
+    } else {
+      moduleMeta = this.meta[key] = this.getMetaFromPath(key, module);
+    }
+
+    if (moduleMeta) {
+
+      if (filter) {
+        shouldLoad = this.filterModules(filter, moduleMeta);
+      }
+
+      if (shouldLoad) {
+        this.replaceTemplate(context, moduleMeta);
       }
     }
   }
 
   /**
-   * Replace all sections. For hot reloading use when the section template has changed.
-   */
-  replaceSections() {
-    const sectionTags = document.querySelectorAll('[data-huron-type="section"]');
-
-    if (sectionTags) {
-      for (let i = 0; i < sectionTags.length; i++) {
-        const currentSection = sectionTags.item(i);
-        const meta = this.getMetaFromTag(currentSection);
-
-        if (meta) {
-          this.replaceTemplate(meta);
-        }
-      }
-    }
-  }
-
-  /**
-   * Hot reload section markup when section data with no corresponding submodule has changed
-   * Example: section title, reference URI
+   * Replace all template markers with the actual template markup.
    *
-   * @param  {string} sectionPath - path to KSS section for accessing section data
+   * @param {object} filter - Filter for modules. Options:
+   * @param {string} filter.property - Which property to filter ('key' or 'type')
+   * @param {array}  filter.values - Values for property
+   * @param {bool}   filter.include - Whether the values should be included or excluded (true = include, false = exclude)
+   * @param {object} moduleMeta  Filter for modules. Fields explained in the filterModules() function docs
    */
-  updateChangedSection(sectionPath) {
-    const changed = this._sections.sectionsByPath[sectionPath];
-    const sectionTemplate = './huron-sections/sections.hbs';
+  filterModules(filter, moduleMeta) {
+    const moduleKeys = Object.keys(this._modules);
 
-    if (changed) {
-      const renderData = this.getModuleRender(
-        'section',
-        sectionTemplate,
-        this._modules[sectionTemplate],
-        changed
-      );
-
-      this.replaceTemplate(Object.assign({
-        id: changed.referenceURI,
-        type: 'section',
-        key: sectionTemplate,
-        module: this._modules[sectionTemplate],
-      }, renderData));
+    // Check if we should filter out any modules
+    if (
+      'object' === typeof filter &&
+      filter.hasOwnProperty('property') &&
+      filter.hasOwnProperty('values') &&
+      filter.hasOwnProperty('include')
+    ) {
+      const match = filter.values.filter((value) => moduleMeta[filter.property] === value);
+      return Boolean(match.length) === filter.include;
     }
+
+    console.log(`
+      filter ${filter} is not in a valid format.
+      module filters must include 'property', 'values', and 'include' properties
+    `);
+
+    return true;
   }
 
   /**
    * Replace a single template marker with template content.
    *
-   * @param  {object} meta  Module metadata
+   * @param {object} context - The context (e.g. document) that you will query
+   *                          for the template ID to replace
+   * @param {object} meta - Module metadata
    */
-  replaceTemplate(meta) {
-    let tags = document.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`);
-
-    // Look for implicit type of "template"
-    if (!tags || !tags.length) {
-      tags = document.querySelectorAll(`[data-huron-id="${meta.id}"]:not([data-huron-type])`);
-    }
+  replaceTemplate(context, meta) {
+    let tags = context.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`);
 
     if (tags && meta.render) {
       for (let i = 0; i < tags.length; i++) {
@@ -170,7 +156,12 @@ class InsertNodes {
           .querySelector('template')
           .innerHTML
 
-        this.cycleEls(currentTag, meta.id);
+        // Recursively load modules, excluding the current one
+        this.cycleModules(currentTag, true, {
+          property: 'key',
+          values: [meta.key, this._sectionTemplatePath],
+          include: false,
+        });
       }
     } else {
       console.warn(
@@ -179,62 +170,6 @@ class InsertNodes {
         type: ${meta.type}`
       );
     }
-  }
-
-  /**
-   * Get module metadata from an HTMLElement
-   *
-   * @param  {string} key - Module require path
-   *
-   * @return {object} - id: huron id (referenceURI)
-   *                    type: huron type
-   *                    key: module require path (key)
-   *                    module: module contents
-   */
-  getMetaFromTag(tag) {
-    const type = this.validateType(tag);
-    const id = tag.dataset.huronId;
-    const field = `${type}Path`; // Custom field in section data containing require path to partial
-    const sections = this._sections.sectionsByURI;
-    let key = false;
-    let currentSection = false;
-    let data = false;
-
-    // Find require path based on huron type
-    if ('template' === type || 'description' === type ) {
-      if (sections[id] && sections[id].hasOwnProperty(field)) {
-        key = sections[id][field];
-      } else {
-        console.warn(`Failed to find template or section '${id}' does not exist`);
-      }
-    } else if ('prototype' === type) {
-      for (let prototype in this._prototypes) {
-        if (id === prototype) {
-          key = this._prototypes[id];
-          break;
-        }
-      }
-    } else if ('section' === type) {
-      if (sections[id]) {
-        data = sections[id];
-        key = `./huron-sections/sections.hbs`;
-      } else {
-        console.warn(`Section '${id}' does not exist`);
-      }
-    }
-
-    if (key) {
-      const module = this._modules[key];
-      const renderData = this.getModuleRender(type, key, module, data);
-
-      return Object.assign({id, type, key, module}, renderData);
-    }
-
-    console.warn(`Could not find module or this module cannot be hot reloaded
-      type: '${type}'
-      section: '${id}'
-    `);
-    return false;
   }
 
   /**
@@ -247,7 +182,7 @@ class InsertNodes {
    *                    key: module require path (key)
    *                    module: module contents
    */
-  getMetaFromPath(key) {
+  getMetaFromPath(key, module) {
     const sections = this._sections.sectionsByPath;
     const templateTypes = this._types.filter((type) => type !== 'prototype');
     let id = false;
@@ -261,7 +196,7 @@ class InsertNodes {
         id = prototype;
         type = 'prototype';
       }
-    } else if (key.indexOf('sections.hbs') !== -1) {
+    } else if (key === this._sectionTemplatePath) {
       id = 'sections-template',
       type = 'sections-template';
     } else {
@@ -271,18 +206,20 @@ class InsertNodes {
         if (testTypes.length) {
           id = sections[section].referenceURI;
           type = testTypes[0];
+          break;
         }
       }
     }
 
     if (id && type) {
-      const module = this._modules[key];
       const renderData = this.getModuleRender(type, key, module);
 
-      return Object.assign({id, type, key, module}, renderData);
+      if (renderData) {
+        return Object.assign({id, type, key, module}, renderData);
+      }
     }
 
-    console.warn(`Could not find module '${key}' or this module cannot be hot reloaded`);
+    console.warn(`Could not find module '${key}' or module cannot be hot reloaded`);
     return false;
   }
 
@@ -291,26 +228,32 @@ class InsertNodes {
    *
    * @param  {object} type    Module metadata
    * @param  {mixed}  module  Module contents
-   * @param  {object} data    Explicit data input
    *
    * @return {object} render: render function
    *                  data: original module contents
    *                  id: id of partial
    */
-  getModuleRender(type, key, module, data = false) {
+  getModuleRender(type, key, module) {
     let render = false;
+    let data = false;
 
     if ('template' === type && 'function' === typeof module) {
       // It's a render function for a template
       render = module;
       data = this._modules[this._templates[key]];
     } else if (
-      'section' === type &&
+      'sections-template' === type &&
       'function' === typeof module
     ) {
-      // It's a full KSS section
-      // Data is passed in from cycleEls
+      // It's a kss section template
       render = module;
+    } else if (
+      'section' === type &&
+      'object' === typeof module
+    ) {
+      // It's section data
+      render = this._modules[this._sectionTemplatePath];
+      data = module;
     } else if (
       ('template' === type || 'description' === type || 'prototype' === type) &&
       'string' === typeof module
@@ -465,6 +408,7 @@ class InsertNodes {
     this._templates = store.templates;
     this._prototypes = store.prototypes;
     this._types = store.types;
+    this._sectionTemplatePath = store.sectionTemplatePath
   }
 }
 

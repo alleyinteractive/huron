@@ -19,7 +19,6 @@ export const kssHandler = {};
 kssHandler.updateKSS = function(filepath, store) {
   const kssSource = fs.readFileSync(filepath, 'utf8');
   const huron = store.get('config');
-  const file = path.parse(filepath);
   let newStore = store;
 
   if (kssSource) {
@@ -27,37 +26,8 @@ kssHandler.updateKSS = function(filepath, store) {
 
     if (styleguide.data.sections.length) {
       let section = utils.normalizeSectionData(styleguide.data.sections[0]);
-      const oldData = utils.getSection(filepath, false, newStore);
-      let changed = false;
-
-      // Tell HMR the section data has changed
-      if (oldData && oldData !== section) {
-        changed = filepath;
-      }
-
-      // Output new version of non-inline templates and data
-      // if section URI was changed (as those files are written using referenceURI)
-      if (oldData && oldData.referenceURI !== section.referenceURI) {
-        newStore = kssHandler.updateAssets(file, oldData, section, store);
-      }
-
-      // Update inline and description
-      const inline = kssHandler.updateInlineTemplate(filepath, oldData, section, newStore);
-      const description = kssHandler.updateDescription(filepath, oldData, section, newStore);
-
-      // Set section value if inlineTempalte() returned a path
-      if (inline) {
-        section.inlineTemplate = inline;
-      }
-
-      // Output section description
-      if (description) {
-        section.descriptionPath = description;
-      }
-
-      newStore = kssHandler.updateSection(section, filepath, inline, newStore);
-
-      writeStore(newStore, changed);
+      newStore = kssHandler.updateSectionData(section, filepath, store);
+      writeStore(newStore);
       console.log(chalk.green(`KSS section ${section.referenceURI} file ${filepath} changed or added`));
       return newStore;
     } else {
@@ -98,80 +68,116 @@ kssHandler.deleteKSS = function(filepath, section, store) {
  * Handle detection and output of inline templates, which is
  * markup written in the KSS documentation itself as opposed to an external file
  *
- * @param {string} oldData - previous iteration of KSS data, if updated
+ * @param {string} oldSection - previous iteration of KSS data, if updated
  * @param {object} section - KSS section data
  *
  * @return {mixed} output template path or false
  */
-kssHandler.updateInlineTemplate = function(filepath, oldData, section, store) {
+kssHandler.updateInlineTemplate = function(filepath, oldSection, section, store) {
   const isInline = section.markup.match(/<\/[^>]*>/) !== null;
+  const newSection = section;
 
   // If we have inline markup
   if (isInline) {
-    // Remove old template if referenceURI has changed
-    if (oldData && oldData.referenceURI !== section.referenceURI) {
-      utils.removeFile(oldData.referenceURI, 'template', filepath, store);
-    }
-
-    return utils.writeFile(section.referenceURI, 'template', filepath, section.markup, store);;
+    newSection.templatePath = utils.writeFile(
+      section.referenceURI,
+      'template',
+      filepath,
+      section.markup,
+      store
+    );
   }
 
-  return false;
+  return newSection;
 }
 
 /**
  * Handle output of section description
  *
- * @param {string} oldData - previous iteration of KSS data, if updated
+ * @param {string} oldSection - previous iteration of KSS data, if updated
  * @param {object} section - KSS section data
  *
  * @return {mixed} output description path or false
  */
-kssHandler.updateDescription = function(filepath, oldData, section, store) {
-  // Remove old description if referenceURI has changed
-  if (oldData && oldData.referenceURI !== section.referenceURI) {
-     utils.removeFile(oldData.referenceURI, 'description', filepath, store);
-  }
+kssHandler.updateDescription = function(filepath, oldSection, section, store) {
+  const newSection = section;
 
   // If we don't have previous KSS or the KSS has been updated
-  if ((oldData &&
-        (oldData.description !== section.description ||
-          oldData.referenceURI !== section.referenceURI)
+  if ((oldSection &&
+        (oldSection.description !== section.description ||
+          oldSection.referenceURI !== section.referenceURI)
     ) ||
-    !oldData
+    !oldSection
   ) {
     // Write new description
-    return utils.writeFile(section.referenceURI, 'description', filepath, section.description, store);
+    newSection.descriptionPath = utils.writeFile(
+      section.referenceURI,
+      'description',
+      filepath,
+      section.description,
+      store
+    );
   }
 
-  return false;
+  return newSection;
 }
 
 /**
  * Handle output of section description
  *
  * @param {string} file - File data for KSS file from path.parse()
- * @param {object} oldData - outdate KSS data
+ * @param {object} oldSection - outdate KSS data
  * @param {object} section - KSS section data
  * @param {object} store - memory store
  *
  * @return {object} KSS section data with updated asset paths
  */
-kssHandler.updateAssets = function(file, oldData, section, store) {
+kssHandler.updateReferenceURI = function(file, oldSection, section, store) {
+  const isInline = section.markup.match(/<\/[^>]*>/) !== null;
+  const filepath = path.format(file);
   const huron = store.get('config');
   const newSection = section;
+  const dataFilepath = path.join(file.dir, `${file.name}.json`);
   let newStore = store;
+  let newSort = kssHandler.sortSection(
+    store.getIn(['sections', 'sorted']),
+    section.referenceURI
+  );
+
+  if (
+    oldSection.hasOwnProperty('referenceURI') &&
+    oldSection.referenceURI !== newSection.referenceURI
+  ) {
+    newSort = kssHandler.unsortSection(newSort, oldSection.referenceURI);
+    // Remove old description if referenceURI has changed
+    utils.removeFile(oldSection.referenceURI, 'description', filepath, store);
+    // Remove old inline template if referenceURI has changed
+    if (isInline) {
+      utils.removeFile(oldSection.referenceURI, 'template', filepath, store);
+    }
+    // Remove old section data
+    utils.removeFile(
+      oldSection.referenceURI,
+      'section',
+      dataFilepath,
+      store
+    );
+  }
 
   ['data', 'markup'].forEach((field) => {
-    if (oldData[field]) {
-      const filepath = path.join(file.dir, oldData[field]);
+    if (oldSection[field]) {
+      const filepath = path.join(file.dir, oldSection[field]);
 
-      newStore = templateHandler.deleteTemplate(filepath, oldData, newStore);
+      newStore = templateHandler.deleteTemplate(filepath, oldSection, newStore);
       newStore = templateHandler.updateTemplate(filepath, section, newStore);
     }
   });
 
-  return newStore;
+  return newStore
+    .setIn(
+      ['sections', 'sorted'],
+      newSort
+    );
 }
 
 /**
@@ -179,48 +185,49 @@ kssHandler.updateAssets = function(file, oldData, section, store) {
  *
  * @param {object} section - contains updated section data
  * @param {string} kssPath - path to KSS section
- * @param {bool} isInline - is the markup inline in KSS?
  * @param {object} store - memory store
  */
-kssHandler.updateSection = function(section, kssPath, isInline, store) {
+kssHandler.updateSectionData = function(section, kssPath, store) {
   const huron = store.get('config');
-  const oldData = utils.getSection(kssPath, false, store);
+  const oldSection = utils.getSection(kssPath, false, store) || {};
   const sectionMarkup = section.markup;
   const sectionFileInfo = path.parse(kssPath);
-  let resetData = null;
-  let newSort = kssHandler.sortSection(
-    store.getIn(['sections', 'sorted']),
-    section.referenceURI
-  );
-
-  // Store section data based on filepath so we can garbage-collect references
-  // in the future
-  if (oldData) {
-    // If section exists, merge section data
-    resetData = Object.assign({}, oldData, section);
-    newSort = kssHandler.unsortSection(newSort, oldData.referenceURI);
-  } else {
-    // If section does not exist, set the new section
-    resetData = section;
-  }
+  const dataFilepath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
+  let newSection = Object.assign({}, oldSection, section);;
+  let newStore = store;
 
   // Required for reference from templates and data
-  resetData.kssPath = kssPath;
+  newSection.kssPath = kssPath;
+
+  // Set section value if inlineTempalte() returned a path
+  newSection = kssHandler.updateInlineTemplate(kssPath, oldSection, newSection, newStore);
+
+  // Output section description
+  newSection = kssHandler.updateDescription(kssPath, oldSection, newSection, newStore);
+
+  // Output section data
+  newSection.sectionPath = utils.writeFile(
+    newSection.referenceURI,
+    'section',
+    dataFilepath,
+    JSON.stringify(newSection),
+    store
+  );
+
+  // Output new version of non-inline templates and data
+  // if section URI was changed (as those files are written using referenceURI)
+  newStore = kssHandler.updateReferenceURI(sectionFileInfo, oldSection, section, store);
 
   // Update section sorting
-  return store
+  return newStore
     .setIn(
       ['sections', 'sectionsByPath', kssPath],
-      resetData
+      newSection
     )
     .setIn(
       ['sections', 'sectionsByURI', section.referenceURI],
-      resetData
+      newSection
     )
-    .setIn(
-      ['sections', 'sorted'],
-      newSort
-    );
 }
 
 /**

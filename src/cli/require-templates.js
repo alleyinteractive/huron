@@ -11,9 +11,7 @@ export const requireTemplates = function(store) {
 
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
-let huronData = require('./huron-store.js');
-let store = huronData.store;
-let changed = huronData.changed;
+let store = require('./huron-store.js');
 
 let assets = require.context(
   '${path.join(cwd, huron.get('root'), huron.get('output'))}',
@@ -47,7 +45,7 @@ if (module.hot) {
 
       newModules.forEach((module) => {
         modules[module[0]] = module[1];
-        hotReplace(module[0], module[1], modules, store);
+        hotReplace(module[0], module[1], modules);
       });
     }
   );
@@ -61,22 +59,24 @@ if (module.hot) {
 }\n`
 
   const append = `
-function hotReplace(key, module, modules, store) {
+function hotReplace(key, module, modules) {
   insert.modules = modules;
-  insert.loadModule(key, module);
+  if (module === store.sectionTemplatePath) {
+    insert.cycleModules(document, false, {
+      property: 'type',
+      values: ['section'],
+      include: true,
+    });
+  } else {
+    insert.loadModule(document, key, module);
+  }
 }
 
-function updateStore(data) {
-  store = data.store;
-  changed = data.changed;
-  insert.store = store;
-
-  if (changed) {
-    insert.updateChangedSection(changed);
-  }
+function updateStore(newStore) {
+  insert.store = newStore;
 }\n`
 
-  // Write the contents of thsi script.
+  // Write the contents of this script.
   fs.outputFileSync(
     path.join(outputPath, 'huron.js'),
     `${prepend}\n\n${huronScript}\n\n${append}`
@@ -96,8 +96,7 @@ export const writeStore = function(store, changed = false) {
   // Write updated data store
   fs.outputFileSync(
     path.join(outputPath, 'huron-store.js'),
-    `module.exports.store = ${JSON.stringify(store.toJSON())}
-module.exports.changed = '${changed}'\n`
+    `module.exports = ${JSON.stringify(store.toJSON())}`
   );
 }
 
