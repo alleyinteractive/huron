@@ -87,6 +87,8 @@ export default function generateConfig(config) {
   // Set publicPath
   if (isHot) {
     config.output.publicPath = `http://localhost:${huron.port}/${huron.root}`;
+  } else {
+    config.output.publicPath = '';
   }
 
   return config;
