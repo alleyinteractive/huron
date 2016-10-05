@@ -159,6 +159,16 @@ kssHandler.updateReferenceURI = function(file, oldSection, section, store) {
     if (isInline) {
       utils.removeFile(oldSection.referenceURI, 'template', filepath, store);
     }
+
+    ['data', 'markup'].forEach((field) => {
+      if (oldSection[field]) {
+        const filepath = path.join(file.dir, oldSection[field]);
+
+        newStore = templateHandler.deleteTemplate(filepath, oldSection, newStore);
+        newStore = templateHandler.updateTemplate(filepath, section, newStore);
+      }
+    });
+
     // Remove old section data
     utils.removeFile(
       oldSection.referenceURI,
@@ -167,15 +177,6 @@ kssHandler.updateReferenceURI = function(file, oldSection, section, store) {
       store
     );
   }
-
-  ['data', 'markup'].forEach((field) => {
-    if (oldSection[field]) {
-      const filepath = path.join(file.dir, oldSection[field]);
-
-      newStore = templateHandler.deleteTemplate(filepath, oldSection, newStore);
-      newStore = templateHandler.updateTemplate(filepath, section, newStore);
-    }
-  });
 
   return newStore
     .setIn(

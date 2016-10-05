@@ -96,6 +96,6 @@ if (!program.production) {
 }
 
 // Start webpack or build for production
-// startWebpack(config);
+startWebpack(config);
 
 

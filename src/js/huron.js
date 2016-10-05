@@ -147,7 +147,10 @@ class InsertNodes {
    * @param {object} meta - Module metadata
    */
   replaceTemplate(context, meta) {
-    let tags = context.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`);
+    let tags = null;
+
+    meta.type = this.validateType(meta.type);
+    tags = context.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`);
 
     if (tags && meta.render) {
       for (let i = 0; i < tags.length; i++) {
@@ -291,15 +294,18 @@ class InsertNodes {
   /**
    * Verify specified element is using an acceptable huron type
    *
-   * @param  {HTMLElement} element - Html element to check huron type
+   * @param  {string} type - type of partial
+   *                         (template, data, description, section or prototype )
    *
    * @return {string} - huron type or 'template' if invalid
    */
-  validateType(element) {
-    const type = element.dataset.huronType;
+  validateType(type) {
+    if ('data' === type) {
+      return 'template';
+    }
 
     if (!this._types.includes(type)) {
-      return 'template';
+      return false;
     }
 
     return type;
