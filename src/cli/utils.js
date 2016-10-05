@@ -107,7 +107,7 @@ utils.writeFile = function(id, type, filepath, content, store) {
   const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
   const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
 
-  if ('data' !== type) {
+  if ('data' !== type && 'section' !== type) {
     content = utils.wrapMarkup(content, id);
   }
 
@@ -146,21 +146,30 @@ utils.removeFile = function(id, type, filepath, store) {
   return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;;
 }
 
+/**
+ * Write a template for sections
+ *
+ * @param  {string} filepath - the original template file
+ * @param  {object} store - data store
+ *
+ * @return {object} updated store
+ */
 utils.writeSectionTemplate = function(filepath, store) {
   const huron = store.get('config');
   const sectionTemplate = utils.wrapMarkup(fs.readFileSync(filepath, 'utf8'));
+  const componentPath = './huron-sections/sections.hbs';
   const output = path.join(
     cwd,
     huron.get('root'),
     huron.get('output'),
-    'huron-sections/sections.hbs'
+    componentPath
   );
 
   // Move huron script and section template into huron root
   fs.outputFileSync(output, sectionTemplate);
   console.log(chalk.green(`writing section template to ${output}`));
 
-  return store.set('sectionTemplatePath', './huron-sections/section.hbs');;
+  return store.set('sectionTemplatePath', componentPath);
 }
 
 /**

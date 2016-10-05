@@ -6,6 +6,10 @@
 
 	<!-- markup -->
 	{{#each modifiers}}
-		<div data-huron-id="{{ ../referenceURI }}" data-huron-modifier="{{ this.name }}" class="{{ this.className }}"></div>
+		<div data-huron-id="{{ ../referenceURI }}"
+			data-huron-type="template"
+			data-huron-modifier="{{ this.name }}"
+			class="{{ this.className }}">
+		</div>
 	{{/each}}
 </section>

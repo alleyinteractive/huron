@@ -67,7 +67,6 @@ if (!program.production) {
   gaze.on('changed', (filepath) => {
     const file = path.parse(filepath);
     store = updateFile(filepath, store);
-    console.log(filepath);
     console.log(chalk.green(`${filepath} updated!`));
   });
 

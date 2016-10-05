@@ -1,10 +1,11 @@
-const cwd = process.cwd(); // Current working directory
-const path = require('path');
-const fs = require('fs-extra');
-
 import { utils } from './utils';
 
 export const templateHandler = {};
+
+const cwd = process.cwd(); // Current working directory
+const path = require('path');
+const fs = require('fs-extra');
+const chalk = require('chalk')
 
 /**
  * Handle update of a template or data (json) file
@@ -19,24 +20,36 @@ templateHandler.updateTemplate = function(filepath, section, store) {
   const dest = path.resolve(cwd, huron.get('output'));
   const pairPath = utils.getTemplateDataPair(file, section, store);
   const type = '.json' === file.ext ? 'data' : 'template';
-  let content = fs.readFileSync(filepath, 'utf8');
+  let content = false;
 
-  let requirePath = utils.writeFile(section.referenceURI, type, filepath, content, store);
-  section[`${type}Path`] = requirePath;
+  try {
+    content = fs.readFileSync(filepath, 'utf8');
+  } catch(e) {
+    console.log(chalk.red(`${filepath} does not exist`));
+  }
 
-  return store
-    .setIn(
-      ['templates', requirePath],
-      pairPath
-    )
-    .setIn(
-      ['sections', 'sectionsByPath', section.kssPath],
-      section
-    )
-    .setIn(
-      ['sections', 'sectionsByURI', section.referenceURI],
-      section
-    );
+
+  if (content) {
+    let requirePath = utils.writeFile(section.referenceURI, type, filepath, content, store);
+    section[`${type}Path`] = requirePath;
+
+    return store
+      .setIn(
+        ['templates', requirePath],
+        pairPath
+      )
+      .setIn(
+        ['sections', 'sectionsByPath', section.kssPath],
+        section
+      )
+      .setIn(
+        ['sections', 'sectionsByURI', section.referenceURI],
+        section
+      );
+  } else {
+    console.log('hey');
+    return store;
+  }
 }
 
 /**
