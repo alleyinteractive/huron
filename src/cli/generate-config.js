@@ -3,8 +3,10 @@ const path = require('path');
 const fs = require('fs-extra');
 const cwd = process.cwd();
 const HTMLWebpackPlugin = require('html-webpack-plugin');
+const isHot = 'dev' === process.env.npm_lifecycle_event;
 import { defaultConfig } from '../../config/webpack.config.js';
 import { program } from './parse-args';
+
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -83,7 +85,9 @@ export default function generateConfig(config) {
   delete config.devServer;
 
   // Set publicPath
-  config.output.publicPath = `http://localhost:8080/${huron.root}`;
+  if (isHot) {
+    config.output.publicPath = `http://localhost:${huron.port}/${huron.root}`;
+  }
 
   return config;
 }
