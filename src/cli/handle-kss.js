@@ -19,6 +19,7 @@ export const kssHandler = {};
 kssHandler.updateKSS = function(filepath, store) {
   const kssSource = fs.readFileSync(filepath, 'utf8');
   const huron = store.get('config');
+  const oldData = utils.getSection(filepath, false, store);
   let newStore = store;
 
   if (kssSource) {
@@ -35,6 +36,9 @@ kssHandler.updateKSS = function(filepath, store) {
       return newStore;
     }
   } else {
+    if (oldData) {
+      newStore = kssHandler.deleteKSS(filepath, oldData, store);
+    }
     console.log(chalk.red(`${filepath} not found or empty`));
     return newStore;
   }
@@ -61,7 +65,7 @@ kssHandler.deleteKSS = function(filepath, section, store) {
   utils.removeFile(section.referenceURI, 'description', filepath, store);
 
   // Remove section data from memory store
-  return unsetSection(sections, section, filepath);
+  return kssHandler.unsetSection(section, filepath, store);
 }
 
 /**
@@ -238,6 +242,7 @@ kssHandler.updateSectionData = function(section, kssPath, store) {
  * @param {object} store - memory store
  */
 kssHandler.unsetSection = function(section, kssPath, store) {
+  const sorted = store.getIn(['sections', 'sorted']);
   const newSort = kssHandler.unsortSection(sorted, section.referenceURI);
   return store
     .deleteIn(['sections', 'sectionsByPath', kssPath])
@@ -261,7 +266,6 @@ kssHandler.sortSection = function(sorted, reference) {
   } else {
     sorted[parts[0]] = newSort;
   }
-
   return sorted;
 }
 
@@ -273,11 +277,13 @@ kssHandler.sortSection = function(sorted, reference) {
  */
 kssHandler.unsortSection = function(sorted, reference) {
   let parts = reference.split('-');
-  let newSort = sorted[parts[0]];
+  const subsections = Object.keys(sorted[parts[0]]);
 
-  if (parts.length > 1 && newSort) {
-    let newParts = parts.filter((part, idx) => idx !== 0);
-    sorted[parts[0]] = kssHandler.unsortSection(newSort, newParts.join('-'));
+  if (subsections.length) {
+    if (parts.length > 1) {
+      let newParts = parts.filter((part, idx) => idx !== 0);
+      sorted[parts[0]] = kssHandler.unsortSection(sorted[parts[0]], newParts.join('-'));
+    }
   } else {
     delete sorted[parts[0]];
   }
