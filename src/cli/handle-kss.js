@@ -20,6 +20,7 @@ kssHandler.updateKSS = function(filepath, store) {
   const kssSource = fs.readFileSync(filepath, 'utf8');
   const huron = store.get('config');
   const file = path.parse(filepath);
+  const oldData = utils.getSection(filepath, false, store);
   let newStore = store;
 
   if (kssSource) {
@@ -27,7 +28,6 @@ kssHandler.updateKSS = function(filepath, store) {
 
     if (styleguide.data.sections.length) {
       let section = utils.normalizeSectionData(styleguide.data.sections[0]);
-      const oldData = utils.getSection(filepath, false, newStore);
       let changed = false;
 
       // Tell HMR the section data has changed
@@ -65,6 +65,9 @@ kssHandler.updateKSS = function(filepath, store) {
       return newStore;
     }
   } else {
+    if (oldData) {
+      newStore = kssHandler.deleteKSS(filepath, oldData, store);
+    }
     console.log(chalk.red(`${filepath} not found or empty`));
     return newStore;
   }
@@ -91,7 +94,7 @@ kssHandler.deleteKSS = function(filepath, section, store) {
   utils.removeFile(section.referenceURI, 'description', filepath, store);
 
   // Remove section data from memory store
-  return unsetSection(sections, section, filepath);
+  return kssHandler.unsetSection(section, filepath, store);
 }
 
 /**
@@ -196,6 +199,7 @@ kssHandler.updateSection = function(section, kssPath, isInline, store) {
   // Store section data based on filepath so we can garbage-collect references
   // in the future
   if (oldData) {
+    console.log('hi');
     // If section exists, merge section data
     resetData = Object.assign({}, oldData, section);
     newSort = kssHandler.unsortSection(newSort, oldData.referenceURI);
@@ -231,6 +235,7 @@ kssHandler.updateSection = function(section, kssPath, isInline, store) {
  * @param {object} store - memory store
  */
 kssHandler.unsetSection = function(section, kssPath, store) {
+  const sorted = store.getIn(['sections', 'sorted']);
   const newSort = kssHandler.unsortSection(sorted, section.referenceURI);
   return store
     .deleteIn(['sections', 'sectionsByPath', kssPath])
@@ -266,11 +271,13 @@ kssHandler.sortSection = function(sorted, reference) {
  */
 kssHandler.unsortSection = function(sorted, reference) {
   let parts = reference.split('-');
-  let newSort = sorted[parts[0]];
+  const subsections = Object.keys(sorted[parts[0]]);
 
-  if (parts.length > 1 && newSort) {
-    let newParts = parts.filter((part, idx) => idx !== 0);
-    sorted[parts[0]] = kssHandler.unsortSection(newSort, newParts.join('-'));
+  if (subsections.length) {
+    if (parts.length > 1) {
+      let newParts = parts.filter((part, idx) => idx !== 0);
+      sorted[parts[0]] = kssHandler.unsortSection(sorted[parts[0]], newParts.join('-'));
+    }
   } else {
     delete sorted[parts[0]];
   }
