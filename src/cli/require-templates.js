@@ -13,7 +13,7 @@ export const requireTemplates = function(store) {
   const prepend = `
 let store = require('./huron-store.js');
 
-let assets = require.context(
+const assets = require.context(
   '${path.join(cwd, huron.get('root'), huron.get('output'))}',
   true,
   /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
@@ -73,9 +73,10 @@ function updateStore(newStore) {
 }\n`
 
   // Write the contents of this script.
+  // @todo lint this file.
   fs.outputFileSync(
     path.join(outputPath, 'huron.js'),
-    `${prepend}\n\n${huronScript}\n\n${append}`
+    `/*eslint-disable*/${prepend}\n\n${huronScript}\n\n${append}/*eslint-enable*/\n`
   );
 }
 
@@ -90,9 +91,12 @@ export const writeStore = function(store, changed = false) {
   const outputPath = path.join(cwd, huron.get('root'));
 
   // Write updated data store
+  // @todo lint this file.
   fs.outputFileSync(
     path.join(outputPath, 'huron-store.js'),
-    `module.exports = ${JSON.stringify(store.toJSON())}`
+    `/*eslint-disable*/
+    module.exports = ${JSON.stringify(store.toJSON())}
+    /*eslint-disable*/\n`
   );
 }
 
