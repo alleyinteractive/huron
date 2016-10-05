@@ -16,7 +16,7 @@ let store = huronData.store;
 let changed = huronData.changed;
 
 const assets = require.context(
-  '${path.join(cwd, huron.get('root'), huron.get('output'))}',
+  '${path.join('./', huron.get('root'), huron.get('output'))}',
   true,
   /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
 );
@@ -31,7 +31,7 @@ if (module.hot) {
     assets.id,
     () => {
       const newAssets = require.context(
-        '${path.join(cwd, huron.get('root'), huron.get('output'))}',
+        '${path.join('./', huron.get('root'), huron.get('output'))}',
         true,
         /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
       );
