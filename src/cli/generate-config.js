@@ -83,7 +83,7 @@ export default function generateConfig(config) {
   delete config.devServer;
 
   // Set publicPath
-  config.output.publicPath = 'http://localhost:8080/static/prototype';
+  config.output.publicPath = `http://localhost:8080/${huron.root}`;
 
   return config;
 }

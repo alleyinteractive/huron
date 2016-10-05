@@ -11,11 +11,11 @@ export const requireTemplates = function(store) {
 
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
-let huronData = require('./huron-store.js');
+const huronData = require('./huron-store.js');
 let store = huronData.store;
 let changed = huronData.changed;
 
-let assets = require.context(
+const assets = require.context(
   '${path.join(cwd, huron.get('root'), huron.get('output'))}',
   true,
   /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
@@ -78,10 +78,11 @@ if (module.hot) {
   }
   `
 
-  // Write the contents of thsi script.
+  // Write the contents of this script.
+  // @todo lint this file.
   fs.outputFileSync(
     path.join(outputPath, 'huron.js'),
-    `${prepend}\n\n${huronScript}\n\n${append}`
+    `/*eslint-disable*/${prepend}\n\n${huronScript}\n\n${append}/*eslint-enable*/\n`
   );
 }
 
@@ -96,10 +97,13 @@ export const writeStore = function(store, changed = false) {
   const outputPath = path.join(cwd, huron.get('root'));
 
   // Write updated data store
+  // @todo lint this file.
   fs.outputFileSync(
     path.join(outputPath, 'huron-store.js'),
-    `module.exports.store = ${JSON.stringify(store.toJSON())}
-    module.exports.changed = '${changed}'\n`
+    `/*eslint-disable*/
+    module.exports.store = ${JSON.stringify(store.toJSON())}
+    module.exports.changed = '${changed}'
+    /*eslint-disable*/\n`
   );
 }
 
