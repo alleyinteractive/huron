@@ -14,7 +14,7 @@ export const requireTemplates = function(store) {
 let store = require('./huron-store.js');
 
 const assets = require.context(
-  '${path.join('./', huron.get('root'), huron.get('output'))}',
+  './${huron.get('output')}',
   true,
   /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
 );
@@ -29,7 +29,7 @@ if (module.hot) {
     assets.id,
     () => {
       const newAssets = require.context(
-        '${path.join('./', huron.get('root'), huron.get('output'))}',
+        '${`./${huron.get('output')}`}',
         true,
         /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
       );

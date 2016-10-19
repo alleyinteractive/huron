@@ -20,17 +20,20 @@ const chalk = require('chalk'); // Colorize terminal output
 export function initFiles(data, store, depth = 0) {
   const type = Object.prototype.toString.call(data);
   let newStore = store;
+  let tempStore;
   let info;
   let files;
 
   switch (type) {
     case '[object Object]':
       files = Object.keys(data);
-      newStore = files.map((file) => initFiles(data[file], store, depth));
+      tempStore = files.map((file) => initFiles(data[file], store, depth));
+      newStore = tempStore[0];
       break;
 
     case '[object Array]':
-      newStore = data.map((file) => initFiles(file, store, depth));
+      tempStore = data.map((file) => initFiles(file, store, depth));
+      newStore = tempStore[0];
       break;
 
     case '[object String]':
