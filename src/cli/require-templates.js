@@ -29,7 +29,7 @@ if (module.hot) {
     assets.id,
     () => {
       const newAssets = require.context(
-        '${`./${huron.get('output')}`}',
+        './${huron.get('output')}',
         true,
         /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
       );
