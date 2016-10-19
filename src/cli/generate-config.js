@@ -1,10 +1,12 @@
-import { defaultConfig } from '../../config/webpack.config.js';
+import { defaultConfig } from '../../config/webpack.config';
 import { program } from './parse-args';
+
 const webpack = require('webpack');
 const path = require('path');
 const fs = require('fs-extra');
-const cwd = process.cwd();
 const HTMLWebpackPlugin = require('html-webpack-plugin');
+
+const cwd = process.cwd();
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -12,57 +14,65 @@ const HTMLWebpackPlugin = require('html-webpack-plugin');
  * @param {object} config - local webpack config
  */
 export default function generateConfig(config) {
-  config.huron = Object.assign({}, defaultConfig.huron, config.huron);
-  const huron = config.huron;
+  const huron = Object.assign({}, defaultConfig.huron, config.huron);
   const entry = config.entry[huron.entry];
-  const wrapperTemplate = fs.readFileSync(path.join(__dirname, '../../templates/huron-wrapper.ejs'), 'utf8');
+  const wrapperTemplate = fs.readFileSync(
+    path.join(__dirname, '../../templates/huron-wrapper.ejs'),
+    'utf8'
+  );
+  const newConfig = config;
 
   // Manage entries
-  config.entry = {};
-  if (!program.production) {
-    config.entry[huron.entry] = [
+  newConfig.entry = {};
+  if (! program.production) {
+    newConfig.entry[huron.entry] = [
       `webpack-dev-server/client?http://localhost:${huron.port}`,
       'webpack/hot/dev-server',
       path.join(cwd, huron.root, 'huron'),
     ].concat(entry);
   } else {
-    config.entry['dev'] = [path.join(cwd, huron.root, 'huron')].concat(entry);
+    newConfig.entry.dev = [
+      path.join(cwd, huron.root, 'huron'),
+    ].concat(entry);
   }
 
   // Manage loaders
   const templatesLoader = huron.templates.loader;
   templatesLoader.include = [path.join(cwd, huron.root)];
 
-  config.module = config.module || {};
-  config.module.loaders = config.module.loaders || [];
-  config.module.loaders.push(
+  newConfig.module = config.module || {};
+  newConfig.module.loaders = config.module.loaders || [];
+  newConfig.module.loaders.push(
     {
       test: /\.html?$/,
       loaders: ['html'],
-      include: [path.join(cwd, huron.root)]
+      include: [path.join(cwd, huron.root)],
     },
     {
       test: /\.json?$/,
       loaders: ['json'],
-      include: [path.join(cwd, huron.root)]
+      include: [path.join(cwd, huron.root)],
     },
     templatesLoader
   );
 
   // De-dupe HMR plugin
-  if (!program.production) {
+  if (! program.production) {
     if (config.plugins && config.plugins.length) {
-      config.plugins = config.plugins.filter(plugin => {
-        return plugin.constructor.name !== 'HotModuleReplacementPlugin';
-      });
+      newConfig.plugins = config.plugins.filter(
+        (plugin) => 'HotModuleReplacementPlugin' !== plugin.constructor.name
+      );
     }
-    config.plugins.push(new webpack.HotModuleReplacementPlugin());
+    newConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
   }
 
   // Init HTML webpack plugin
-  fs.outputFileSync(path.join(cwd, huron.root, 'huron-wrapper.ejs'), wrapperTemplate);
-  huron.prototypes.forEach(prototype => {
-    config.plugins.push(
+  fs.outputFileSync(
+    path.join(cwd, huron.root, 'huron-wrapper.ejs'),
+    wrapperTemplate
+  );
+  huron.prototypes.forEach((prototype) => {
+    newConfig.plugins.push(
       new HTMLWebpackPlugin({
         title: prototype,
         window: huron.window,
@@ -70,24 +80,24 @@ export default function generateConfig(config) {
         filename: `${prototype}.html`,
         template: path.join(huron.root, 'huron-wrapper.ejs'),
         inject: false,
-        chunks: [huron.entry]
+        chunks: [huron.entry],
       })
     );
   });
 
   // Set ouput options
-  config.output = Object.assign({}, config.output, defaultConfig.output);
-  config.output.path = path.resolve(cwd, huron.root);
+  newConfig.output = Object.assign({}, config.output, defaultConfig.output);
+  newConfig.output.path = path.resolve(cwd, huron.root);
 
   // Remove existing devServer settings
-  delete config.devServer;
+  delete newConfig.devServer;
 
   // Set publicPath
-  if (!program.production) {
-    config.output.publicPath = `http://localhost:${huron.port}/${huron.root}`;
+  if (! program.production) {
+    newConfig.output.publicPath = `http://localhost:${huron.port}/${huron.root}`;
   } else {
-    config.output.publicPath = '';
+    newConfig.output.publicPath = '';
   }
 
-  return config;
+  return newConfig;
 }

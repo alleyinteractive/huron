@@ -1,5 +1,5 @@
 // Imports
-import { htmlHandler } from './handle-html';
+import htmlHandler from './handle-html';
 import { templateHandler } from './handle-templates';
 import { kssHandler } from './handle-kss';
 import { utils } from './utils';
@@ -20,20 +20,23 @@ const chalk = require('chalk'); // Colorize terminal output
 export function initFiles(data, store, depth = 0) {
   const type = Object.prototype.toString.call(data);
   let newStore = store;
-  let tempStore;
   let info;
   let files;
 
   switch (type) {
     case '[object Object]':
       files = Object.keys(data);
-      tempStore = files.map((file) => initFiles(data[file], store, depth));
-      newStore = tempStore[0];
+      newStore = files.reduce(
+        (prevStore, file) => initFiles(data[file], prevStore, depth),
+        newStore
+      );
       break;
 
     case '[object Array]':
-      tempStore = data.map((file) => initFiles(file, store, depth));
-      newStore = tempStore[0];
+      newStore = data.reduce(
+        (prevStore, file) => initFiles(file, prevStore, depth),
+        newStore
+      );
       break;
 
     case '[object String]':
@@ -72,7 +75,7 @@ export function updateFile(filepath, store) {
       section = utils.getSection(file.base, 'markup', store);
 
       if (section) {
-        return htmlHandler.updateTempate(filepath, section, store);
+        return htmlHandler.updateTemplate(filepath, section, store);
       } else if (
         - 1 !== file.dir.indexOf('prototypes') &&
         - 1 !== file.name.indexOf('prototype-')
