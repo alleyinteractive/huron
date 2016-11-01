@@ -26,7 +26,8 @@ export default function generateConfig(config) {
       path.join(cwd, huron.root, 'huron'),
     ].concat(entry);
   } else {
-    config.entry['dev'] = [path.join(cwd, huron.root, 'huron')].concat(entry);
+    config.entry[huron.entry] = [path.join(cwd, huron.root, 'huron')]
+      .concat(entry);
   }
 
   // Manage loaders
@@ -37,12 +38,12 @@ export default function generateConfig(config) {
   config.module.loaders = config.module.loaders || [];
   config.module.loaders.push(
     {
-      test: /\.html?$/,
+      test: /\.html$/,
       loaders: ['html'],
       include: [path.join(cwd, huron.root)]
     },
     {
-      test: /\.json?$/,
+      test: /\.json$/,
       loaders: ['json'],
       include: [path.join(cwd, huron.root)]
     },

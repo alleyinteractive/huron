@@ -8,7 +8,9 @@ export const requireTemplates = function(store) {
   const templatePathArray = [];
   const templateIds = [];
   const outputPath = path.join(cwd, huron.get('root'));
-  const requireRegex = new RegExp(`\.(html|json|${huron.get('templates').extension.replace('.', '')})$`);
+  const requireRegex = new RegExp(`\\.html|\\.json|\\${
+    huron.get('templates').extension
+  }$`);
   const requirePath = `'./${huron.get('output')}'`
 
   // Initialize templates, js, css and HMR acceptance logic
