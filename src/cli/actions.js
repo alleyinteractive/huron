@@ -2,7 +2,6 @@
 const cwd = process.cwd(); // Current working directory
 const path = require('path');
 const fs = require('fs-extra');
-const Promise = require('bluebird');
 const chalk = require('chalk'); // Colorize terminal output
 
 // Imports

@@ -8,16 +8,15 @@ export const requireTemplates = function(store) {
   const templatePathArray = [];
   const templateIds = [];
   const outputPath = path.join(cwd, huron.get('root'));
+  const requireRegex = new RegExp(`\\.html|\\.json|\\${
+    huron.get('templates').extension
+  }$`);
+  const requirePath = `'./${huron.get('output')}'`
 
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
 let store = require('./huron-store.js');
-
-const assets = require.context(
-  './${huron.get('output')}',
-  true,
-  /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
-);
+const assets = require.context(${requirePath}, true, ${requireRegex});
 const modules = {};
 
 assets.keys().forEach(function(key) {
@@ -28,11 +27,7 @@ if (module.hot) {
   module.hot.accept(
     assets.id,
     () => {
-      const newAssets = require.context(
-        './${huron.get('output')}',
-        true,
-        /\.(html|json|${huron.get('templates').extension.replace('.', '')})/
-      );
+      const newAssets = require.context(${requirePath}, true, ${requireRegex});
       const newModules = newAssets.keys()
         .map((key) => {
           return [key, newAssets(key)];
