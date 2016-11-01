@@ -68,6 +68,7 @@ export default function generateConfig(config) {
         title: prototype,
         window: huron.window,
         js: huron.js,
+        css: huron.css,
         filename: `${prototype}.html`,
         template: path.join(huron.root, 'huron-wrapper.ejs'),
         inject: false,
