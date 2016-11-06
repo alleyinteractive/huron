@@ -157,6 +157,7 @@ class InsertNodes {
         const currentTag = tags.item(i);
         const parentTag = currentTag.parentNode;
         const modifier = currentTag.dataset.huronModifier;
+        // const isReplaced = currentTag.dataset.huronReplaced;
         let rendered = null;
 
         if (meta.data) {
@@ -176,25 +177,44 @@ class InsertNodes {
 
         const results = [...currentTag.childNodes];
 
-        results.forEach((result) => {
+        const resultElements = results.filter((result) => {
+          return result instanceof HTMLElement;
+        });
+
+        if (resultElements.length > 1) {
+          console.warn(
+            `Module needs to be wrapped in single tag.
+            section: ${meta.id}
+            type: ${meta.type}`
+          );
+        }
+
+        results.some((result) => {
+
+          console.log(results, result);
 
           if (result instanceof HTMLElement) {
-            result.setAttribute('data-huron-replace-id', meta.id);
-            result.setAttribute('data-huron-replace-type', meta.type);
+
+            // Put the attributes back on this div.
+            result.setAttribute('data-huron-id', meta.id);
+            result.setAttribute('data-huron-type', meta.type);
+            // result.setAttribute('data-huron-replaced', 'true');
 
             if (modifier) {
-              result.setAttribute('data-huron-replace-modifier', modifier);
+              result.setAttribute('data-huron-modifier', modifier);
             }
 
-          }
-          parentTag.insertBefore(result, currentTag);
+            parentTag.insertBefore(result, currentTag);
 
-          // Recursively load modules, excluding the current one
-          this.cycleModules(currentTag, true, {
-            property: 'key',
-            values: [meta.key, this._sectionTemplatePath],
-            include: false,
-          });
+            // Recursively load modules, excluding the current one
+            this.cycleModules(currentTag, true, {
+              property: 'key',
+              values: [meta.key, this._sectionTemplatePath],
+              include: false,
+            });
+          }
+
+          return result instanceof HTMLElement;
         });
 
         parentTag.removeChild(currentTag);
