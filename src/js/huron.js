@@ -1,3 +1,5 @@
+const crypto = require('crypto-browserify');
+
 // Accept the huron.js module for Huron development
 if (module.hot) {
   module.hot.accept();
@@ -18,6 +20,7 @@ class InsertNodes {
     this._templates = null;
     this._prototypes = null;
     this._types = null;
+    this._inserted = [];
 
     // Module meta
     this.meta = {};
@@ -26,19 +29,18 @@ class InsertNodes {
     this.store = store;
 
     // Inits
-    this.cycleModules(document);
+    this.cycleModules();
     this.cycleStyleguide();
   }
 
   /**
    * Replace all template markers with the actual template markup.
    *
-   * @param  {object} context    The context (e.g. document) that you will query
-   *                             for the template ID to replace
+   * @param  {string} context    The hash context for the module
    * @param  {bool}   cached     Whether or not to use cached values for module replacement
    * @param  {object} filter     Filter for modules. Fields explained in the filterModules() function docs
    */
-  cycleModules(context, cached = false, filter = false) {
+  cycleModules(context = false, cached = false, filter = false) {
     for (let module in this._modules) {
       this.loadModule(context, module, this._modules[module], cached, filter);
     }
@@ -68,7 +70,7 @@ class InsertNodes {
    * Helper for reloading sections only
    */
   cycleSections() {
-    this.cycleModules(document, false, {
+    this.cycleModules(false, false, {
       property: 'type',
       values: ['section'],
       include: true,
@@ -109,7 +111,7 @@ class InsertNodes {
   }
 
   /**
-   * Replace all template markers with the actual template markup.
+   * Filter module object by module key or module type
    *
    * @param {object} filter - Filter for modules. Options:
    * @param {string} filter.property - Which property to filter ('key' or 'type')
@@ -147,90 +149,103 @@ class InsertNodes {
    * @param {object} meta - Module metadata
    */
   replaceTemplate(context, meta) {
+    const type = this.validateType(meta.type);
+    let hashContext = null;
     let tags = null;
 
-    meta.type = this.validateType(meta.type);
-    tags = context.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`);
+    if (!context) {
+      this._inserted = [];
+      tags = document.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${type}"]`);
+    } else {
+      tags = [];
+      // @todo Make this the context instead
+      hashContext = [...document.querySelectorAll(`[data-parent-hash="${context}"]`)];
 
-    if (tags && meta.render) {
-      for (let i = 0; i < tags.length; i++) {
-        const currentTag = tags.item(i);
-        const parentTag = currentTag.parentNode;
-        const modifier = currentTag.dataset.huronModifier;
-        // const isReplaced = currentTag.dataset.huronReplaced;
-        let rendered = null;
-
-        if (meta.data) {
-          // If we have a modifier, use it, otherwise use the entire data set
-          if (modifier && meta.data[modifier]) {
-            rendered = meta.render(meta.data[modifier]);
-          } else {
-            rendered = meta.render(meta.data);
-          }
-        } else {
-          rendered = meta.render();
+      hashContext.forEach((hashEl) => {
+        if (
+          hashEl.dataset &&
+          hashEl.dataset.huronId === meta.id &&
+          hashEl.dataset.huronType === type
+        ) {
+          tags.push(hashEl);
         }
 
-        currentTag.innerHTML = this.convertToElement(rendered)
-          .querySelector('template')
-          .innerHTML;
+        tags = tags.concat(
+          [...hashEl.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${type}"]`)]
+        );
+      });
+    }
 
-        // Collect the rendered childNodes.
-        const results = [...currentTag.childNodes];
+    if (tags) {
+      if (tags.length && meta.render) {
+        tags.forEach((currentTag) => {
+          const modifier = currentTag.dataset.huronModifier;
+          const hash = crypto.createHash('md5')
+            .update(`${meta.id}${type}${modifier ? modifier : ''}`)
+            .digest('hex')
+            .slice(0, 7);
 
-        // Check that they are elements.
-        const resultElements = results.filter((result) => {
-          return result instanceof HTMLElement;
-        });
+          if (-1 === this._inserted.indexOf(hash)) {
+            const parent = currentTag.parentNode;
+            let rendered = null;
+            let renderedContents = null;
+            let renderedTemplate = null;
 
-        // If not exactly 1, echo a warning.
-        if (1 !== resultElements.length) {
-          console.warn(
-            `Module needs to be wrapped in single tag.
-            section: ${meta.id}
-            type: ${meta.type}`
-          );
-        }
+            this.removeOldTags(hash);
 
-        // Go through the child elements and apply the parent's
-        // attributes to the first child Element
-        results.some((result) => {
-
-          if (result instanceof HTMLElement) {
-
-            // Put the attributes back on this div.
-            result.setAttribute('data-huron-id', meta.id);
-            result.setAttribute('data-huron-type', meta.type);
-            if (modifier) {
-              result.setAttribute('data-huron-modifier', modifier);
+            if (meta.data) {
+              // If we have a modifier, use it, otherwise use the entire data set
+              if (modifier && meta.data[modifier]) {
+                rendered = meta.render(meta.data[modifier]);
+              } else {
+                rendered = meta.render(meta.data);
+              }
+            } else {
+              rendered = meta.render();
             }
 
-            // Take this element out of the current tag and
-            // insert it before its parent.
-            parentTag.insertBefore(result, currentTag);
+            renderedContents = [
+              ...this.convertToElement(rendered)
+                .querySelector('template')
+                .content
+                .children
+            ];
+            currentTag.dataset.selfHash = hash;
+            this._inserted.push(hash);
 
-            // Recursively load modules, excluding the current one
-            this.cycleModules(result, true, {
-              property: 'key',
-              values: [meta.key, this._sectionTemplatePath],
-              include: false,
+            renderedContents.forEach((element) => {
+              if (1 === element.nodeType) {
+                element.dataset.parentHash = hash;
+                parent.insertBefore(element, currentTag);
+              }
             });
-
-            // Remove original tag completely.
-            parentTag.removeChild(currentTag);
           }
 
-          // End loop after firstElementChild
-          return result instanceof HTMLElement;
+          // Recursively load modules, excluding the current one
+          // @todo prevent this from calling for each tag?
+          this.cycleModules(hash, true, {
+            property: 'key',
+            values: [meta.key, this._sectionTemplatePath],
+            include: false,
+          });
         });
-
-      } //end of for tags
+      }
     } else {
       console.warn(
         `Could not render module
         section: ${meta.id}
         type: ${meta.type}`
       );
+    }
+  }
+
+  removeOldTags(hash) {
+    let oldTags = document.querySelectorAll(`[data-parent-hash="${hash}"]`);
+
+    if (oldTags && oldTags.length) {
+      oldTags.forEach((tag) => {
+        tag.parentNode.removeChild(tag);
+      });
     }
   }
 
@@ -280,7 +295,7 @@ class InsertNodes {
         .filter((name) => this._prototypes[name] === key);
 
       if (prototype.length) {
-        id = prototype;
+        id = prototype[0];
         type = 'prototype';
       }
     } else if (key === this._sectionTemplatePath) {
