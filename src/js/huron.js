@@ -175,13 +175,16 @@ class InsertNodes {
           .querySelector('template')
           .innerHTML;
 
+        // Collect the rendered childNodes.
         const results = [...currentTag.childNodes];
 
+        // Check that they are elements.
         const resultElements = results.filter((result) => {
           return result instanceof HTMLElement;
         });
 
-        if (resultElements.length > 1) {
+        // If not exactly 1, echo a warning.
+        if (1 !== resultElements.length) {
           console.warn(
             `Module needs to be wrapped in single tag.
             section: ${meta.id}
@@ -189,36 +192,39 @@ class InsertNodes {
           );
         }
 
+        // Go through the child elements and apply the parent's
+        // attributes to the first child Element
         results.some((result) => {
-
-          console.log(results, result);
 
           if (result instanceof HTMLElement) {
 
             // Put the attributes back on this div.
             result.setAttribute('data-huron-id', meta.id);
             result.setAttribute('data-huron-type', meta.type);
-            // result.setAttribute('data-huron-replaced', 'true');
-
             if (modifier) {
               result.setAttribute('data-huron-modifier', modifier);
             }
 
+            // Take this element out of the current tag and
+            // insert it before its parent.
             parentTag.insertBefore(result, currentTag);
 
             // Recursively load modules, excluding the current one
-            this.cycleModules(currentTag, true, {
+            this.cycleModules(result, true, {
               property: 'key',
               values: [meta.key, this._sectionTemplatePath],
               include: false,
             });
+
+            // Remove original tag completely.
+            parentTag.removeChild(currentTag);
           }
 
+          // End loop after firstElementChild
           return result instanceof HTMLElement;
         });
 
-        parentTag.removeChild(currentTag);
-      }
+      } //end of for tags
     } else {
       console.warn(
         `Could not render module
@@ -226,6 +232,31 @@ class InsertNodes {
         type: ${meta.type}`
       );
     }
+  }
+
+  /**
+   * Look that a context only has one element child.
+   * Return it or warn that there is more than one.
+   *
+   * @param  {object} context HTMLElement
+   * @return {object}         First element child of context.
+   */
+  ensureFirstElementChild(context) {
+    const results = [...context.childNodes];
+
+    const resultElements = results.filter((result) => {
+      return result instanceof HTMLElement;
+    });
+
+    if (1 !== resultElements.length) {
+      console.warn(
+        `Module needs to be wrapped in single tag.
+        section: ${meta.id}
+        type: ${meta.type}`
+      );
+    }
+
+    return context.firstElementChild;
   }
 
   /**
