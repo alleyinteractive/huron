@@ -154,8 +154,9 @@ class InsertNodes {
 
     if (tags && meta.render) {
       for (let i = 0; i < tags.length; i++) {
-        let currentTag = tags.item(i);
-        let modifier = currentTag.dataset.huronModifier;
+        const currentTag = tags.item(i);
+        const parentTag = currentTag.parentNode;
+        const modifier = currentTag.dataset.huronModifier;
         let rendered = null;
 
         if (meta.data) {
@@ -171,14 +172,32 @@ class InsertNodes {
 
         currentTag.innerHTML = this.convertToElement(rendered)
           .querySelector('template')
-          .innerHTML
+          .innerHTML;
 
-        // Recursively load modules, excluding the current one
-        this.cycleModules(currentTag, true, {
-          property: 'key',
-          values: [meta.key, this._sectionTemplatePath],
-          include: false,
+        const results = [...currentTag.childNodes];
+
+        results.forEach((result) => {
+
+          if (result instanceof HTMLElement) {
+            result.setAttribute('data-huron-replace-id', meta.id);
+            result.setAttribute('data-huron-replace-type', meta.type);
+
+            if (modifier) {
+              result.setAttribute('data-huron-replace-modifier', modifier);
+            }
+
+          }
+          parentTag.insertBefore(result, currentTag);
+
+          // Recursively load modules, excluding the current one
+          this.cycleModules(currentTag, true, {
+            property: 'key',
+            values: [meta.key, this._sectionTemplatePath],
+            include: false,
+          });
         });
+
+        parentTag.removeChild(currentTag);
       }
     } else {
       console.warn(
