@@ -153,11 +153,13 @@ class InsertNodes {
 
     if (this.validateType(meta.type)) {
       if (!context) {
+        // Reset inserted cache
         this._inserted = [];
         tags = document.querySelectorAll(
           `[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`
         );
       } else {
+        // Search for this module within a hash context
         tags = this.generateHashContext(meta, context);
       }
 
@@ -170,23 +172,34 @@ class InsertNodes {
             let renderedContents = null;
             let renderedTemplate = null;
 
+            // Remove existing module tags
             this.removeOldTags(meta.hash, currentTag.previousSibling);
 
+            // Get the contents of the rendered template
             renderedContents = [
               ...this.convertToElement(rendered)
                 .querySelector('template')
                 .content
                 .children
             ];
-            currentTag.dataset.selfHash = meta.hash;
-            this._inserted.push(currentTag);
 
+            // Insert each tag of the template contents before placeholder
             renderedContents.forEach((element) => {
               if (1 === element.nodeType) {
                 element.dataset.parentHash = meta.hash;
                 parent.insertBefore(element, currentTag);
               }
             });
+
+            // Add module hash to this placeholder
+            currentTag.dataset.selfHash = meta.hash;
+
+            // Add this placeholder to the inserted cache,
+            // to make sure we don't insert it twice
+            this._inserted.push(currentTag);
+
+            // Hide the placeholder
+            currentTag.style.display = 'none';
 
             // Recursively load modules, excluding the current one
             // @todo prevent this from calling for each tag?
