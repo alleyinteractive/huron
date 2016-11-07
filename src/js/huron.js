@@ -230,31 +230,6 @@ class InsertNodes {
   }
 
   /**
-   * Look that a context only has one element child.
-   * Return it or warn that there is more than one.
-   *
-   * @param  {object} context HTMLElement
-   * @return {object}         First element child of context.
-   */
-  ensureFirstElementChild(context) {
-    const results = [...context.childNodes];
-
-    const resultElements = results.filter((result) => {
-      return result instanceof HTMLElement;
-    });
-
-    if (1 !== resultElements.length) {
-      console.warn(
-        `Module needs to be wrapped in single tag.
-        section: ${meta.id}
-        type: ${meta.type}`
-      );
-    }
-
-    return context.firstElementChild;
-  }
-
-  /**
    * Get module metadata from a module require path
    *
    * @param  {string} key - Module require path
