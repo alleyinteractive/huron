@@ -37,6 +37,7 @@ const dataStructure = Immutable.Map({
     'description',
     'section',
     'prototype',
+    'section-template',
   ],
   config: Immutable.Map(config.huron),
   sections: Immutable.Map({
