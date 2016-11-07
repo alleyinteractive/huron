@@ -47,7 +47,6 @@ templateHandler.updateTemplate = function(filepath, section, store) {
         section
       );
   } else {
-    console.log('hey');
     return store;
   }
 }
