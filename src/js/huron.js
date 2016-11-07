@@ -42,7 +42,7 @@ class InsertNodes {
    */
   cycleModules(context = false, cached = false, filter = false) {
     for (let module in this._modules) {
-      this.loadModule(context, module, this._modules[module], cached, filter);
+      this.loadModule(module, this._modules[module], context, cached, filter);
     }
   }
 
@@ -87,7 +87,7 @@ class InsertNodes {
    * @param {bool}    chached    Whether or not to use cached values for module replacement
    * @param {object}  filter     Filter for modules. Fields explained in the filterModules() function docs
    */
-  loadModule(context, key, module, cached = false, filter = false) {
+  loadModule(key, module, context = false, cached = false, filter = false) {
     let moduleMeta = null;
     let shouldLoad = true;
 
@@ -105,7 +105,7 @@ class InsertNodes {
       }
 
       if (shouldLoad) {
-        this.replaceTemplate(context, moduleMeta);
+        this.replaceTemplate(moduleMeta, context);
       }
     }
   }
@@ -148,87 +148,57 @@ class InsertNodes {
    *                          for the template ID to replace
    * @param {object} meta - Module metadata
    */
-  replaceTemplate(context, meta) {
-    const type = this.validateType(meta.type);
-    let hashContext = null;
+  replaceTemplate(meta, context = false) {
     let tags = null;
 
-    if (!context) {
-      this._inserted = [];
-      tags = document.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${type}"]`);
-    } else {
-      tags = [];
-      // @todo Make this the context instead
-      hashContext = [...document.querySelectorAll(`[data-parent-hash="${context}"]`)];
-
-      hashContext.forEach((hashEl) => {
-        if (
-          hashEl.dataset &&
-          hashEl.dataset.huronId === meta.id &&
-          hashEl.dataset.huronType === type
-        ) {
-          tags.push(hashEl);
-        }
-
-        tags = tags.concat(
-          [...hashEl.querySelectorAll(`[data-huron-id="${meta.id}"][data-huron-type="${type}"]`)]
+    if (this.validateType(meta.type)) {
+      if (!context) {
+        this._inserted = [];
+        tags = document.querySelectorAll(
+          `[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`
         );
-      });
-    }
+      } else {
+        tags = this.generateHashContext(meta, context);
+      }
 
-    if (tags) {
-      if (tags.length && meta.render) {
+      if (tags && tags.length && meta.render) {
         tags.forEach((currentTag) => {
           const modifier = currentTag.dataset.huronModifier;
-          const hash = crypto.createHash('md5')
-            .update(`${meta.id}${type}${modifier ? modifier : ''}`)
-            .digest('hex')
-            .slice(0, 7);
+          const parent = currentTag.parentNode;
+          const rendered = this.applyModifier(modifier, meta);
+          let renderedContents = null;
+          let renderedTemplate = null;
 
-          if (-1 === this._inserted.indexOf(hash)) {
-            const parent = currentTag.parentNode;
-            let rendered = null;
-            let renderedContents = null;
-            let renderedTemplate = null;
+          this.removeOldTags(meta.hash, currentTag);
 
-            this.removeOldTags(hash);
+          renderedContents = [
+            ...this.convertToElement(rendered)
+              .querySelector('template')
+              .content
+              .children
+          ];
+          currentTag.dataset.selfHash = meta.hash;
+          this._inserted.push(meta.hash);
 
-            if (meta.data) {
-              // If we have a modifier, use it, otherwise use the entire data set
-              if (modifier && meta.data[modifier]) {
-                rendered = meta.render(meta.data[modifier]);
-              } else {
-                rendered = meta.render(meta.data);
-              }
-            } else {
-              rendered = meta.render();
+          renderedContents.forEach((element) => {
+            if (1 === element.nodeType) {
+              element.dataset.parentHash = meta.hash;
+              parent.insertBefore(element, currentTag);
             }
-
-            renderedContents = [
-              ...this.convertToElement(rendered)
-                .querySelector('template')
-                .content
-                .children
-            ];
-            currentTag.dataset.selfHash = hash;
-            this._inserted.push(hash);
-
-            renderedContents.forEach((element) => {
-              if (1 === element.nodeType) {
-                element.dataset.parentHash = hash;
-                parent.insertBefore(element, currentTag);
-              }
-            });
-          }
+          });
 
           // Recursively load modules, excluding the current one
           // @todo prevent this from calling for each tag?
-          this.cycleModules(hash, true, {
+          this.cycleModules(meta.hash, true, {
             property: 'key',
             values: [meta.key, this._sectionTemplatePath],
             include: false,
           });
         });
+      } else {
+        if (! context) {
+          this.cleanupTags(meta.hash);
+        }
       }
     } else {
       console.warn(
@@ -239,14 +209,85 @@ class InsertNodes {
     }
   }
 
-  removeOldTags(hash) {
-    let oldTags = document.querySelectorAll(`[data-parent-hash="${hash}"]`);
+  generateModuleHash(key) {
+    return crypto.createHash('md5')
+      .update(key)
+      .digest('hex');
+  }
 
-    if (oldTags && oldTags.length) {
-      oldTags.forEach((tag) => {
+  generateHashContext(meta, context) {
+    let tags = [];
+    let hashContext = [...document.querySelectorAll(`[data-parent-hash="${context}"]`)];
+
+    if (hashContext && hashContext.length) {
+      hashContext.forEach((hashEl) => {
+        if (
+          hashEl.dataset &&
+          hashEl.dataset.huronId === meta.id &&
+          hashEl.dataset.huronType === meta.type
+        ) {
+          tags.push(hashEl);
+        }
+
+        tags = tags.concat(
+          [...hashEl.querySelectorAll(
+            `[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`
+          )]
+        );
+      });
+    }
+
+    return tags;
+  }
+
+  removeOldTags(hash, currentTag) {
+    let checkTag = currentTag.previousSibling;
+
+    while (checkTag) {
+      let validateTag = checkTag;
+      checkTag = checkTag.previousSibling;
+
+      if (validateTag.dataset) {
+        if (validateTag.dataset.selfHash === hash) {
+          // This is another instance of this module
+          break;
+        } else if (validateTag.dataset.parentHash === hash) {
+          // This is a child of the current module,
+          // so remove it
+          validateTag.parentNode.removeChild(validateTag);
+          continue;
+        }
+      }
+    }
+  }
+
+  cleanupTags(hash) {
+    const orphans = [...document.querySelectorAll(
+      `[data-parent-hash="${meta.hash}"]`
+    )];
+
+    if (orphans && orphans.length) {
+      orphans.forEach((tag) => {
         tag.parentNode.removeChild(tag);
       });
     }
+  }
+
+  applyModifier(modifier, meta) {
+    let rendered = false;
+
+    if (meta.data) {
+      // If we have a modifier, use it, otherwise use the entire data set
+      if (modifier && meta.data[modifier]) {
+        rendered = meta.render(meta.data[modifier]);
+      } else {
+        rendered = meta.render(meta.data);
+      }
+    } else {
+      rendered = meta.render();
+    }
+
+    return rendered;
   }
 
   /**
@@ -315,9 +356,10 @@ class InsertNodes {
 
     if (id && type) {
       const renderData = this.getModuleRender(type, key, module);
+      const hash = this.generateModuleHash(key);
 
       if (renderData) {
-        return Object.assign({id, type, key, module}, renderData);
+        return Object.assign({id, type, key, hash, module}, renderData);
       }
     }
 

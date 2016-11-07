@@ -59,7 +59,7 @@ function hotReplace(key, module, modules) {
   if (key === store.sectionTemplatePath) {
     insert.cycleSections();
   } else {
-    insert.loadModule(false, key, module);
+    insert.loadModule(key, module, false);
   }
 }
 
