@@ -50,8 +50,10 @@ class InsertNodes {
    * Reload styleguide sections and menu helpers
    */
   cycleStyleguide() {
-    // Sections
     const sectionsQuery = document.querySelector('[huron-sections]');
+    const menuQuery = document.querySelector('[huron-menu]');
+
+    // Sections
     if (sectionsQuery) {
       sectionsQuery.innerHTML = '';
       this.outputSections(null, sectionsQuery);
@@ -59,7 +61,6 @@ class InsertNodes {
     }
 
     // Menu
-    const menuQuery = document.querySelector('[huron-menu]');
     if (menuQuery) {
       menuQuery.innerHTML = '';
       this.outputMenu(null, menuQuery);
@@ -99,7 +100,6 @@ class InsertNodes {
     }
 
     if (moduleMeta) {
-
       if (filter) {
         shouldLoad = this.filterModules(filter, moduleMeta);
       }
@@ -163,42 +163,40 @@ class InsertNodes {
 
       if (tags && tags.length && meta.render) {
         tags.forEach((currentTag) => {
-          const modifier = currentTag.dataset.huronModifier;
-          const parent = currentTag.parentNode;
-          const rendered = this.applyModifier(modifier, meta);
-          let renderedContents = null;
-          let renderedTemplate = null;
+          if (-1 === this._inserted.indexOf(currentTag)) {
+            const modifier = currentTag.dataset.huronModifier;
+            const parent = currentTag.parentNode;
+            const rendered = this.applyModifier(modifier, meta);
+            let renderedContents = null;
+            let renderedTemplate = null;
 
-          this.removeOldTags(meta.hash, currentTag);
+            this.removeOldTags(meta.hash, currentTag.previousSibling);
 
-          renderedContents = [
-            ...this.convertToElement(rendered)
-              .querySelector('template')
-              .content
-              .children
-          ];
-          currentTag.dataset.selfHash = meta.hash;
-          this._inserted.push(meta.hash);
+            renderedContents = [
+              ...this.convertToElement(rendered)
+                .querySelector('template')
+                .content
+                .children
+            ];
+            currentTag.dataset.selfHash = meta.hash;
+            this._inserted.push(currentTag);
 
-          renderedContents.forEach((element) => {
-            if (1 === element.nodeType) {
-              element.dataset.parentHash = meta.hash;
-              parent.insertBefore(element, currentTag);
-            }
-          });
+            renderedContents.forEach((element) => {
+              if (1 === element.nodeType) {
+                element.dataset.parentHash = meta.hash;
+                parent.insertBefore(element, currentTag);
+              }
+            });
 
-          // Recursively load modules, excluding the current one
-          // @todo prevent this from calling for each tag?
-          this.cycleModules(meta.hash, true, {
-            property: 'key',
-            values: [meta.key, this._sectionTemplatePath],
-            include: false,
-          });
+            // Recursively load modules, excluding the current one
+            // @todo prevent this from calling for each tag?
+            this.cycleModules(meta.hash, true, {
+              property: 'key',
+              values: [meta.key, this._sectionTemplatePath],
+              include: false,
+            });
+          }
         });
-      } else {
-        if (! context) {
-          this.cleanupTags(meta.hash);
-        }
       }
     } else {
       console.warn(
@@ -209,18 +207,31 @@ class InsertNodes {
     }
   }
 
+  /**
+   * Generate a hash string from a module key
+   *
+   * @param {string} key - module key (require path) to convert into a hash
+   */
   generateModuleHash(key) {
     return crypto.createHash('md5')
       .update(key)
       .digest('hex');
   }
 
+  /**
+   * Create an element context based on module medata
+   *
+   * @param {object} meta - module metadata
+   * @param {string} context - hash of module we are currently searching for submodules
+   */
   generateHashContext(meta, context) {
     let tags = [];
+    // Get an array of children to search for submodule placeholders
     let hashContext = [...document.querySelectorAll(`[data-parent-hash="${context}"]`)];
 
     if (hashContext && hashContext.length) {
       hashContext.forEach((hashEl) => {
+        // Module children can themselves be submodule placeholders
         if (
           hashEl.dataset &&
           hashEl.dataset.huronId === meta.id &&
@@ -229,6 +240,7 @@ class InsertNodes {
           tags.push(hashEl);
         }
 
+        // Check within module children to see if they have any submodules
         tags = tags.concat(
           [...hashEl.querySelectorAll(
             `[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`
@@ -240,39 +252,43 @@ class InsertNodes {
     return tags;
   }
 
-  removeOldTags(hash, currentTag) {
-    let checkTag = currentTag.previousSibling;
+  /**
+   * Recursively remove old tags
+   *
+   * @param {string} hash - hash of module for which we need to remove old tags
+   * @param {object} tag - tag to start our search with
+   *                       (usually the tag immediately preceding the current placeholder)
+   */
+  removeOldTags(hash, tag) {
+    if (tag && tag.dataset) {
 
-    while (checkTag) {
-      let validateTag = checkTag;
-      checkTag = checkTag.previousSibling;
+      if (tag.dataset.selfHash === hash) {
+        // This is another instance of this module
+        return;
+      } else if (tag.dataset.parentHash === hash) {
+        // This is a child of the current module,
+        // so remove it and its children (if applicable)
+        let childrenHash = tag.dataset.selfHash;
+        let nextTag = tag.previousSibling;
 
-      if (validateTag.dataset) {
-        if (validateTag.dataset.selfHash === hash) {
-          // This is another instance of this module
-          break;
-        } else if (validateTag.dataset.parentHash === hash) {
-          // This is a child of the current module,
-          // so remove it
-          validateTag.parentNode.removeChild(validateTag);
-          continue;
+        if (childrenHash) {
+          this.removeOldTags(childrenHash, nextTag);
+          // Reset nextTag if we removed a child
+          nextTag = tag.previousSibling;
         }
+
+        tag.parentNode.removeChild(tag);
+        this.removeOldTags(hash, nextTag);
       }
     }
   }
 
-  cleanupTags(hash) {
-    const orphans = [...document.querySelectorAll(
-      `[data-parent-hash="${meta.hash}"]`
-    )];
-
-    if (orphans && orphans.length) {
-      orphans.forEach((tag) => {
-        tag.parentNode.removeChild(tag);
-      });
-    }
-  }
-
+  /**
+   * Apply a modifier to a render function
+   *
+   * @param {string} modifier - target modifier
+   * @param {object} meta - module metadata
+   */
   applyModifier(modifier, meta) {
     let rendered = false;
 
