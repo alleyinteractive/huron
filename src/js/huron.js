@@ -183,45 +183,40 @@ class InsertNodes {
           return result instanceof HTMLElement;
         });
 
-        // If not exactly 1, echo a warning.
-        if (1 !== resultElements.length) {
+        let tagToKeep = currentTag;
+
+        // Add the attributes back to the firstElementChild
+        // of the module and replace the currentTag.
+        if (1 === resultElements.length) {
+          tagToKeep = currentTag.firstElementChild;
+          // Put the attributes back on this div.
+          tagToKeep.setAttribute('data-huron-id', meta.id);
+          tagToKeep.setAttribute('data-huron-type', meta.type);
+          if (modifier) {
+            tagToKeep.setAttribute('data-huron-modifier', modifier);
+          }
+
+          // Take this element out of the current tag and
+          // insert it before its parent.
+          parentTag.insertBefore(tagToKeep, currentTag);
+
+          // Remove original tag completely.
+          parentTag.removeChild(currentTag);
+        } else {
+          // Otherwise, echo a warning that the module
+          // was wrapped.
           console.warn(
-            `Module needs to be wrapped in single tag.
+            `We put a wrapper tag around this module:
             section: ${meta.id}
             type: ${meta.type}`
           );
         }
 
-        // Go through the child elements and apply the parent's
-        // attributes to the first child Element
-        results.some((result) => {
-
-          if (result instanceof HTMLElement) {
-
-            // Put the attributes back on this div.
-            result.setAttribute('data-huron-id', meta.id);
-            result.setAttribute('data-huron-type', meta.type);
-            if (modifier) {
-              result.setAttribute('data-huron-modifier', modifier);
-            }
-
-            // Take this element out of the current tag and
-            // insert it before its parent.
-            parentTag.insertBefore(result, currentTag);
-
-            // Recursively load modules, excluding the current one
-            this.cycleModules(result, true, {
-              property: 'key',
-              values: [meta.key, this._sectionTemplatePath],
-              include: false,
-            });
-
-            // Remove original tag completely.
-            parentTag.removeChild(currentTag);
-          }
-
-          // End loop after firstElementChild
-          return result instanceof HTMLElement;
+        // Recursively load modules, excluding the current one
+        this.cycleModules(tagToKeep, true, {
+          property: 'key',
+          values: [meta.key, this._sectionTemplatePath],
+          include: false,
         });
 
       } //end of for tags
