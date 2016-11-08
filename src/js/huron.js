@@ -149,14 +149,15 @@ class InsertNodes {
    * @param {object} meta - Module metadata
    */
   replaceTemplate(meta, context = false) {
+    const type = this.validateType(meta.type);
     let tags = null;
 
-    if (this.validateType(meta.type)) {
+    if (type) {
       if (!context) {
         // Reset inserted cache
         this._inserted = [];
         tags = document.querySelectorAll(
-          `[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`
+          `[data-huron-id="${meta.id}"][data-huron-type="${type}"]`
         );
       } else {
         // Search for this module within a hash context
@@ -384,8 +385,9 @@ class InsertNodes {
     }
 
     if (id && type) {
+      const hashKey = 'data' === type ? this._templates[key] : key;
       const renderData = this.getModuleRender(type, key, module);
-      const hash = this.generateModuleHash(key);
+      const hash = this.generateModuleHash(hashKey);
 
       if (renderData) {
         return Object.assign({id, type, key, hash, module}, renderData);
