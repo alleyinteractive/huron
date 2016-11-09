@@ -170,25 +170,27 @@ class InsertNodes {
             const modifier = currentTag.dataset.huronModifier;
             const parent = currentTag.parentNode;
             const rendered = this.applyModifier(modifier, meta);
+            const renderedTemplate = this.convertToElement(rendered)
+                .querySelector('template');
             let renderedContents = null;
-            let renderedTemplate = null;
 
             // Remove existing module tags
             this.removeOldTags(meta.hash, currentTag.previousSibling);
 
             // Get the contents of the rendered template
             renderedContents = [
-              ...this.convertToElement(rendered)
-                .querySelector('template')
-                .content
-                .children
+              ...renderedTemplate.content.children
             ];
 
             // Insert each tag of the template contents before placeholder
             renderedContents.forEach((element) => {
               if (1 === element.nodeType) {
                 element.dataset.parentHash = meta.hash;
-                parent.insertBefore(element, currentTag);
+
+                // Insert new tag unless it's a styleguide helper
+                if (! this.styleguideHelpersInserted(meta, element)) {
+                  parent.insertBefore(element, currentTag);
+                }
               }
             });
 
@@ -219,6 +221,34 @@ class InsertNodes {
         type: ${meta.type}`
       );
     }
+  }
+
+  /**
+   * Check if styleguide helpers already exist on this page
+   *
+   * @param {object} meta - module metadata
+   * @param {object} tag - tag to check
+   */
+  styleguideHelpersInserted(meta, tag) {
+    if ('prototype' === meta.type) {
+      return
+        (tag.hasAttribute('huron-sections') ||
+          tag.hasAttribute('huron-menu')) &&
+        (null === document.querySelector(`[huron-sections][data-parent-hash="${meta.hash}"]`) &&
+          null === document.querySelector(`[huron-menu][data-parent-hash="${meta.hash}"]`));
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if this tag is a styleguide helper
+   *
+   * @param {object} tag - tag to check
+   */
+  isSectionHelper(tag) {
+    return tag.hasAttribute('huron-sections') ||
+      tag.hasAttribute('huron-menu');
   }
 
   /**
@@ -291,7 +321,11 @@ class InsertNodes {
           nextTag = tag.previousSibling;
         }
 
-        tag.parentNode.removeChild(tag);
+        if (! this.isSectionHelper(tag)) {
+          // Remove old tag unless its a styleguide helper
+          tag.parentNode.removeChild(tag);
+        }
+
         this.removeOldTags(hash, nextTag);
       }
     }
@@ -505,26 +539,54 @@ class InsertNodes {
    */
   outputSections(parent, el, sections = this._sections.sorted) {
     let templateId = null;
-    let wrapper = null;
+    let placeholder = null;
 
     for (let section in sections) {
+      let currentHash = false;
+      let istopLevel = false;
+      let topLevelWrapper = null;
+      let topLevelSection = null;
+      let insertionEl = el;
+
+      // Generate section ID and check if it is top-level
       if (parent) {
         templateId = `${parent}-${section}`;
       } else {
         templateId = section;
+        istopLevel = true;
       }
 
       if (el) {
-        wrapper = document.createElement('div');
-        wrapper.dataset.huronId = templateId;
-        wrapper.dataset.huronType = 'section';
-        el.appendChild(wrapper);
+        // Generate huron placeholder for this section
+        placeholder = document.createElement('div');
+        placeholder.dataset.huronId = templateId;
+        placeholder.dataset.huronType = 'section';
+
+        if (istopLevel) {
+          // Generate wrapper to contain top-level section and all subsections underneath it
+          topLevelWrapper = document.createElement('div');
+          topLevelWrapper.classList.add('top-level-wrapper');
+
+          // Generate wrapper for top-level section
+          topLevelSection = document.createElement('div');
+          topLevelSection.classList.add('top-level-section');
+
+          // Append wrappers to huron-sections element
+          topLevelSection.appendChild(placeholder)
+          topLevelWrapper.appendChild(topLevelSection);
+          el.appendChild(topLevelWrapper);
+          insertionEl = topLevelWrapper;
+        } else {
+          // If this is not top-level, append placeholder
+          el.appendChild(placeholder);
+        }
       }
 
-      if (Object.keys(sections[section]).length && wrapper) {
+      // Recursively call this function to insert other sections
+      if (Object.keys(sections[section]).length && placeholder) {
         this.outputSections(
           templateId,
-          wrapper,
+          insertionEl,
           sections[section]
         );
       }
