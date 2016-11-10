@@ -20,10 +20,10 @@ class InsertNodes {
     this._templates = null;
     this._prototypes = null;
     this._types = null;
-    this._inserted = [];
 
-    // Module meta
+    // Module chaches
     this.meta = {};
+    this.inserted = [];
 
     // Set store values
     this.store = store;
@@ -41,6 +41,12 @@ class InsertNodes {
    * @param  {object} filter     Filter for modules. Fields explained in the filterModules() function docs
    */
   cycleModules(context = false, cached = false, filter = false) {
+    // Reset inserted cache
+    if (! context) {
+      this.inserted = [];
+    }
+
+    // Loop through modules array
     for (let module in this._modules) {
       this.loadModule(module, this._modules[module], context, cached, filter);
     }
@@ -151,11 +157,10 @@ class InsertNodes {
   replaceTemplate(meta, context = false) {
     const type = this.validateType(meta.type);
     let tags = null;
+    let hasStyleguideHelpers = false;
 
     if (type) {
       if (!context) {
-        // Reset inserted cache
-        this._inserted = [];
         tags = document.querySelectorAll(
           `[data-huron-id="${meta.id}"][data-huron-type="${type}"]`
         );
@@ -166,8 +171,10 @@ class InsertNodes {
 
       if (tags && tags.length && meta.render) {
         tags.forEach((currentTag) => {
-          if (-1 === this._inserted.indexOf(currentTag)) {
-            const modifier = currentTag.dataset.huronModifier;
+          const modifier = currentTag.dataset.huronModifier;
+          const insertedKey = `${meta.id}${type}${modifier}`;
+
+          if (-1 === this.inserted.indexOf(insertedKey)) {
             const parent = currentTag.parentNode;
             const rendered = this.applyModifier(modifier, meta);
             const renderedTemplate = this.convertToElement(rendered)
@@ -186,11 +193,11 @@ class InsertNodes {
             renderedContents.forEach((element) => {
               if (1 === element.nodeType) {
                 element.dataset.parentHash = meta.hash;
+                hasStyleguideHelpers = ! hasStyleguideHelpers ?
+                  this.isSectionHelper(element, meta) :
+                  hasStyleguideHelpers;
 
-                // Insert new tag unless it's a styleguide helper
-                if (! this.styleguideHelpersInserted(meta, element)) {
-                  parent.insertBefore(element, currentTag);
-                }
+                parent.insertBefore(element, currentTag);
               }
             });
 
@@ -199,7 +206,7 @@ class InsertNodes {
 
             // Add this placeholder to the inserted cache,
             // to make sure we don't insert it twice
-            this._inserted.push(currentTag);
+            this.inserted.push(insertedKey);
 
             // Hide the placeholder
             currentTag.style.display = 'none';
@@ -211,6 +218,10 @@ class InsertNodes {
               values: [meta.key, this._sectionTemplatePath],
               include: false,
             });
+
+            if (hasStyleguideHelpers) {
+              this.cycleStyleguide();
+            }
           }
         });
       }
@@ -224,31 +235,18 @@ class InsertNodes {
   }
 
   /**
-   * Check if styleguide helpers already exist on this page
-   *
-   * @param {object} meta - module metadata
-   * @param {object} tag - tag to check
-   */
-  styleguideHelpersInserted(meta, tag) {
-    if ('prototype' === meta.type) {
-      return
-        (tag.hasAttribute('huron-sections') ||
-          tag.hasAttribute('huron-menu')) &&
-        (null === document.querySelector(`[huron-sections][data-parent-hash="${meta.hash}"]`) &&
-          null === document.querySelector(`[huron-menu][data-parent-hash="${meta.hash}"]`));
-    }
-
-    return false;
-  }
-
-  /**
    * Check if this tag is a styleguide helper
    *
    * @param {object} tag - tag to check
+   * @param {object} meta - module metadata
    */
-  isSectionHelper(tag) {
-    return tag.hasAttribute('huron-sections') ||
-      tag.hasAttribute('huron-menu');
+  isSectionHelper(tag, meta) {
+    if ('prototype' === meta.type) {
+      return tag.hasAttribute('huron-sections') ||
+        tag.hasAttribute('huron-menu');
+    }
+
+    return false;
   }
 
   /**
@@ -321,11 +319,7 @@ class InsertNodes {
           nextTag = tag.previousSibling;
         }
 
-        if (! this.isSectionHelper(tag)) {
-          // Remove old tag unless its a styleguide helper
-          tag.parentNode.removeChild(tag);
-        }
-
+        tag.parentNode.removeChild(tag);
         this.removeOldTags(hash, nextTag);
       }
     }
