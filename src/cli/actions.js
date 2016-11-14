@@ -120,6 +120,7 @@ export function deleteFile(filepath, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
   let section = null;
+  let newStore = store;
 
   switch (file.ext) {
     // Plain HTML template, external
@@ -127,12 +128,12 @@ export function deleteFile(filepath, store) {
       section = utils.getSection(file.base, 'markup', store);
 
       if (section) {
-        return htmlHandler.deleteTemplate(filepath, section, store);
+        newStore = htmlHandler.deleteTemplate(filepath, section, store);
       } else if (
         file.dir.indexOf('prototypes') !== -1 &&
         file.name.indexOf('prototype-') !== -1
       ) {
-        return htmlHandler.deletePrototype(filepath, store);
+        newStore = htmlHandler.deletePrototype(filepath, store);
       }
       break;
 
@@ -142,7 +143,7 @@ export function deleteFile(filepath, store) {
       section = utils.getSection(file.base, field, store);
 
       if (section) {
-        return templateHandler.deleteTemplate(filepath, section, store);
+        newStore = templateHandler.deleteTemplate(filepath, section, store);
       }
       break;
 
@@ -150,13 +151,12 @@ export function deleteFile(filepath, store) {
       section = utils.getSection(filepath, false, store);
 
       if (section) {
-        return kssHandler.deleteKSS(filepath, section, store);
+        newStore = kssHandler.deleteKSS(filepath, section, store);
       }
       break;
 
     default:
       consle.log(`Could not delete: ${file.name}`);
-      return store;
       break;
   }
 
