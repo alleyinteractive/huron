@@ -1,4 +1,4 @@
-const crypto = require('crypto-browserify');
+const md5 = require('js-md5');
 
 // Accept the huron.js module for Huron development
 if (module.hot) {
@@ -227,9 +227,7 @@ class InsertNodes {
    * @param {string} key - module key (require path) to convert into a hash
    */
   generateModuleHash(key) {
-    return crypto.createHash('md5')
-      .update(key)
-      .digest('hex');
+    return md5(key);
   }
 
   /**
