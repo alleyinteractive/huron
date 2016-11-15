@@ -90,6 +90,7 @@ kssHandler.updateInlineTemplate = function(filepath, oldSection, section, store)
       section.markup,
       store
     );
+    newSection.templateContent = section.markup;
   }
 
   return newSection;
@@ -215,14 +216,8 @@ kssHandler.updateSectionData = function(section, kssPath, store) {
   // Output section description
   newSection = kssHandler.updateDescription(kssPath, oldSection, newSection, newStore);
 
-  // Output section data
-  newSection.sectionPath = utils.writeFile(
-    newSection.referenceURI,
-    'section',
-    dataFilepath,
-    JSON.stringify(newSection),
-    store
-  );
+  // Output section data to a JSON file
+  newSection.sectionPath = utils.writeSectionData(store, newSection, dataFilepath);
 
   // Output new version of non-inline templates and data
   // if section URI was changed (as those files are written using referenceURI)

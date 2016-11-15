@@ -17,13 +17,29 @@ htmlHandler.updateTempate = function(filepath, section, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
   const content = fs.readFileSync(filepath, 'utf8');
+  let newSection = section;
 
   if (content) {
-    section.templatePath = utils.writeFile(section.referenceURI, 'template', filepath, content, store);
+    newSection.templatePath = utils.writeFile(
+      section.referenceURI,
+      'template',
+      filepath,
+      content,
+      store
+    );
+    newSection.templateContent = content;
 
-    return store.setIn(
+    // Rewrite section data with template content
+    utils.writeSectionData(store, newSection);
+
+    return store
+      .setIn(
         ['sections', 'sectionsByPath', section.kssPath],
-        section
+        newSection
+      )
+      .setIn(
+        ['sections', 'sectionsByURI', section.referenceURI],
+        newSection
       );
   } else {
     console.log(`File ${file.base} could not be read`);

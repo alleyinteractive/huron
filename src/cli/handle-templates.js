@@ -20,6 +20,7 @@ templateHandler.updateTemplate = function(filepath, section, store) {
   const dest = path.resolve(cwd, huron.get('output'));
   const pairPath = utils.getTemplateDataPair(file, section, store);
   const type = '.json' === file.ext ? 'data' : 'template';
+  let newSection = section;
   let content = false;
 
   try {
@@ -31,7 +32,14 @@ templateHandler.updateTemplate = function(filepath, section, store) {
 
   if (content) {
     let requirePath = utils.writeFile(section.referenceURI, type, filepath, content, store);
-    section[`${type}Path`] = requirePath;
+    newSection[`${type}Path`] = requirePath;
+
+    if ('template' === type) {
+      newSection.templateContent = content;
+
+      // Rewrite section data with template content
+      utils.writeSectionData(store, newSection);
+    }
 
     return store
       .setIn(
@@ -40,11 +48,11 @@ templateHandler.updateTemplate = function(filepath, section, store) {
       )
       .setIn(
         ['sections', 'sectionsByPath', section.kssPath],
-        section
+        newSection
       )
       .setIn(
         ['sections', 'sectionsByURI', section.referenceURI],
-        section
+        newSection
       );
   } else {
     return store;
