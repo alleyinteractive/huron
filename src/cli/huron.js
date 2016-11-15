@@ -65,8 +65,6 @@ store = initFiles(gaze.watched(), dataStructure);
 requireTemplates(store);
 writeStore(store);
 
-console.log(store.getIn(['sections', 'sorted']));
-
 if (!program.production) {
   // file changed
   gaze.on('changed', (filepath) => {

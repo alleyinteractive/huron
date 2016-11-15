@@ -69,6 +69,24 @@ class InsertNodes {
     // Menu
     if (menuQuery) {
       menuQuery.innerHTML = '';
+
+      if (null === document.querySelector('.section-menu__expand')) {
+        const menuTrigger = document.createElement('button');
+
+        menuTrigger.classList.add('section-menu__expand');
+        menuTrigger.innerHTML = 'Sections Menu';
+        document.body.insertBefore(
+          menuQuery.appendChild(menuTrigger),
+          document.body.childNodes[0]
+        );
+
+        // Add menu trigger handler
+        menuTrigger.addEventListener('click', () => {
+          document.body.classList.toggle('section-menu-open');
+        });
+      }
+
+      // Create menu
       this.outputMenu(null, menuQuery);
     }
   }
@@ -559,11 +577,11 @@ class InsertNodes {
         if (istopLevel) {
           // Generate wrapper to contain top-level section and all subsections underneath it
           topLevelWrapper = document.createElement('div');
-          topLevelWrapper.classList.add('top-level-wrapper');
+          topLevelWrapper.classList.add('section--top-level__wrapper');
 
           // Generate wrapper for top-level section
           topLevelSection = document.createElement('div');
-          topLevelSection.classList.add('top-level-section');
+          topLevelSection.classList.add('section', 'section--top-level');
 
           // Append wrappers to huron-sections element
           topLevelSection.appendChild(placeholder)
@@ -596,6 +614,10 @@ class InsertNodes {
     let wrapper = null;
 
     for (let section in sections) {
+      const hasSubmenu = Object.keys(sections[section]).length;
+      let menuTarget;
+      let nextMenu;
+
       if (parent) {
         templateId = `${parent}-${section}`;
       } else {
@@ -607,36 +629,40 @@ class InsertNodes {
             .sectionsByURI[templateId] ?
           this._sections
             .sectionsByURI[templateId]
-            .referenceURI :
+            .header :
           templateId;
-        const link = `<a href="#${templateId}">${title}</a>`;
-        const submenu = el.querySelector('ul');
+        const sectionMenu = document.createElement('ul');
+        const menuItem = document.createElement('li');
+        const link = `<a href="#styleguide-section-${templateId}">${title}</a>`;
 
-        if (Object.keys(sections[section]).length) {
-          wrapper = document.createElement('ul');
-          wrapper.classList.add('sections-menu');
-          wrapper.innerHTML = `<li class="menu-item">
-            ${link}
-            <ul></ul>
-          </li>`;
-        } else {
-          wrapper = document.createElement('li');
-          wrapper.innerHTML = link;
+        sectionMenu.classList.add('section-menu');
+        menuItem.classList.add('section-menu__item');
+        menuItem.innerHTML = link;
+
+        // Check if this is a UL and, if not, create one
+        if ('UL' !== el.tagName) {
+          menuTarget = sectionMenu.cloneNode();
+          el.appendChild(menuTarget);
+          el = menuTarget;
         }
 
-        if (submenu) {
-          submenu.appendChild(wrapper);
-        } else {
-          el.appendChild(wrapper);
+        // Has subsections
+        if (hasSubmenu) {
+          nextMenu = sectionMenu.cloneNode();
+          nextMenu.classList.add('section-menu--submenu');
+          menuItem.classList.add('section-menu__item--has-submenu');
+          menuItem.appendChild(nextMenu);
         }
-      }
 
-      if (sections[section] && wrapper) {
-        this.outputMenu(
-          templateId,
-          wrapper,
-          sections[section]
-        );
+        el.appendChild(menuItem);
+
+        if (hasSubmenu) {
+          this.outputMenu(
+            templateId,
+            nextMenu,
+            sections[section]
+          );
+        }
       }
     }
   }

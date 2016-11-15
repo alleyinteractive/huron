@@ -1,15 +1,35 @@
-<section class="{{ referenceURI }}" id="{{ referenceURI }}">
-	<h1><span>{{ reference }}: </span>{{ header }}</h1>
+<section class="section section-name-{{ referenceURI }}" id="styleguide-section-{{ referenceURI }}">
+	<h2 class="section__header">{{ header }}</h2>
 
 	<!-- description -->
-	<div data-huron-id="{{ referenceURI }}" data-huron-type="description"></div>
+	<div class="section__meta">
+		<h3 class="section__reference">Reference: <span>{{ reference }}</span></h3>
+		<div class="section__description" data-huron-id="{{ referenceURI }}" data-huron-type="description"></div>
+	</div>
 
 	<!-- markup -->
-	{{#each modifiers}}
-		<div data-huron-id="{{ ../referenceURI }}"
-			data-huron-type="template"
-			data-huron-modifier="{{ this.name }}"
-			class="{{ this.className }}">
-		</div>
-	{{/each}}
+	<div class="section__markup">
+		<h3 class="section__markup-header">Markup:</h3>
+		{{#if modifiers}}
+			{{#each modifiers}}
+				<div class="section__modifier">
+					<h4 class="section__modifier-name">{{ this.name }}</h4>
+					<div class="section__modifier-content">
+						<div data-huron-id="{{ ../referenceURI }}"
+							data-huron-type="template"
+							data-huron-modifier="{{ this.name }}"
+							class="{{ this.className }}">
+						</div>
+					</div>
+				</div>
+			{{/each}}
+		{{else}}
+			<div class="section__markup-content">
+				<div data-huron-id="{{ this.referenceURI }}"
+					data-huron-type="template"
+					class="{{ this.className }}">
+				</div>
+			</div>
+		{{/if}}
+	</div>
 </section>

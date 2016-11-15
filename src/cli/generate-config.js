@@ -16,6 +16,16 @@ export default function generateConfig(config) {
   const huron = config.huron;
   const entry = config.entry[huron.entry];
   const wrapperTemplate = fs.readFileSync(path.join(__dirname, '../../templates/huron-wrapper.ejs'), 'utf8');
+  const defaultHTMLPluginOptions = {
+    title: '',
+    window: huron.window,
+    js: huron.js,
+    css: huron.css,
+    filename: 'index.html',
+    template: path.join(huron.root, 'huron-wrapper.ejs'),
+    inject: false,
+    chunks: [huron.entry],
+  };
 
   // Manage entries
   config.entry = {};
@@ -62,19 +72,33 @@ export default function generateConfig(config) {
 
   // Init HTML webpack plugin
   fs.outputFileSync(path.join(cwd, huron.root, 'huron-wrapper.ejs'), wrapperTemplate);
-  huron.prototypes.forEach(prototype => {
-    config.plugins.push(
-      new HTMLWebpackPlugin({
+  huron.prototypes.forEach((prototype) => {
+    let opts = {};
+
+    // Merge configured settings with default settings
+    if ('string' === typeof prototype) {
+      opts = Object.assign({}, defaultHTMLPluginOptions, {
         title: prototype,
-        window: huron.window,
-        js: huron.js,
-        css: huron.css,
         filename: `${prototype}.html`,
-        template: path.join(huron.root, 'huron-wrapper.ejs'),
-        inject: false,
-        chunks: [huron.entry]
-      })
-    );
+      });
+    } else if (
+      'object' === typeof prototype &&
+      prototype.hasOwnProperty('title')
+    ) {
+      // Create filename based on configured title if not provided
+      if (! prototype.hasOwnProperty('filename')) {
+        prototype.filename = `${prototype.title}.html`;;
+      }
+
+      opts = Object.assign({}, defaultHTMLPluginOptions, prototype);
+    }
+
+    // Push a new plugin for each configured prototype
+    if (Object.keys(opts).length) {
+      config.plugins.push(
+        new HTMLWebpackPlugin(opts)
+      );
+    }
   });
 
   // Set ouput options
