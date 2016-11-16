@@ -3,14 +3,16 @@
 
 	<!-- description -->
 	<div class="section__meta">
-		<h3 class="section__reference">Reference: <span>{{ reference }}</span></h3>
-		<h3 class="section__description-header">Description:</h3>
-		<div class="section__description" data-huron-id="{{ referenceURI }}" data-huron-type="description"></div>
+		<h3 class="section__field-title section__reference">Reference: <span>{{ reference }}</span></h3>
+		<h3 class="section__field-title section__description-header">Description:</h3>
+		<div class="section__description">
+			<div data-huron-id="{{ referenceURI }}" data-huron-type="description"></div>
+		</div>
 	</div>
 
 	<!-- markup -->
 	<div class="section__markup">
-		<h3 class="section__markup-header">Markup:</h3>
+		<h3 class="section__field-title section__markup-header">Markup:</h3>
 		{{#if modifiers}}
 			{{#each modifiers}}
 				<div class="section__modifier">
