@@ -29,7 +29,6 @@ templateHandler.updateTemplate = function(filepath, section, store) {
     console.log(chalk.red(`${filepath} does not exist`));
   }
 
-
   if (content) {
     let requirePath = utils.writeFile(section.referenceURI, type, filepath, content, store);
     newSection[`${type}Path`] = requirePath;

@@ -204,7 +204,7 @@ kssHandler.updateSectionData = function(section, kssPath, store) {
   const sectionMarkup = section.markup;
   const sectionFileInfo = path.parse(kssPath);
   const dataFilepath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
-  let newSection = Object.assign({}, oldSection, section);;
+  let newSection = Object.assign({}, oldSection, section);
   let newStore = store;
 
   // Required for reference from templates and data
