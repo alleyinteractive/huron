@@ -239,6 +239,8 @@ function moveAdditionalAssets(assets, subdir = '', huron) {
         fs.outputFileSync(outputPath, contents);
         assetResults.push(path.join('/', subdir, assetInfo.base));
       }
+    } else {
+      assetResults.push(asset);
     }
   });
 
