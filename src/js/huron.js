@@ -21,7 +21,7 @@ class InsertNodes {
     this._prototypes = null;
     this._types = null;
 
-    // Module chaches
+    // Module caches
     this.meta = {};
     this.inserted = [];
 
