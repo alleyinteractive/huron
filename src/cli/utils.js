@@ -90,10 +90,10 @@ utils.normalizeHeader = function(header) {
  */
 utils.wrapMarkup = function(content, templateId) {
   return `<dom-module>
-    <template id="${templateId}">
-      ${content}
-    </template>
-  </dom-module>\n`;
+<template id="${templateId}">
+${content}
+</template>
+</dom-module>\n`;
 }
 
 /**
