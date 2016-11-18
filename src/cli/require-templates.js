@@ -60,7 +60,7 @@ function hotReplace(key, module, modules) {
     insert.cycleSections();
   } else {
     insert.inserted = [];
-    insert.loadModule(key, module);
+    insert.loadModule(key, module, false);
   }
 }
 

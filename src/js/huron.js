@@ -41,15 +41,31 @@ class InsertNodes {
    * @param  {object} filter     Filter for modules. Fields explained in the filterModules() function docs
    */
   cycleModules(context = false, cached = false, filter = false) {
-    // Reset inserted cache
+    let moduleList = [];
+    let moduleChildren = null;
+
     if (! context) {
       this.inserted = [];
+      moduleList = Object.keys(this._modules);
+      // moduleChildren = [...document.querySelectorAll('[data-huron-id][data-huron-type]')];
+    } else {
+      moduleChildren = context;
+      moduleChildren.forEach((child) => {
+        const type = child.dataset.huronType;
+        const id = child.dataset.huronId;
+        const section = this._sections.sectionsByURI[id];
+
+        if (id && type && section) {
+          moduleList.push(section[`${type}Path`]);
+        }
+      });
     }
 
     // Loop through modules array
-    for (let module in this._modules) {
-      this.loadModule(module, this._modules[module], context, cached, filter);
-    }
+    moduleList.forEach((key) => {
+      const module = this._modules[key];
+      this.loadModule(key, module, context, cached, filter);
+    });
   }
 
   /**
@@ -112,9 +128,9 @@ class InsertNodes {
    * @param {bool}    chached    Whether or not to use cached values for module replacement
    * @param {object}  filter     Filter for modules. Fields explained in the filterModules() function docs
    */
-  loadModule(key, module, context = false, cached = false, filter = false) {
-    let moduleMeta = null;
+  loadModule(key, module, context, cached = false, filter = false) {
     let shouldLoad = true;
+    let moduleMeta = false;
 
     // Check if we should load from internal module metadata cache
     if (cached) {
@@ -145,6 +161,7 @@ class InsertNodes {
    */
   filterModules(filter, moduleMeta) {
     const moduleKeys = Object.keys(this._modules);
+    let match = true;
 
     // Check if we should filter out any modules
     if (
@@ -153,7 +170,7 @@ class InsertNodes {
       filter.hasOwnProperty('values') &&
       filter.hasOwnProperty('include')
     ) {
-      const match = filter.values.filter((value) => moduleMeta[filter.property] === value);
+      match = filter.values.filter((value) => moduleMeta[filter.property] === value);
       return Boolean(match.length) === filter.include;
     }
 
@@ -162,7 +179,7 @@ class InsertNodes {
       module filters must include 'property', 'values', and 'include' properties
     `);
 
-    return true;
+    return match;
   }
 
   /**
@@ -174,7 +191,7 @@ class InsertNodes {
    */
   replaceTemplate(meta, context = false) {
     const type = this.validateType(meta.type);
-    let tags = null;
+    let tags = [];
     let hasStyleguideHelpers = false;
 
     if (type) {
@@ -183,8 +200,15 @@ class InsertNodes {
           `[data-huron-id="${meta.id}"][data-huron-type="${type}"]`
         );
       } else {
-        // Search for this module within a hash context
-        tags = this.generateHashContext(meta, context);
+        context.forEach((tag) => {
+          if (
+            tag.dataset &&
+            tag.dataset.huronId === meta.id &&
+            tag.dataset.huronType === type
+          ) {
+             tags.push(tag);
+          }
+        });
       }
 
       if (tags && tags.length && meta.render) {
@@ -197,6 +221,7 @@ class InsertNodes {
             const rendered = this.applyModifier(modifier, meta);
             const renderedTemplate = this.convertToElement(rendered)
                 .querySelector('template');
+            let hashContext = null;
             let renderedContents = null;
 
             // Remove existing module tags
@@ -229,9 +254,11 @@ class InsertNodes {
             // Hide the placeholder
             currentTag.style.display = 'none';
 
+            // Set next context
+            hashContext = this.generateHashContext(meta);
+
             // Recursively load modules, excluding the current one
-            // @todo prevent this from calling for each tag?
-            this.cycleModules(meta.hash, true, {
+            this.cycleModules(hashContext, true, {
               property: 'key',
               values: [meta.key, this._sectionTemplatePath],
               include: false,
@@ -284,18 +311,18 @@ class InsertNodes {
    * @param {object} meta - module metadata
    * @param {string} context - hash of module we are currently searching for submodules
    */
-  generateHashContext(meta, context) {
+  generateHashContext(meta) {
     let tags = [];
     // Get an array of children to search for submodule placeholders
-    let hashContext = [...document.querySelectorAll(`[data-parent-hash="${context}"]`)];
+    let hashContext = [...document.querySelectorAll(`[data-parent-hash="${meta.hash}"]`)];
 
     if (hashContext && hashContext.length) {
       hashContext.forEach((hashEl) => {
         // Module children can themselves be submodule placeholders
         if (
           hashEl.dataset &&
-          hashEl.dataset.huronId === meta.id &&
-          hashEl.dataset.huronType === meta.type
+          hashEl.dataset.huronId &&
+          hashEl.dataset.huronType
         ) {
           tags.push(hashEl);
         }
@@ -303,7 +330,7 @@ class InsertNodes {
         // Check within module children to see if they have any submodules
         tags = tags.concat(
           [...hashEl.querySelectorAll(
-            `[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`
+            `[data-huron-id][data-huron-type]`
           )]
         );
       });
