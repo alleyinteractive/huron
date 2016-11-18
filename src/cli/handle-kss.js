@@ -90,6 +90,7 @@ kssHandler.updateInlineTemplate = function(filepath, oldSection, section, store)
       section.markup,
       store
     );
+    newSection.templateContent = section.markup;
   }
 
   return newSection;
@@ -145,14 +146,19 @@ kssHandler.updateReferenceURI = function(file, oldSection, section, store) {
   let newStore = store;
   let newSort = kssHandler.sortSection(
     store.getIn(['sections', 'sorted']),
-    section.referenceURI
+    section.reference,
+    store.get('referenceDelimiter')
   );
 
   if (
     oldSection.hasOwnProperty('referenceURI') &&
     oldSection.referenceURI !== newSection.referenceURI
   ) {
-    newSort = kssHandler.unsortSection(newSort, oldSection.referenceURI);
+    newSort = kssHandler.unsortSection(
+      newSort,
+      oldSection.reference,
+      store.get('referenceDelimiter')
+    );
     // Remove old description if referenceURI has changed
     utils.removeFile(oldSection.referenceURI, 'description', filepath, store);
     // Remove old inline template if referenceURI has changed
@@ -198,7 +204,7 @@ kssHandler.updateSectionData = function(section, kssPath, store) {
   const sectionMarkup = section.markup;
   const sectionFileInfo = path.parse(kssPath);
   const dataFilepath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
-  let newSection = Object.assign({}, oldSection, section);;
+  let newSection = Object.assign({}, oldSection, section);
   let newStore = store;
 
   // Required for reference from templates and data
@@ -210,14 +216,8 @@ kssHandler.updateSectionData = function(section, kssPath, store) {
   // Output section description
   newSection = kssHandler.updateDescription(kssPath, oldSection, newSection, newStore);
 
-  // Output section data
-  newSection.sectionPath = utils.writeFile(
-    newSection.referenceURI,
-    'section',
-    dataFilepath,
-    JSON.stringify(newSection),
-    store
-  );
+  // Output section data to a JSON file
+  newSection.sectionPath = utils.writeSectionData(store, newSection, dataFilepath);
 
   // Output new version of non-inline templates and data
   // if section URI was changed (as those files are written using referenceURI)
@@ -244,7 +244,11 @@ kssHandler.updateSectionData = function(section, kssPath, store) {
  */
 kssHandler.unsetSection = function(section, kssPath, store) {
   const sorted = store.getIn(['sections', 'sorted']);
-  const newSort = kssHandler.unsortSection(sorted, section.referenceURI);
+  const newSort = kssHandler.unsortSection(
+    sorted,
+    section.reference,
+    store.get('referenceDelimiter')
+  );
   return store
     .deleteIn(['sections', 'sectionsByPath', kssPath])
     .deleteIn(['sections', 'sectionsByURI', section.referenceURI])
@@ -257,13 +261,17 @@ kssHandler.unsetSection = function(section, kssPath, store) {
  * @param {object} sorted - currently sorted sections
  * @param {string} reference - reference URI of section to sort
  */
-kssHandler.sortSection = function(sorted, reference) {
-  let parts = reference.split('-');
+kssHandler.sortSection = function(sorted, reference, delimiter) {
+  let parts = reference.split(delimiter);
   let newSort = sorted[parts[0]] || {};
 
   if (parts.length > 1) {
     let newParts = parts.filter((part, idx) => idx !== 0);
-    sorted[parts[0]] = kssHandler.sortSection(newSort, newParts.join('-'));
+    sorted[parts[0]] = kssHandler.sortSection(
+      newSort,
+      newParts.join(delimiter),
+      delimiter
+    );
   } else {
     sorted[parts[0]] = newSort;
   }
@@ -276,14 +284,18 @@ kssHandler.sortSection = function(sorted, reference) {
  * @param {object} sorted - currently sorted sections
  * @param {string} reference - reference URI of section to sort
  */
-kssHandler.unsortSection = function(sorted, reference) {
-  let parts = reference.split('-');
+kssHandler.unsortSection = function(sorted, reference, delimiter) {
+  let parts = reference.split(delimiter);
   const subsections = Object.keys(sorted[parts[0]]);
 
   if (subsections.length) {
     if (parts.length > 1) {
       let newParts = parts.filter((part, idx) => idx !== 0);
-      sorted[parts[0]] = kssHandler.unsortSection(sorted[parts[0]], newParts.join('-'));
+      sorted[parts[0]] = kssHandler.unsortSection(
+        sorted[parts[0]],
+        newParts.join(delimiter),
+        delimiter
+      );
     }
   } else {
     delete sorted[parts[0]];

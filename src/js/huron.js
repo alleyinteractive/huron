@@ -20,10 +20,10 @@ class InsertNodes {
     this._templates = null;
     this._prototypes = null;
     this._types = null;
-    this._inserted = [];
 
-    // Module meta
+    // Module caches
     this.meta = {};
+    this.inserted = [];
 
     // Set store values
     this.store = store;
@@ -41,6 +41,12 @@ class InsertNodes {
    * @param  {object} filter     Filter for modules. Fields explained in the filterModules() function docs
    */
   cycleModules(context = false, cached = false, filter = false) {
+    // Reset inserted cache
+    if (! context) {
+      this.inserted = [];
+    }
+
+    // Loop through modules array
     for (let module in this._modules) {
       this.loadModule(module, this._modules[module], context, cached, filter);
     }
@@ -63,6 +69,24 @@ class InsertNodes {
     // Menu
     if (menuQuery) {
       menuQuery.innerHTML = '';
+
+      if (null === document.querySelector('.section-menu__expand')) {
+        const menuTrigger = document.createElement('button');
+
+        menuTrigger.classList.add('section-menu__expand');
+        menuTrigger.innerHTML = 'Sections Menu';
+        document.body.insertBefore(
+          menuQuery.appendChild(menuTrigger),
+          document.body.childNodes[0]
+        );
+
+        // Add menu trigger handler
+        menuTrigger.addEventListener('click', () => {
+          document.body.classList.toggle('section-menu-open');
+        });
+      }
+
+      // Create menu
       this.outputMenu(null, menuQuery);
     }
   }
@@ -151,11 +175,10 @@ class InsertNodes {
   replaceTemplate(meta, context = false) {
     const type = this.validateType(meta.type);
     let tags = null;
+    let hasStyleguideHelpers = false;
 
     if (type) {
       if (!context) {
-        // Reset inserted cache
-        this._inserted = [];
         tags = document.querySelectorAll(
           `[data-huron-id="${meta.id}"][data-huron-type="${type}"]`
         );
@@ -166,28 +189,32 @@ class InsertNodes {
 
       if (tags && tags.length && meta.render) {
         tags.forEach((currentTag) => {
-          if (-1 === this._inserted.indexOf(currentTag)) {
-            const modifier = currentTag.dataset.huronModifier;
+          const modifier = currentTag.dataset.huronModifier;
+          const insertedKey = `${meta.id}${type}${modifier}`;
+
+          if (-1 === this.inserted.indexOf(insertedKey)) {
             const parent = currentTag.parentNode;
             const rendered = this.applyModifier(modifier, meta);
+            const renderedTemplate = this.convertToElement(rendered)
+                .querySelector('template');
             let renderedContents = null;
-            let renderedTemplate = null;
 
             // Remove existing module tags
             this.removeOldTags(meta.hash, currentTag.previousSibling);
 
             // Get the contents of the rendered template
             renderedContents = [
-              ...this.convertToElement(rendered)
-                .querySelector('template')
-                .content
-                .children
+              ...renderedTemplate.content.children
             ];
 
             // Insert each tag of the template contents before placeholder
             renderedContents.forEach((element) => {
               if (1 === element.nodeType) {
                 element.dataset.parentHash = meta.hash;
+                hasStyleguideHelpers = ! hasStyleguideHelpers ?
+                  this.isSectionHelper(element, meta) :
+                  hasStyleguideHelpers;
+
                 parent.insertBefore(element, currentTag);
               }
             });
@@ -197,7 +224,7 @@ class InsertNodes {
 
             // Add this placeholder to the inserted cache,
             // to make sure we don't insert it twice
-            this._inserted.push(currentTag);
+            this.inserted.push(insertedKey);
 
             // Hide the placeholder
             currentTag.style.display = 'none';
@@ -209,6 +236,10 @@ class InsertNodes {
               values: [meta.key, this._sectionTemplatePath],
               include: false,
             });
+
+            if (hasStyleguideHelpers) {
+              this.cycleStyleguide();
+            }
           }
         });
       }
@@ -219,6 +250,21 @@ class InsertNodes {
         type: ${meta.type}`
       );
     }
+  }
+
+  /**
+   * Check if this tag is a styleguide helper
+   *
+   * @param {object} tag - tag to check
+   * @param {object} meta - module metadata
+   */
+  isSectionHelper(tag, meta) {
+    if ('prototype' === meta.type) {
+      return tag.hasAttribute('huron-sections') ||
+        tag.hasAttribute('huron-menu');
+    }
+
+    return false;
   }
 
   /**
@@ -503,26 +549,54 @@ class InsertNodes {
    */
   outputSections(parent, el, sections = this._sections.sorted) {
     let templateId = null;
-    let wrapper = null;
+    let placeholder = null;
 
     for (let section in sections) {
+      let currentHash = false;
+      let istopLevel = false;
+      let topLevelWrapper = null;
+      let topLevelSection = null;
+      let insertionEl = el;
+
+      // Generate section ID and check if it is top-level
       if (parent) {
         templateId = `${parent}-${section}`;
       } else {
         templateId = section;
+        istopLevel = true;
       }
 
       if (el) {
-        wrapper = document.createElement('div');
-        wrapper.dataset.huronId = templateId;
-        wrapper.dataset.huronType = 'section';
-        el.appendChild(wrapper);
+        // Generate huron placeholder for this section
+        placeholder = document.createElement('div');
+        placeholder.dataset.huronId = templateId;
+        placeholder.dataset.huronType = 'section';
+
+        if (istopLevel) {
+          // Generate wrapper to contain top-level section and all subsections underneath it
+          topLevelWrapper = document.createElement('div');
+          topLevelWrapper.classList.add('section--top-level__wrapper');
+
+          // Generate wrapper for top-level section
+          topLevelSection = document.createElement('div');
+          topLevelSection.classList.add('section', 'section--top-level');
+
+          // Append wrappers to huron-sections element
+          topLevelSection.appendChild(placeholder)
+          topLevelWrapper.appendChild(topLevelSection);
+          el.appendChild(topLevelWrapper);
+          insertionEl = topLevelWrapper;
+        } else {
+          // If this is not top-level, append placeholder
+          el.appendChild(placeholder);
+        }
       }
 
-      if (Object.keys(sections[section]).length && wrapper) {
+      // Recursively call this function to insert other sections
+      if (Object.keys(sections[section]).length && placeholder) {
         this.outputSections(
           templateId,
-          wrapper,
+          insertionEl,
           sections[section]
         );
       }
@@ -538,6 +612,10 @@ class InsertNodes {
     let wrapper = null;
 
     for (let section in sections) {
+      const hasSubmenu = Object.keys(sections[section]).length;
+      let menuTarget;
+      let nextMenu;
+
       if (parent) {
         templateId = `${parent}-${section}`;
       } else {
@@ -549,36 +627,40 @@ class InsertNodes {
             .sectionsByURI[templateId] ?
           this._sections
             .sectionsByURI[templateId]
-            .referenceURI :
+            .header :
           templateId;
-        const link = `<a href="#${templateId}">${title}</a>`;
-        const submenu = el.querySelector('ul');
+        const sectionMenu = document.createElement('ul');
+        const menuItem = document.createElement('li');
+        const link = `<a href="#styleguide-section-${templateId}">${title}</a>`;
 
-        if (Object.keys(sections[section]).length) {
-          wrapper = document.createElement('ul');
-          wrapper.classList.add('sections-menu');
-          wrapper.innerHTML = `<li class="menu-item">
-            ${link}
-            <ul></ul>
-          </li>`;
-        } else {
-          wrapper = document.createElement('li');
-          wrapper.innerHTML = link;
+        sectionMenu.classList.add('section-menu');
+        menuItem.classList.add('section-menu__item');
+        menuItem.innerHTML = link;
+
+        // Check if this is a UL and, if not, create one
+        if ('UL' !== el.tagName) {
+          menuTarget = sectionMenu.cloneNode();
+          el.appendChild(menuTarget);
+          el = menuTarget;
         }
 
-        if (submenu) {
-          submenu.appendChild(wrapper);
-        } else {
-          el.appendChild(wrapper);
+        // Has subsections
+        if (hasSubmenu) {
+          nextMenu = sectionMenu.cloneNode();
+          nextMenu.classList.add('section-menu--submenu');
+          menuItem.classList.add('section-menu__item--has-submenu');
+          menuItem.appendChild(nextMenu);
         }
-      }
 
-      if (sections[section] && wrapper) {
-        this.outputMenu(
-          templateId,
-          wrapper,
-          sections[section]
-        );
+        el.appendChild(menuItem);
+
+        if (hasSubmenu) {
+          this.outputMenu(
+            templateId,
+            nextMenu,
+            sections[section]
+          );
+        }
       }
     }
   }

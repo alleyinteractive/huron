@@ -22,6 +22,36 @@ utils.normalizeSectionData = function(section) {
 }
 
 /**
+ * Ensure predictable data structure for KSS section data
+ *
+ * @param {object} store - data store
+ * @param {object} section - section data
+ * @param {string} sectionPath - output destination for section data file
+ */
+utils.writeSectionData = function(store, section, sectionPath = false) {
+  let outputPath = sectionPath;
+  let sectionFileInfo;
+
+  if (! outputPath) {
+    if ({}.hasOwnProperty.call(section, 'kssPath')) {
+      sectionFileInfo = path.parse(section.kssPath);
+      outputPath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
+    } else {
+      return;
+    }
+  }
+
+  // Output section data
+  return utils.writeFile(
+    section.referenceURI,
+    'section',
+    outputPath,
+    JSON.stringify(section),
+    store
+  );
+}
+
+/**
  * Find .json from a template file or vice versa
  *
  * @param {object} file - file object from path.parse()
