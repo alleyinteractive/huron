@@ -90,7 +90,7 @@ export function updateFile(filepath, store) {
       if (section) {
         return templateHandler.updateTemplate(filepath, section, store);
       } else {
-        console.log(chalk.red(`No pairing (data or template) file was found for template ${filepath}`));
+        console.log(chalk.red(`Could not find associated KSS section for ${filepath}`));
       }
       break;
 
