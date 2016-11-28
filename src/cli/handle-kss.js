@@ -340,6 +340,14 @@ kssHandler.unsortSection = function(sorted, reference, delimiter) {
   return sorted;
 }
 
+/**
+ * Compare a KSS field between old and new KSS data to see if we need to output
+ * a new module for that field
+ *
+ * @param {object} oldSection - currently sorted sections
+ * @param {object} newSection - reference URI of section to sort
+ * @param {string} field - KSS field to check
+ */
 kssHandler.fieldShouldOutput = function(oldSection, newSection, field) {
   return (oldSection &&
       (oldSection[field] !== newSection[field] ||
