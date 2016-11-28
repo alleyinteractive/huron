@@ -110,8 +110,6 @@ kssHandler.updateSectionData = function(kssPath, section, oldSection, store) {
   // Output section data to a JSON file
   newSection.sectionPath = utils.writeSectionData(newStore, newSection, dataFilepath);
 
-  console.log(oldSection, newSection);
-
   // Update section sorting
   return newStore
     .setIn(
