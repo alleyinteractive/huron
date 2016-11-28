@@ -40,14 +40,15 @@ class InsertNodes {
    */
   applyModifier(modifier, meta) {
     let rendered = false;
+    let data = meta.data;
 
-    if (meta.data) {
+    if (data) {
       // If we have a modifier, use it, otherwise use the entire data set
       if (modifier && meta.data[modifier]) {
-        rendered = meta.render(meta.data[modifier]);
-      } else {
-        rendered = meta.render(meta.data);
+        data = Object.assign({}, meta.data[modifier], {modifier});
       }
+
+      rendered = meta.render(data);
     } else {
       rendered = meta.render();
     }
