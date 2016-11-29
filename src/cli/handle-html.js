@@ -30,7 +30,7 @@ htmlHandler.updateTempate = function(filepath, section, store) {
     newSection.templateContent = content;
 
     // Rewrite section data with template content
-    utils.writeSectionData(store, newSection);
+    newSection.sectionPath = utils.writeSectionData(store, newSection);
 
     return store
       .setIn(

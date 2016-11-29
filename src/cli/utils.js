@@ -32,23 +32,23 @@ utils.writeSectionData = function(store, section, sectionPath = false) {
   let outputPath = sectionPath;
   let sectionFileInfo;
 
-  if (! outputPath) {
-    if ({}.hasOwnProperty.call(section, 'kssPath')) {
-      sectionFileInfo = path.parse(section.kssPath);
-      outputPath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
-    } else {
-      return;
-    }
+  if (! outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
+    sectionFileInfo = path.parse(section.kssPath);
+    outputPath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
   }
 
   // Output section data
-  return utils.writeFile(
-    section.referenceURI,
-    'section',
-    outputPath,
-    JSON.stringify(section),
-    store
-  );
+  if (outputPath) {
+    return utils.writeFile(
+      section.referenceURI,
+      'section',
+      outputPath,
+      JSON.stringify(section),
+      store
+    );
+  }
+
+  console.warn(chalk.red(`Failed to write section data for ${section.referenceURI}`));
 }
 
 /**
@@ -90,10 +90,10 @@ utils.normalizeHeader = function(header) {
  */
 utils.wrapMarkup = function(content, templateId) {
   return `<dom-module>
-    <template id="${templateId}">
-      ${content}
-    </template>
-  </dom-module>\n`;
+<template id="${templateId}">
+${content}
+</template>
+</dom-module>\n`;
 }
 
 /**

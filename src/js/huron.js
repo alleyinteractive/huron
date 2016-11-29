@@ -23,7 +23,6 @@ class InsertNodes {
 
     // Module caches
     this.meta = {};
-    this.inserted = [];
 
     // Set store values
     this.store = store;
@@ -34,22 +33,82 @@ class InsertNodes {
   }
 
   /**
+   * Apply a modifier to a render function
+   *
+   * @param {string} modifier - target modifier
+   * @param {object} meta - module metadata
+   */
+  applyModifier(modifier, meta) {
+    let rendered = false;
+    let data = meta.data;
+
+    if (data) {
+      // If we have a modifier, use it, otherwise use the entire data set
+      if (modifier && meta.data[modifier]) {
+        data = Object.assign({}, meta.data[modifier], {modifier});
+      }
+
+      rendered = meta.render(data);
+    } else {
+      rendered = meta.render();
+    }
+
+    return rendered;
+  }
+
+  /**
+   * Get markup from any type of module (html, json or template)
+   *
+   * @param {string} content String corresponding to markup
+   */
+  convertToElement(content) {
+    let el = document.createElement('div');
+
+    el.innerHTML = content;
+    return el.firstElementChild;
+  }
+
+  /**
    * Replace all template markers with the actual template markup.
    *
    * @param  {string} context    The hash context for the module
-   * @param  {bool}   cached     Whether or not to use cached values for module replacement
    * @param  {object} filter     Filter for modules. Fields explained in the filterModules() function docs
    */
-  cycleModules(context = false, cached = false, filter = false) {
-    // Reset inserted cache
-    if (! context) {
-      this.inserted = [];
+  cycleModules(context = false, filter = false) {
+    let moduleList = {};
+    let moduleChildren = null;
+    let elementList = context;
+
+    // We're replacing top-level elements
+    if (! elementList) {
+      this.regenCache();
+
+      // Find all top-level huron placeholders
+      elementList = document.querySelectorAll(
+        '[data-huron-id][data-huron-type]'
+      );
     }
 
+    moduleList = this.getModuleListFromTags(elementList);
+
     // Loop through modules array
-    for (let module in this._modules) {
-      this.loadModule(module, this._modules[module], context, cached, filter);
-    }
+    Object.keys(moduleList).forEach((key) => {
+      const module = this._modules[key];
+      const replaceElements = moduleList[key];
+
+      this.loadModule(key, module, replaceElements, true, filter);
+    });
+  }
+
+  /**
+   * Helper for reloading sections only
+   */
+  cycleSections() {
+    this.cycleModules(false, {
+      property: 'type',
+      values: ['section'],
+      include: true,
+    });
   }
 
   /**
@@ -92,49 +151,6 @@ class InsertNodes {
   }
 
   /**
-   * Helper for reloading sections only
-   */
-  cycleSections() {
-    this.cycleModules(false, false, {
-      property: 'type',
-      values: ['section'],
-      include: true,
-    });
-  }
-
-  /**
-   * Replace all sections. For hot reloading use when the section template has changed.
-   *
-   * @param {object} context     The context (e.g. document) that you will query
-   *                             for the template ID to replace
-   * @param {string}  key        Module require path
-   * @param {mixed}   module     Module contents
-   * @param {bool}    chached    Whether or not to use cached values for module replacement
-   * @param {object}  filter     Filter for modules. Fields explained in the filterModules() function docs
-   */
-  loadModule(key, module, context = false, cached = false, filter = false) {
-    let moduleMeta = null;
-    let shouldLoad = true;
-
-    // Check if we should load from internal module metadata cache
-    if (cached) {
-      moduleMeta = this.meta[key];
-    } else {
-      moduleMeta = this.meta[key] = this.getMetaFromPath(key, module);
-    }
-
-    if (moduleMeta) {
-      if (filter) {
-        shouldLoad = this.filterModules(filter, moduleMeta);
-      }
-
-      if (shouldLoad) {
-        this.replaceTemplate(moduleMeta, context);
-      }
-    }
-  }
-
-  /**
    * Filter module object by module key or module type
    *
    * @param {object} filter - Filter for modules. Options:
@@ -145,6 +161,7 @@ class InsertNodes {
    */
   filterModules(filter, moduleMeta) {
     const moduleKeys = Object.keys(this._modules);
+    let match = true;
 
     // Check if we should filter out any modules
     if (
@@ -153,7 +170,7 @@ class InsertNodes {
       filter.hasOwnProperty('values') &&
       filter.hasOwnProperty('include')
     ) {
-      const match = filter.values.filter((value) => moduleMeta[filter.property] === value);
+      match = filter.values.filter((value) => moduleMeta[filter.property] === value);
       return Boolean(match.length) === filter.include;
     }
 
@@ -162,109 +179,7 @@ class InsertNodes {
       module filters must include 'property', 'values', and 'include' properties
     `);
 
-    return true;
-  }
-
-  /**
-   * Replace a single template marker with template content.
-   *
-   * @param {object} context - The context (e.g. document) that you will query
-   *                          for the template ID to replace
-   * @param {object} meta - Module metadata
-   */
-  replaceTemplate(meta, context = false) {
-    const type = this.validateType(meta.type);
-    let tags = null;
-    let hasStyleguideHelpers = false;
-
-    if (type) {
-      if (!context) {
-        tags = document.querySelectorAll(
-          `[data-huron-id="${meta.id}"][data-huron-type="${type}"]`
-        );
-      } else {
-        // Search for this module within a hash context
-        tags = this.generateHashContext(meta, context);
-      }
-
-      if (tags && tags.length && meta.render) {
-        tags.forEach((currentTag) => {
-          const modifier = currentTag.dataset.huronModifier;
-          const insertedKey = `${meta.id}${type}${modifier}`;
-
-          if (-1 === this.inserted.indexOf(insertedKey)) {
-            const parent = currentTag.parentNode;
-            const rendered = this.applyModifier(modifier, meta);
-            const renderedTemplate = this.convertToElement(rendered)
-                .querySelector('template');
-            let renderedContents = null;
-
-            // Remove existing module tags
-            this.removeOldTags(meta.hash, currentTag.previousSibling);
-
-            // Get the contents of the rendered template
-            renderedContents = [
-              ...renderedTemplate.content.children
-            ];
-
-            // Insert each tag of the template contents before placeholder
-            renderedContents.forEach((element) => {
-              if (1 === element.nodeType) {
-                element.dataset.parentHash = meta.hash;
-                hasStyleguideHelpers = ! hasStyleguideHelpers ?
-                  this.isSectionHelper(element, meta) :
-                  hasStyleguideHelpers;
-
-                parent.insertBefore(element, currentTag);
-              }
-            });
-
-            // Add module hash to this placeholder
-            currentTag.dataset.selfHash = meta.hash;
-
-            // Add this placeholder to the inserted cache,
-            // to make sure we don't insert it twice
-            this.inserted.push(insertedKey);
-
-            // Hide the placeholder
-            currentTag.style.display = 'none';
-
-            // Recursively load modules, excluding the current one
-            // @todo prevent this from calling for each tag?
-            this.cycleModules(meta.hash, true, {
-              property: 'key',
-              values: [meta.key, this._sectionTemplatePath],
-              include: false,
-            });
-
-            if (hasStyleguideHelpers) {
-              this.cycleStyleguide();
-            }
-          }
-        });
-      }
-    } else {
-      console.warn(
-        `Could not render module
-        section: ${meta.id}
-        type: ${meta.type}`
-      );
-    }
-  }
-
-  /**
-   * Check if this tag is a styleguide helper
-   *
-   * @param {object} tag - tag to check
-   * @param {object} meta - module metadata
-   */
-  isSectionHelper(tag, meta) {
-    if ('prototype' === meta.type) {
-      return tag.hasAttribute('huron-sections') ||
-        tag.hasAttribute('huron-menu');
-    }
-
-    return false;
+    return match;
   }
 
   /**
@@ -274,119 +189,6 @@ class InsertNodes {
    */
   generateModuleHash(key) {
     return md5(key);
-  }
-
-  /**
-   * Create an element context based on module medata
-   *
-   * @param {object} meta - module metadata
-   * @param {string} context - hash of module we are currently searching for submodules
-   */
-  generateHashContext(meta, context) {
-    let tags = [];
-    // Get an array of children to search for submodule placeholders
-    let hashContext = [...document.querySelectorAll(`[data-parent-hash="${context}"]`)];
-
-    if (hashContext && hashContext.length) {
-      hashContext.forEach((hashEl) => {
-        // Module children can themselves be submodule placeholders
-        if (
-          hashEl.dataset &&
-          hashEl.dataset.huronId === meta.id &&
-          hashEl.dataset.huronType === meta.type
-        ) {
-          tags.push(hashEl);
-        }
-
-        // Check within module children to see if they have any submodules
-        tags = tags.concat(
-          [...hashEl.querySelectorAll(
-            `[data-huron-id="${meta.id}"][data-huron-type="${meta.type}"]`
-          )]
-        );
-      });
-    }
-
-    return tags;
-  }
-
-  /**
-   * Recursively remove old tags
-   *
-   * @param {string} hash - hash of module for which we need to remove old tags
-   * @param {object} tag - tag to start our search with
-   *                       (usually the tag immediately preceding the current placeholder)
-   */
-  removeOldTags(hash, tag) {
-    if (tag && tag.dataset) {
-
-      if (tag.dataset.selfHash === hash) {
-        // This is another instance of this module
-        return;
-      } else if (tag.dataset.parentHash === hash) {
-        // This is a child of the current module,
-        // so remove it and its children (if applicable)
-        let childrenHash = tag.dataset.selfHash;
-        let nextTag = tag.previousSibling;
-
-        if (childrenHash) {
-          this.removeOldTags(childrenHash, nextTag);
-          // Reset nextTag if we removed a child
-          nextTag = tag.previousSibling;
-        }
-
-        tag.parentNode.removeChild(tag);
-        this.removeOldTags(hash, nextTag);
-      }
-    }
-  }
-
-  /**
-   * Apply a modifier to a render function
-   *
-   * @param {string} modifier - target modifier
-   * @param {object} meta - module metadata
-   */
-  applyModifier(modifier, meta) {
-    let rendered = false;
-
-    if (meta.data) {
-      // If we have a modifier, use it, otherwise use the entire data set
-      if (modifier && meta.data[modifier]) {
-        rendered = meta.render(meta.data[modifier]);
-      } else {
-        rendered = meta.render(meta.data);
-      }
-    } else {
-      rendered = meta.render();
-    }
-
-    return rendered;
-  }
-
-  /**
-   * Look that a context only has one element child.
-   * Return it or warn that there is more than one.
-   *
-   * @param  {object} context HTMLElement
-   * @return {object}         First element child of context.
-   */
-  ensureFirstElementChild(context) {
-    const results = [...context.childNodes];
-
-    const resultElements = results.filter((result) => {
-      return result instanceof HTMLElement;
-    });
-
-    if (1 !== resultElements.length) {
-      console.warn(
-        `Module needs to be wrapped in single tag.
-        section: ${meta.id}
-        type: ${meta.type}`
-      );
-    }
-
-    return context.firstElementChild;
   }
 
   /**
@@ -443,6 +245,65 @@ class InsertNodes {
   }
 
   /**
+   * Check if a tag is a huron placeholder and, if so,
+   * return its associated module key
+   *
+   * @param {object} tag - tag to check
+   */
+  getModuleKeyFromTag(tag) {
+    const type = tag.dataset.huronType;
+    const id = tag.dataset.huronId;
+    const section = this._sections.sectionsByURI[id];
+
+    if (id && type) {
+      if (section) {
+        return section[`${type}Path`];
+      } else if ('prototype' === type) {
+        return this._prototypes[id];
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Check if an array of elements contains a Huron placeholder
+   *
+   * @param {array} tags - array of DOM nodes
+   * @param {bool} recurse - should we recurse this function with a new array
+   */
+  getModuleListFromTags(elements, recurse = true) {
+    const moduleList = {};
+    let newList = {};
+
+    if (elements && elements.length) {
+      elements.forEach((element) => {
+        const moduleKey = this.getModuleKeyFromTag(element);
+
+        if (moduleKey) {
+          if (! moduleList[moduleKey]) {
+            moduleList[moduleKey] = [];
+          }
+          moduleList[moduleKey].push(element);
+        } else if (recurse) {
+          newList = this.getModuleListFromTags(
+            [...element.querySelectorAll('[data-huron-id][data-huron-type]')],
+            false
+          );
+
+          Object.keys(newList).forEach((key) => {
+            moduleList[key] = moduleList[key] ?
+              modulList[key].concat(newList[key]) :
+              newList[key];
+          });
+        }
+      });
+    }
+
+    return moduleList;
+  }
+
+  /**
    * Transform every module into a predictable object
    *
    * @param  {object} type    Module metadata
@@ -494,55 +355,117 @@ class InsertNodes {
   }
 
   /**
-   * Verify specified element is using an acceptable huron type
+   * Check if this tag is a styleguide helper
    *
-   * @param  {string} type - type of partial
-   *                         (template, data, description, section or prototype )
-   *
-   * @return {string} - huron type or 'template' if invalid
+   * @param {object} tag - tag to check
+   * @param {object} meta - module metadata
    */
-  validateType(type) {
-    if ('data' === type) {
-      return 'template';
-    }
-
-    if (!this._types.includes(type)) {
-      return false;
-    }
-
-    return type;
-  }
-
-  /**
-   * Get markup from any type of module (html, json or template)
-   *
-   * @param {string} content String corresponding to markup
-   */
-  convertToElement(content) {
-    let el = document.createElement('div');
-    el.innerHTML = content;
-    return el.firstElementChild;
-  }
-
-  /*
-   * Check if a template contains a specific subtemplate.
-   */
-  hasTemplate(template, templateId) {
-    if (templateId !== null) {
-      const subTemplate = template
-        .querySelector('template')
-        .content
-        .querySelector(`[data-huron-id=${templateId}`);
-
-      if (subTemplate !== null) {
-        return true;
-      }
+  isSectionHelper(tag, meta) {
+    if ('prototype' === meta.type) {
+      return tag.hasAttribute('huron-sections') ||
+        tag.hasAttribute('huron-menu');
     }
 
     return false;
   }
 
-  /* Helper function for inserting styleguide sections.
+  /**
+   * Replace all sections. For hot reloading use when the section template has changed.
+   *
+   * @param {object}  replaceElements     The context (e.g. document) that you will query
+   *                                      for the template ID to replace
+   * @param {string}  key                 Module require path
+   * @param {mixed}   module              Module contents
+   * @param {bool}    cached             Whether or not to use cached values for module replacement
+   * @param {object}  filter              Filter for modules. Fields explained in the filterModules() function docs
+   */
+  loadModule(key, module, replaceElements, cached = false, filter = false) {
+    let shouldLoad = true;
+    let moduleMeta = false;
+
+    // Check if we should load from internal module metadata cache
+    if (cached) {
+      moduleMeta = this.meta[key];
+    } else {
+      moduleMeta = this.meta[key] = this.getMetaFromPath(key, module);
+    }
+
+    if (moduleMeta) {
+      if (filter) {
+        shouldLoad = this.filterModules(filter, moduleMeta);
+      }
+
+      if (shouldLoad) {
+        this.replaceTemplate(moduleMeta, replaceElements);
+      }
+    }
+  }
+
+  /*
+   * Helper function for inserting styleguide sections.
+   *
+   * Recurses over sorted styleguide sections and inserts a <ul> to be used as a menu for each section
+   */
+  outputMenu(parent, el, sections = this._sections.sorted) {
+    let templateId = null;
+    let wrapper = null;
+
+    for (let section in sections) {
+      const hasSubmenu = Object.keys(sections[section]).length;
+      let menuTarget;
+      let nextMenu;
+
+      if (parent) {
+        templateId = `${parent}-${section}`;
+      } else {
+        templateId = section;
+      }
+
+      if (el) {
+        const title = this._sections
+            .sectionsByURI[templateId] ?
+          this._sections
+            .sectionsByURI[templateId]
+            .header :
+          templateId;
+        const sectionMenu = document.createElement('ul');
+        const menuItem = document.createElement('li');
+        const link = `<a href="#styleguide-section-${templateId}">${title}</a>`;
+
+        sectionMenu.classList.add('section-menu');
+        menuItem.classList.add('section-menu__item');
+        menuItem.innerHTML = link;
+
+        // Check if this is a UL and, if not, create one
+        if ('UL' !== el.tagName) {
+          menuTarget = sectionMenu.cloneNode();
+          el.appendChild(menuTarget);
+          el = menuTarget;
+        }
+
+        // Has subsections
+        if (hasSubmenu) {
+          nextMenu = sectionMenu.cloneNode();
+          nextMenu.classList.add('section-menu--submenu');
+          menuItem.classList.add('section-menu__item--has-submenu');
+          menuItem.appendChild(nextMenu);
+        }
+
+        el.appendChild(menuItem);
+
+        if (hasSubmenu) {
+          this.outputMenu(
+            templateId,
+            nextMenu,
+            sections[section]
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Helper function for inserting styleguide sections.
    *
    * Recurses over sorted styleguide sections and inserts a <section> tag with
    * [huron-id] equal to the section template name.
@@ -603,66 +526,150 @@ class InsertNodes {
     }
   }
 
-  /* Helper function for inserting styleguide sections.
-   *
-   * Recurses over sorted styleguide sections and inserts a <ul> to be used as a menu for each section
+  /**
+   * Regenerate module meta cache
    */
-  outputMenu(parent, el, sections = this._sections.sorted) {
-    let templateId = null;
-    let wrapper = null;
+  regenCache() {
+    for (let moduleKey in this._modules) {
+      this.meta[moduleKey] = this.getMetaFromPath(
+        moduleKey, this._modules[moduleKey]
+      );
+    }
+  }
 
-    for (let section in sections) {
-      const hasSubmenu = Object.keys(sections[section]).length;
-      let menuTarget;
-      let nextMenu;
+  /**
+   * Recursively remove old tags
+   *
+   * @param {string} hash - hash of module for which we need to remove old tags
+   * @param {object} tag - tag to start our search with
+   *                       (usually the tag immediately preceding the current placeholder)
+   */
+  removeOldTags(hash, tag) {
+    if (tag && tag.dataset) {
 
-      if (parent) {
-        templateId = `${parent}-${section}`;
-      } else {
-        templateId = section;
-      }
+      if (tag.dataset.selfHash === hash) {
+        // This is another instance of this module
+        return;
+      } else if (tag.dataset.parentHash === hash) {
+        // This is a child of the current module,
+        // so remove it and its children (if applicable)
+        let childrenHash = tag.dataset.selfHash;
+        let nextTag = tag.previousSibling;
 
-      if (el) {
-        const title = this._sections
-            .sectionsByURI[templateId] ?
-          this._sections
-            .sectionsByURI[templateId]
-            .header :
-          templateId;
-        const sectionMenu = document.createElement('ul');
-        const menuItem = document.createElement('li');
-        const link = `<a href="#styleguide-section-${templateId}">${title}</a>`;
-
-        sectionMenu.classList.add('section-menu');
-        menuItem.classList.add('section-menu__item');
-        menuItem.innerHTML = link;
-
-        // Check if this is a UL and, if not, create one
-        if ('UL' !== el.tagName) {
-          menuTarget = sectionMenu.cloneNode();
-          el.appendChild(menuTarget);
-          el = menuTarget;
+        if (childrenHash) {
+          this.removeOldTags(childrenHash, nextTag);
+          // Reset nextTag if we removed a child
+          nextTag = tag.previousSibling;
         }
 
-        // Has subsections
-        if (hasSubmenu) {
-          nextMenu = sectionMenu.cloneNode();
-          nextMenu.classList.add('section-menu--submenu');
-          menuItem.classList.add('section-menu__item--has-submenu');
-          menuItem.appendChild(nextMenu);
-        }
-
-        el.appendChild(menuItem);
-
-        if (hasSubmenu) {
-          this.outputMenu(
-            templateId,
-            nextMenu,
-            sections[section]
-          );
-        }
+        tag.parentNode.removeChild(tag);
+        this.removeOldTags(hash, nextTag);
       }
     }
+  }
+
+  /**
+   * Replace a single template marker with template content.
+   *
+   * @param {object} replaceElements - Array of elements to check for Huron placeholders
+   * @param {object} meta - Module metadata
+   */
+  replaceTemplate(meta, replaceElements) {
+    const type = this.validateType(meta.type);
+    let tags = [];
+    let hasStyleguideHelpers = false;
+
+    if (!replaceElements) {
+      replaceElements = document.querySelectorAll(
+        '[data-huron-id][data-huron-type]'
+      );
+    }
+
+    if (type) {
+      replaceElements.forEach((tag) => {
+        if (
+          tag.dataset &&
+          tag.dataset.huronId === meta.id &&
+          tag.dataset.huronType === type
+        ) {
+           tags.push(tag);
+        }
+      });
+
+      if (tags && tags.length && meta.render) {
+        tags.forEach((currentTag) => {
+          const modifier = currentTag.dataset.huronModifier;
+          const parent = currentTag.parentNode;
+          const rendered = this.applyModifier(modifier, meta);
+          const renderedTemplate = this.convertToElement(rendered)
+              .querySelector('template');
+          let renderedContents = null;
+
+          // Remove existing module tags
+          this.removeOldTags(meta.hash, currentTag.previousSibling);
+
+          // Get the contents of the rendered template
+          renderedContents = [
+            ...renderedTemplate.content.children
+          ];
+
+          // Insert each tag of the template contents before placeholder
+          renderedContents.forEach((element) => {
+            if (1 === element.nodeType) {
+              element.dataset.parentHash = meta.hash;
+              hasStyleguideHelpers = ! hasStyleguideHelpers ?
+                this.isSectionHelper(element, meta) :
+                hasStyleguideHelpers;
+
+              parent.insertBefore(element, currentTag);
+            }
+          });
+
+          // Add module hash to this placeholder
+          currentTag.dataset.selfHash = meta.hash;
+
+          // Hide the placeholder
+          currentTag.style.display = 'none';
+
+          // Recursively load modules, excluding the current one
+          this.cycleModules(renderedContents, {
+            property: 'key',
+            values: [meta.key, this._sectionTemplatePath],
+            include: false,
+          });
+
+          if (hasStyleguideHelpers) {
+            this.cycleStyleguide();
+          }
+        });
+      }
+    } else {
+      console.warn(
+        `Could not render module
+        section: ${meta.id}
+        type: ${meta.type}`
+      );
+    }
+  }
+
+  /**
+   * Verify specified element is using an acceptable huron type
+   *
+   * @param  {string} type - type of partial
+   *                         (template, data, description, section or prototype )
+   *
+   * @return {string} - huron type or 'template' if invalid
+   */
+  validateType(type) {
+    if ('data' === type) {
+      return 'template';
+    }
+
+    if (!this._types.includes(type)) {
+      return false;
+    }
+
+    return type;
   }
 
   /*

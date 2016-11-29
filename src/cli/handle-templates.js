@@ -20,7 +20,8 @@ templateHandler.updateTemplate = function(filepath, section, store) {
   const dest = path.resolve(cwd, huron.get('output'));
   const pairPath = utils.getTemplateDataPair(file, section, store);
   const type = '.json' === file.ext ? 'data' : 'template';
-  let newSection = section;
+  const newSection = section;
+  let newStore = store;
   let content = false;
 
   try {
@@ -30,32 +31,32 @@ templateHandler.updateTemplate = function(filepath, section, store) {
   }
 
   if (content) {
-    let requirePath = utils.writeFile(section.referenceURI, type, filepath, content, store);
+    let requirePath = utils.writeFile(newSection.referenceURI, type, filepath, content, newStore);
     newSection[`${type}Path`] = requirePath;
 
     if ('template' === type) {
       newSection.templateContent = content;
 
       // Rewrite section data with template content
-      utils.writeSectionData(store, newSection);
+      newSection.sectionPath = utils.writeSectionData(newStore, newSection);
     }
 
-    return store
+    return newStore
       .setIn(
         ['templates', requirePath],
         pairPath
       )
       .setIn(
-        ['sections', 'sectionsByPath', section.kssPath],
+        ['sections', 'sectionsByPath', newSection.kssPath],
         newSection
       )
       .setIn(
-        ['sections', 'sectionsByURI', section.referenceURI],
+        ['sections', 'sectionsByURI', newSection.referenceURI],
         newSection
       );
-  } else {
-    return store;
   }
+
+  return newStore;
 }
 
 /**
@@ -70,19 +71,21 @@ templateHandler.deleteTemplate = function(filepath, section, store) {
   const file = path.parse(filepath);
   const dest = path.resolve(cwd, huron.get('output'));
   const type = '.json' === file.ext ? 'data' : 'template';
+  const newSection = section;
+  let newStore = store;
 
   // Remove partner
-  let requirePath = utils.removeFile(section.referenceURI, type, filepath, store);
-  delete section[`${type}Path`];
+  let requirePath = utils.removeFile(newSection.referenceURI, type, filepath, newStore);
+  delete newSection[`${type}Path`];
 
-  return store
+  return newStore
     .deleteIn(['templates', requirePath])
     .setIn(
-      ['sections', 'sectionsByPath', section.kssPath],
-      section
+      ['sections', 'sectionsByPath', newSection.kssPath],
+      newSection
     )
     .setIn(
-      ['sections', 'sectionsByURI', section.referenceURI],
-      section
+      ['sections', 'sectionsByURI', newSection.referenceURI],
+      newSection
     );
 }

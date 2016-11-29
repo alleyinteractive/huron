@@ -223,6 +223,9 @@ function moveAdditionalAssets(assets, subdir = '', huron) {
     const assetURL = url.parse(asset);
     const sourcePath = path.join(cwd, asset);
     const outputPath = path.resolve(cwd, huron.root, subdir, assetInfo.base);
+    const loadPath = program.production ?
+      path.join(subdir, assetInfo.base) :
+      path.join('/', subdir, assetInfo.base); // Use absolute path in development
     let contents = false;
 
     if (
@@ -237,7 +240,7 @@ function moveAdditionalAssets(assets, subdir = '', huron) {
 
       if (contents) {
         fs.outputFileSync(outputPath, contents);
-        assetResults.push(path.join('/', subdir, assetInfo.base));
+        assetResults.push(loadPath);
       }
     } else {
       assetResults.push(asset);

@@ -24,7 +24,7 @@
     </script>
   <% } %>
 </head>
-<body class="prototype">
+<body class="prototype prototype-<%= htmlWebpackPlugin.options.title %> <%= htmlWebpackPlugin.options.bodyClasses %>">
 <% if (htmlWebpackPlugin.options.unsupportedBrowser) { %>
 <style>.unsupported-browser { display: none; }</style>
 <div class="unsupported-browser">
