@@ -100,6 +100,13 @@ kssHandler.updateSectionData = function(kssPath, section, oldSection, store) {
     // Set section value if inlineTempalte() returned a path
     newStore = kssHandler.updateInlineTemplate(kssPath, oldSection, newSection, newStore);
   } else {
+    // Remove inline template, if it exists
+    utils.removeFile(
+      newSection.referenceURI,
+      'template',
+      kssPath,
+      store
+    );
     // Update markup and data fields
     newStore = kssHandler.updateTemplateFields(sectionFileInfo, oldSection, newSection, newStore);
   }
