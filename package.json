@@ -9,6 +9,14 @@
     "build": "babel src/cli -d dist/cli && babel src/web -d dist/web",
     "prebuild": "./node_modules/eslint/bin/eslint.js -c config/.eslintrc src/**"
   },
+  "bin": {
+    "huron": "./dist/cli/huron-cli.js"
+  },
+  "files": [
+    "dist",
+    "config",
+    "templates"
+  ],
   "dependencies": {
     "chalk": "^1.1.3",
     "commander": "^2.9.0",
