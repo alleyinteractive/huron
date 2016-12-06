@@ -51,8 +51,7 @@ kssHandler.updateKSS = function updateKSS(filepath, store) {
       writeStore(newStore);
       console.log(
         chalk.green(
-          `KSS section ${section.referenceURI}
-          file ${filepath} changed or added`
+          `KSS source in ${filepath} changed or added`
         )
       );
       return newStore;

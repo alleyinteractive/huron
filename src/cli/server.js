@@ -1,4 +1,4 @@
-import { program } from './parse-args';
+import program from './parse-args';
 
 const webpack = require('webpack');
 const WebpackDevServer = require('webpack-dev-server');

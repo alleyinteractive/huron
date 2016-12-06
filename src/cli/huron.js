@@ -1,9 +1,9 @@
 // CLI for Huron
 
 // Local imports
-import { program } from './parse-args';
 import { initFiles, updateFile, deleteFile } from './actions';
 import { requireTemplates, writeStore } from './require-templates';
+import program from './parse-args';
 import generateConfig from './generate-config';
 import startWebpack from './server';
 

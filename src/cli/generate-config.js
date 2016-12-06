@@ -1,5 +1,5 @@
 import { defaultConfig } from '../../config/webpack.config';
-import { program } from './parse-args';
+import program from './parse-args';
 
 const webpack = require('webpack');
 const path = require('path');

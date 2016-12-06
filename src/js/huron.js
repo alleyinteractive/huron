@@ -265,7 +265,7 @@ class InsertNodes {
     if (id && type) {
       const hashKey = 'data' === type ? this._templates[key] : key;
       const renderData = this.getModuleRender(type, key, module);
-      const hash = this.generateModuleHash(hashKey);
+      const hash = InsertNodes.generateModuleHash(hashKey);
 
       if (renderData) {
         return Object.assign({ id, type, key, hash, module }, renderData);
@@ -412,7 +412,7 @@ class InsertNodes {
 
     if (moduleMeta) {
       if (filter) {
-        shouldLoad = this.filterModules(filter, moduleMeta);
+        shouldLoad = InsertNodes.filterModules(filter, moduleMeta);
       }
 
       if (shouldLoad) {
@@ -620,8 +620,8 @@ class InsertNodes {
           const modifiedPlaceholder = currentTag;
           const modifier = modifiedPlaceholder.dataset.huronModifier;
           const parent = modifiedPlaceholder.parentNode;
-          const rendered = this.applyModifier(modifier, meta);
-          const renderedTemplate = this.convertToElement(rendered)
+          const rendered = InsertNodes.applyModifier(modifier, meta);
+          const renderedTemplate = InsertNodes.convertToElement(rendered)
               .querySelector('template');
           let renderedContents = null;
 
@@ -640,7 +640,7 @@ class InsertNodes {
             if (1 === newEl.nodeType) {
               newEl.dataset.parentHash = meta.hash;
               hasStyleguideHelpers = ! hasStyleguideHelpers ?
-                this.isSectionHelper(newEl, meta) :
+                InsertNodes.isSectionHelper(newEl, meta) :
                 hasStyleguideHelpers;
 
               parent.insertBefore(newEl, modifiedPlaceholder);
