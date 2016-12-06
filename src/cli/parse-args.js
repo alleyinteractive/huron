@@ -1,3 +1,5 @@
+/** @module cli/parse-arguments */
+
 // Requires
 const program = require('commander'); // Easy program flags
 const path = require('path');

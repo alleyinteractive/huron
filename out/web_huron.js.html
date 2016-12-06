@@ -26,15 +26,17 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>/* eslint-disable no-underscore-dangle */
+            <pre class="prettyprint source linenums"><code>/** @module web */
+
 const md5 = require('js-md5');
 
+/* eslint-disable no-underscore-dangle */
 // Accept the huron.js module for Huron development
 if (module.hot) {
   module.hot.accept();
 }
 
-/* Method for inserting HTML snippets at particular insertion points
+/** Class for inserting HTML snippets at particular insertion points
  *
  * Uses require() to grab html partials, then inserts that html
  * into an element with an attribute `huron-id` corresponding to the template filename.
@@ -88,7 +90,7 @@ class InsertNodes {
   /**
    * Get markup from any type of module (html, json or template)
    *
-   * @param {string} content String corresponding to markup
+   * @param {string} content - String corresponding to markup
    */
   static convertToElement(content) {
     const el = document.createElement('div');
@@ -102,9 +104,9 @@ class InsertNodes {
    *
    * @param {object} filter - Filter for modules. Options:
    * @param {string} filter.property - Which property to filter ('key' or 'type')
-   * @param {array}  filter.values - Values for property
-   * @param {bool}   filter.include - Whether the values should be included or excluded (true = include, false = exclude)
-   * @param {object} moduleMeta  Filter for modules. Fields explained in the filterModules() function docs
+   * @param {array} filter.values - Values for property
+   * @param {bool} filter.include - Whether the values should be included or excluded (true = include, false = exclude)
+   * @param {object} moduleMeta - Filter for modules. Fields explained in the filterModules() function docs
    */
   static filterModules(filter, moduleMeta) {
     let match = true;
@@ -157,8 +159,8 @@ class InsertNodes {
   /**
    * Replace all template markers with the actual template markup.
    *
-   * @param  {string} context    The hash context for the module
-   * @param  {object} filter     Filter for modules. Fields explained in the filterModules() function docs
+   * @param {string} context - The hash context for the module
+   * @param {object} filter - Filter for modules. Fields explained in the filterModules() function docs
    */
   cycleModules(context = false, filter = false) {
     let moduleList = {};
@@ -239,11 +241,7 @@ class InsertNodes {
    * Get module metadata from a module require path
    *
    * @param  {string} key - Module require path
-   *
-   * @return {object} - id: huron id (referenceURI)
-   *                    type: huron type
-   *                    key: module require path (key)
-   *                    module: module contents
+   * @return {object} containing module id, module type, key and the module contents
    */
   getMetaFromPath(key, module) {
     const sections = this._sections.sectionsByPath;
@@ -369,12 +367,9 @@ class InsertNodes {
   /**
    * Transform every module into a predictable object
    *
-   * @param  {object} type    Module metadata
-   * @param  {mixed}  module  Module contents
-   *
-   * @return {object} render: render function
-   *                  data: original module contents
-   *                  id: id of partial
+   * @param {object} type - Module metadata
+   * @param {mixed} module - Module contents
+   * @return {object} containing render function, render data and module id
    */
   getModuleRender(type, key, module) {
     let render = false;
@@ -420,12 +415,11 @@ class InsertNodes {
   /**
    * Replace all sections. For hot reloading use when the section template has changed.
    *
-   * @param {object}  replaceElements     The context (e.g. document) that you will query
-   *                                      for the template ID to replace
-   * @param {string}  key                 Module require path
-   * @param {mixed}   module              Module contents
-   * @param {bool}    cached             Whether or not to use cached values for module replacement
-   * @param {object}  filter              Filter for modules. Fields explained in the filterModules() function docs
+   * @param {object} replaceElements - The context (e.g. document) that you will query for the template ID to replace
+   * @param {string} key - Module require path
+   * @param {mixed} module - Module contents
+   * @param {bool} cached - Whether or not to use cached values for module replacement
+   * @param {object} filter - Filter for modules. Fields explained in the filterModules() function docs
    */
   loadModule(key, module, replaceElements, cached = false, filter = false) {
     let shouldLoad = true;
@@ -515,8 +509,7 @@ class InsertNodes {
   /**
    * Helper function for inserting styleguide sections.
    *
-   * Recurses over sorted styleguide sections and inserts a &lt;section> tag with
-   * [huron-id] equal to the section template name.
+   * Recurses over sorted styleguide sections and inserts a &lt;section> tag with [huron-id] equal to the section template name.
    */
   outputSections(parent, el, sections = this._sections.sorted) {
     let templateId = null;
@@ -705,10 +698,8 @@ class InsertNodes {
   /**
    * Verify specified element is using an acceptable huron type
    *
-   * @param  {string} type - type of partial
-   *                         (template, data, description, section or prototype )
-   *
-   * @return {string} - huron type or 'template' if invalid
+   * @param  {string} type - type of partial (template, data, description, section or prototype )
+   * @return {string} huron type or 'template' if invalid
    */
   validateType(type) {
     if ('data' === type) {
@@ -761,13 +752,13 @@ const insert = new InsertNodes(modules, store);
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#configureEntries">configureEntries</a></li><li><a href="global.html#configureLoaders">configureLoaders</a></li><li><a href="global.html#configurePlugins">configurePlugins</a></li><li><a href="global.html#configurePrototypes">configurePrototypes</a></li><li><a href="global.html#deleteFile">deleteFile</a></li><li><a href="global.html#deletePrototype">deletePrototype</a></li><li><a href="global.html#deleteTemplate">deleteTemplate</a></li><li><a href="global.html#initFiles">initFiles</a></li><li><a href="global.html#moveAdditionalAssets">moveAdditionalAssets</a></li><li><a href="global.html#updateFile">updateFile</a></li><li><a href="global.html#updatePrototype">updatePrototype</a></li><li><a href="global.html#updateTemplate">updateTemplate</a></li><li><a href="global.html#writeStore">writeStore</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-cli.html">cli</a></li><li><a href="module-cli_actions.html">cli/actions</a></li><li><a href="module-cli_generate-config.html">cli/generate-config</a></li><li><a href="module-cli_html-handler.html">cli/html-handler</a></li><li><a href="module-cli_kss-handler.html">cli/kss-handler</a></li><li><a href="module-cli_parse-arguments.html">cli/parse-arguments</a></li><li><a href="module-cli_require-templates.html">cli/require-templates</a></li><li><a href="module-cli_template-handler.html">cli/template-handler</a></li><li><a href="module-cli_utilities.html">cli/utilities</a></li><li><a href="module-cli_webpack-server.html">cli/webpack-server</a></li><li><a href="module-web.html">web</a></li></ul><h3>Classes</h3><ul><li><a href="module-web-InsertNodes.html">InsertNodes</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Dec 06 2016 17:42:28 GMT-0500 (EST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Dec 06 2016 18:44:59 GMT-0500 (EST)
 </footer>
 
 <script> prettyPrint(); </script>

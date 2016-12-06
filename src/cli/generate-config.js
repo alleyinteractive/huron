@@ -1,3 +1,5 @@
+/** @module cli/generate-config */
+
 import program from './parse-args';
 
 const defaultConfig = require('../../config/webpack.config');

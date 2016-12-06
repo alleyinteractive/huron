@@ -1,12 +1,14 @@
-/* eslint-disable no-underscore-dangle */
+/** @module web */
+
 const md5 = require('js-md5');
 
+/* eslint-disable no-underscore-dangle */
 // Accept the huron.js module for Huron development
 if (module.hot) {
   module.hot.accept();
 }
 
-/* Method for inserting HTML snippets at particular insertion points
+/** Class for inserting HTML snippets at particular insertion points
  *
  * Uses require() to grab html partials, then inserts that html
  * into an element with an attribute `huron-id` corresponding to the template filename.
@@ -60,7 +62,7 @@ class InsertNodes {
   /**
    * Get markup from any type of module (html, json or template)
    *
-   * @param {string} content String corresponding to markup
+   * @param {string} content - String corresponding to markup
    */
   static convertToElement(content) {
     const el = document.createElement('div');
@@ -74,9 +76,9 @@ class InsertNodes {
    *
    * @param {object} filter - Filter for modules. Options:
    * @param {string} filter.property - Which property to filter ('key' or 'type')
-   * @param {array}  filter.values - Values for property
-   * @param {bool}   filter.include - Whether the values should be included or excluded (true = include, false = exclude)
-   * @param {object} moduleMeta  Filter for modules. Fields explained in the filterModules() function docs
+   * @param {array} filter.values - Values for property
+   * @param {bool} filter.include - Whether the values should be included or excluded (true = include, false = exclude)
+   * @param {object} moduleMeta - Filter for modules. Fields explained in the filterModules() function docs
    */
   static filterModules(filter, moduleMeta) {
     let match = true;
@@ -129,8 +131,8 @@ class InsertNodes {
   /**
    * Replace all template markers with the actual template markup.
    *
-   * @param  {string} context    The hash context for the module
-   * @param  {object} filter     Filter for modules. Fields explained in the filterModules() function docs
+   * @param {string} context - The hash context for the module
+   * @param {object} filter - Filter for modules. Fields explained in the filterModules() function docs
    */
   cycleModules(context = false, filter = false) {
     let moduleList = {};
@@ -211,11 +213,7 @@ class InsertNodes {
    * Get module metadata from a module require path
    *
    * @param  {string} key - Module require path
-   *
-   * @return {object} - id: huron id (referenceURI)
-   *                    type: huron type
-   *                    key: module require path (key)
-   *                    module: module contents
+   * @return {object} containing module id, module type, key and the module contents
    */
   getMetaFromPath(key, module) {
     const sections = this._sections.sectionsByPath;
@@ -341,12 +339,9 @@ class InsertNodes {
   /**
    * Transform every module into a predictable object
    *
-   * @param  {object} type    Module metadata
-   * @param  {mixed}  module  Module contents
-   *
-   * @return {object} render: render function
-   *                  data: original module contents
-   *                  id: id of partial
+   * @param {object} type - Module metadata
+   * @param {mixed} module - Module contents
+   * @return {object} containing render function, render data and module id
    */
   getModuleRender(type, key, module) {
     let render = false;
@@ -392,12 +387,11 @@ class InsertNodes {
   /**
    * Replace all sections. For hot reloading use when the section template has changed.
    *
-   * @param {object}  replaceElements     The context (e.g. document) that you will query
-   *                                      for the template ID to replace
-   * @param {string}  key                 Module require path
-   * @param {mixed}   module              Module contents
-   * @param {bool}    cached             Whether or not to use cached values for module replacement
-   * @param {object}  filter              Filter for modules. Fields explained in the filterModules() function docs
+   * @param {object} replaceElements - The context (e.g. document) that you will query for the template ID to replace
+   * @param {string} key - Module require path
+   * @param {mixed} module - Module contents
+   * @param {bool} cached - Whether or not to use cached values for module replacement
+   * @param {object} filter - Filter for modules. Fields explained in the filterModules() function docs
    */
   loadModule(key, module, replaceElements, cached = false, filter = false) {
     let shouldLoad = true;
@@ -487,8 +481,7 @@ class InsertNodes {
   /**
    * Helper function for inserting styleguide sections.
    *
-   * Recurses over sorted styleguide sections and inserts a <section> tag with
-   * [huron-id] equal to the section template name.
+   * Recurses over sorted styleguide sections and inserts a <section> tag with [huron-id] equal to the section template name.
    */
   outputSections(parent, el, sections = this._sections.sorted) {
     let templateId = null;
@@ -677,10 +670,8 @@ class InsertNodes {
   /**
    * Verify specified element is using an acceptable huron type
    *
-   * @param  {string} type - type of partial
-   *                         (template, data, description, section or prototype )
-   *
-   * @return {string} - huron type or 'template' if invalid
+   * @param  {string} type - type of partial (template, data, description, section or prototype )
+   * @return {string} huron type or 'template' if invalid
    */
   validateType(type) {
     if ('data' === type) {

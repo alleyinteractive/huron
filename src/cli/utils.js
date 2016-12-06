@@ -1,3 +1,5 @@
+/** @module cli/utilities */
+
 const cwd = process.cwd(); // Current working directory
 const path = require('path');
 const fs = require('fs-extra');

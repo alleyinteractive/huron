@@ -1,3 +1,5 @@
+/** @module cli/actions */
+
 // Imports
 import htmlHandler from './handle-html';
 import { templateHandler } from './handle-templates';

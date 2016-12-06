@@ -1,3 +1,5 @@
+/** @module cli/webpack-server */
+
 import program from './parse-args';
 
 const webpack = require('webpack');

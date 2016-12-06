@@ -1,3 +1,5 @@
+/** @module cli/require-templates */
+
 const path = require('path');
 const fs = require('fs-extra');
 
@@ -7,6 +9,11 @@ const huronScript = fs.readFileSync(
   'utf8'
 );
 
+/**
+ * Write code for requiring all generated huron assets
+ *
+ * @param {object} store - memory store
+ */
 export const requireTemplates = function requireTemplates(store) {
   const huron = store.get('config');
   const outputPath = path.join(cwd, huron.get('root'), 'huron-assets');

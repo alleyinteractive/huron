@@ -1,3 +1,4 @@
+/** @module cli/template-handler */
 import { utils } from './utils';
 
 /* eslint-disable */

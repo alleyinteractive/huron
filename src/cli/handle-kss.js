@@ -1,3 +1,5 @@
+/** @module cli/kss-handler */
+
 import { utils } from './utils';
 import { templateHandler } from './handle-templates';
 import { writeStore } from './require-templates';

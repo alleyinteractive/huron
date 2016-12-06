@@ -1,14 +1,9 @@
+/** @module cli/html-handler */
+
 import { utils } from './utils';
 
 const path = require('path');
 const fs = require('fs-extra');
-
-const htmlHandler = {
-  updateTemplate,
-  deleteTemplate,
-  updatePrototype,
-  deletePrototype,
-};
 
 export default htmlHandler;
 
@@ -19,7 +14,7 @@ export default htmlHandler;
  * @param {object} section - contains KSS section data
  * @param {object} store - memory store
  */
-function updateTemplate(filepath, section, store) {
+htmlHandler.updateTemplate = function updateTemplate(filepath, section, store) {
   const file = path.parse(filepath);
   const content = fs.readFileSync(filepath, 'utf8');
   const newSection = section;
@@ -59,7 +54,7 @@ function updateTemplate(filepath, section, store) {
  * @param {object} section - contains KSS section data
  * @param {object} store - memory store
  */
-function deleteTemplate(filepath, section, store) {
+htmlHandler.deleteTemplate = function deleteTemplate(filepath, section, store) {
   const newSection = section;
 
   utils.removeFile(
@@ -83,7 +78,7 @@ function deleteTemplate(filepath, section, store) {
  * @param {string} filepath - filepath of changed file (comes from gaze)
  * @param {object} store - memory store
  */
-function updatePrototype(filepath, store) {
+htmlHandler.updatePrototype = function updatePrototype(filepath, store) {
   const file = path.parse(filepath);
   const content = fs.readFileSync(filepath, 'utf8');
 
@@ -112,7 +107,7 @@ function updatePrototype(filepath, store) {
  * @param {string} filepath - filepath of changed file (comes from gaze)
  * @param {object} store - memory store
  */
-function deletePrototype(filepath, store) {
+htmlHandler.deletePrototype = function deletePrototype(filepath, store) {
   const file = path.parse(filepath);
   const requirePath = utils.removeFile(
     file.name,
