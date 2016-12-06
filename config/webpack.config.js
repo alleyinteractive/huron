@@ -51,7 +51,7 @@ export const defaultConfig = {
       markdown: true,
       custom: ['data'],
     },
-    ouptut: 'partials',
+    output: 'partials',
     port: 8080,
     prototypes: ['index'],
     root: 'dist/',

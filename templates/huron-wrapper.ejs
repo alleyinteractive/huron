@@ -9,6 +9,9 @@
   <% for (var script in htmlWebpackPlugin.options.js) { %>
     <script type="text/javascript" src="<%= htmlWebpackPlugin.options.js[script] %>"></script>
   <% } %>
+  <% for (var stylesheet in htmlWebpackPlugin.options.css) { %>
+    <link rel="stylesheet" href="<%= htmlWebpackPlugin.options.css[stylesheet] %>" type="text/css" />
+  <% } %>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <% for (var css in htmlWebpackPlugin.files.css) { %>
     <link href="<%= htmlWebpackPlugin.files.css[css] %>" rel="stylesheet">
@@ -21,7 +24,7 @@
     </script>
   <% } %>
 </head>
-<body>
+<body class="prototype prototype-<%= htmlWebpackPlugin.options.title %> <%= htmlWebpackPlugin.options.bodyClasses %>">
 <% if (htmlWebpackPlugin.options.unsupportedBrowser) { %>
 <style>.unsupported-browser { display: none; }</style>
 <div class="unsupported-browser">

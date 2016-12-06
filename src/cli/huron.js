@@ -37,6 +37,7 @@ const dataStructure = Immutable.Map({
     'description',
     'section',
     'prototype',
+    'sections-template',
   ],
   config: Immutable.Map(config.huron),
   sections: Immutable.Map({
@@ -45,7 +46,9 @@ const dataStructure = Immutable.Map({
     sorted: {},
   }),
   templates: Immutable.Map({}),
-  prototypes: Immutable.Map({})
+  prototypes: Immutable.Map({}),
+  sectionTemplatePath: '',
+  referenceDelimiter: '.',
 });
 let store = null; // All updates to store will be here
 

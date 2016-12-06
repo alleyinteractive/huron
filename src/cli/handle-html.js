@@ -22,7 +22,7 @@ export default htmlHandler;
 function updateTemplate(filepath, section, store) {
   const file = path.parse(filepath);
   const content = fs.readFileSync(filepath, 'utf8');
-  const newSection = section;
+  let newSection = section;
 
   if (content) {
     newSection.templatePath = utils.writeFile(
@@ -32,9 +32,18 @@ function updateTemplate(filepath, section, store) {
       content,
       store
     );
+    newSection.templateContent = content;
 
-    return store.setIn(
-        ['sections', 'sectionsByPath', newSection.kssPath],
+    // Rewrite section data with template content
+    newSection.sectionPath = utils.writeSectionData(store, newSection);
+
+    return store
+      .setIn(
+        ['sections', 'sectionsByPath', section.kssPath],
+        newSection
+      )
+      .setIn(
+        ['sections', 'sectionsByURI', section.referenceURI],
         newSection
       );
   }
