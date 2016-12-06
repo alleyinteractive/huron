@@ -3,17 +3,17 @@ const fs = require('fs-extra');
 
 const cwd = process.cwd();
 const huronScript = fs.readFileSync(
-  path.resolve(__dirname, '../js/huron.js'),
+  path.resolve(__dirname, '../web/huron.js'),
   'utf8'
 );
 
 export const requireTemplates = function requireTemplates(store) {
   const huron = store.get('config');
-  const outputPath = path.join(cwd, huron.get('root'));
+  const outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
   const requireRegex = new RegExp(`\\.html|\\.json|\\${
     huron.get('templates').extension
   }$`);
-  const requirePath = `'./${huron.get('output')}'`;
+  const requirePath = `'../${huron.get('output')}'`;
 
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
@@ -92,7 +92,7 @@ ${prepend}\n\n${huronScript}\n\n${append}\n
  */
 export const writeStore = function writeStore(store) {
   const huron = store.get('config');
-  const outputPath = path.join(cwd, huron.get('root'));
+  const outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
 
   // Write updated data store
   // @todo lint this file.

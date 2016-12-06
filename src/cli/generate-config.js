@@ -1,6 +1,6 @@
-import { defaultConfig } from '../../config/webpack.config';
 import program from './parse-args';
 
+const defaultConfig = require('../../config/webpack.config');
 const webpack = require('webpack');
 const path = require('path');
 const url = require('url');
@@ -65,7 +65,7 @@ function configureEntries(huron, config) {
     newConfig.entry[huron.entry] = [
       `webpack-dev-server/client?http://localhost:${huron.port}`,
       'webpack/hot/dev-server',
-      path.join(cwd, huron.root, 'huron'),
+      path.join(cwd, huron.root, 'huron-assets/huron'),
     ].concat(entry);
   } else {
     newConfig.entry[huron.entry] = [path.join(cwd, huron.root, 'huron')]
@@ -135,7 +135,7 @@ function configureLoaders(huron, config) {
  */
 function configurePrototypes(huron, config) {
   const wrapperTemplate = fs.readFileSync(
-    path.join(__dirname, '../../templates/huron-wrapper.ejs'),
+    path.join(__dirname, '../../templates/prototype-template.ejs'),
     'utf8'
   );
   const defaultHTMLPluginOptions = {
@@ -144,16 +144,18 @@ function configurePrototypes(huron, config) {
     js: [],
     css: [],
     filename: 'index.html',
-    template: path.join(huron.root, 'huron-wrapper.ejs'),
+    template: path.join(huron.root, 'huron-assets/prototype-template.ejs'),
     inject: false,
     chunks: [huron.entry],
   };
   const newConfig = config;
 
+  // Write prototype template file for HTML webpack plugin
   fs.outputFileSync(
-    path.join(cwd, huron.root, 'huron-wrapper.ejs'),
+    path.join(cwd, huron.root, 'huron-assets/prototype-template.ejs'),
     wrapperTemplate
   );
+
   huron.prototypes.forEach((prototype) => {
     const newPrototype = prototype;
     let opts = {};

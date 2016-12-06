@@ -37,3 +37,6 @@ Huron uses webpack (and for best results, webpack-dev-server and hot module repl
 **huron:** Default Huron options.
 
 **That's it! Happy prototyping!**
+
+    "dev": "./node_modules/.bin/babel-node src/cli/huron.js --config '../../config/huron.config.js'",
+    "build": "./node_modules/.bin/babel-node src/cli/huron.js --production",

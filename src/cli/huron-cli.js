@@ -1,4 +1,4 @@
-// CLI for Huron
+#!/usr/bin/env node
 
 // Local imports
 import { initFiles, updateFile, deleteFile } from './actions';
