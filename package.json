@@ -38,6 +38,7 @@
     "eslint-loader": "^1.3.0",
     "eslint-plugin-import": "^1.15.0",
     "eslint-plugin-jsx-a11y": "^3.0.1",
-    "jasmine-node": "^1.14.5"
+    "jasmine-node": "^1.14.5",
+    "jsdoc": "^3.4.3"
   }
 }

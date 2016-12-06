@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: cli/actions.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: cli/actions.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// Imports
+import htmlHandler from './handle-html';
+import { templateHandler } from './handle-templates';
+import { kssHandler } from './handle-kss';
+import { utils } from './utils';
+
+// Requires
+const path = require('path');
+const chalk = require('chalk'); // Colorize terminal output
+
+// EXPORTED FUNCTIONS
+
+/**
+ * Recursively loop through initial watched files list from Gaze.
+ *
+ * @param {object} data - object containing directory and file paths
+ * @param {object} store - memory store
+ * @param {object} huron - huron configuration options
+ */
+export function initFiles(data, store, depth = 0) {
+  const type = Object.prototype.toString.call(data);
+  let newStore = store;
+  let info;
+  let files;
+
+  switch (type) {
+    case '[object Object]':
+      files = Object.keys(data);
+      newStore = files.reduce(
+        (prevStore, file) => initFiles(data[file], prevStore, depth),
+        newStore
+      );
+      break;
+
+    case '[object Array]':
+      newStore = data.reduce(
+        (prevStore, file) => initFiles(file, prevStore, depth),
+        newStore
+      );
+      break;
+
+    case '[object String]':
+      info = path.parse(data);
+      if (info.ext) {
+        newStore = updateFile(data, store);
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  return newStore;
+}
+
+/**
+ * Logic for updating and writing file information based on file type (extension)
+ *
+ * @param {string} filepath - path to updated file. usually passed in from Gaze
+ * @param {object} store - memory store
+ */
+export function updateFile(filepath, store) {
+  const huron = store.get('config');
+  const file = path.parse(filepath);
+  let field;
+  let section;
+
+  if (- 1 !== filepath.indexOf(huron.get('sectionTemplate'))) {
+    return utils.writeSectionTemplate(filepath, store);
+  }
+
+  switch (file.ext) {
+    // Plain HTML template, external
+    case '.html':
+      section = utils.getSection(file.base, 'markup', store);
+
+      if (section) {
+        return htmlHandler.updateTemplate(filepath, section, store);
+      } else if (
+        - 1 !== file.dir.indexOf('prototypes') &amp;&amp;
+        - 1 !== file.name.indexOf('prototype-')
+      ) {
+        return htmlHandler.updatePrototype(filepath, store);
+      }
+
+      console.log(chalk.red(`Failed to write file: ${file.name}`));
+      break;
+
+    // Handlebars template, external
+    case huron.get('templates').extension:
+    case '.json':
+      field = ('.json' === file.ext) ? 'data' : 'markup';
+      section = utils.getSection(file.base, field, store);
+
+      if (section) {
+        return templateHandler.updateTemplate(filepath, section, store);
+      }
+
+      /* eslint-disable */
+      console.log(
+        chalk.red(`Could not find associated KSS section for ${filepath}`)
+      );
+      /* eslint-enable */
+      break;
+
+    // KSS documentation (default extension is `.css`)
+    // Will also output a template if markup is inline
+    // Note: inline markup does _not_ support handlebars currently
+    case huron.get('kssExtension'):
+      return kssHandler.updateKSS(filepath, store);
+
+    // This should never happen if Gaze is working properly
+    default:
+      return store;
+  }
+
+  return store;
+}
+
+/**
+ * Logic for deleting file information and files based on file type (extension)
+ *
+ * @param {string} filepath - path to updated file. usually passed in from Gaze
+ * @param {object} store - memory store
+ */
+export function deleteFile(filepath, store) {
+  const huron = store.get('config');
+  const file = path.parse(filepath);
+  let field = '';
+  let section = null;
+  let newStore = store;
+
+  switch (file.ext) {
+    // Plain HTML template, external
+    case '.html':
+      section = utils.getSection(file.base, 'markup', store);
+
+      if (section) {
+        newStore = htmlHandler.deleteTemplate(filepath, section, store);
+      } else if (
+        - 1 !== file.dir.indexOf('prototypes') &amp;&amp;
+        - 1 !== file.name.indexOf('prototype-')
+      ) {
+        newStore = htmlHandler.deletePrototype(filepath, store);
+      }
+      break;
+
+    case huron.get('templates').extension:
+    case '.json':
+      field = ('.json' === file.ext) ? 'data' : 'markup';
+      section = utils.getSection(file.base, field, store);
+
+      if (section) {
+        newStore = templateHandler.deleteTemplate(filepath, section, store);
+      }
+      break;
+
+    case huron.get('kssExtension'):
+      section = utils.getSection(filepath, false, store);
+
+      if (section) {
+        newStore = kssHandler.deleteKSS(filepath, section, store);
+      }
+      break;
+
+    default:
+      /* eslint-disable */
+      console.warn(
+        chalk.red(`Could not delete: ${file.name}`)
+      );
+      /* eslint-enable */
+      break;
+  }
+
+  return newStore;
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#configureEntries">configureEntries</a></li><li><a href="global.html#configureLoaders">configureLoaders</a></li><li><a href="global.html#configurePlugins">configurePlugins</a></li><li><a href="global.html#configurePrototypes">configurePrototypes</a></li><li><a href="global.html#deleteFile">deleteFile</a></li><li><a href="global.html#deletePrototype">deletePrototype</a></li><li><a href="global.html#deleteTemplate">deleteTemplate</a></li><li><a href="global.html#initFiles">initFiles</a></li><li><a href="global.html#moveAdditionalAssets">moveAdditionalAssets</a></li><li><a href="global.html#updateFile">updateFile</a></li><li><a href="global.html#updatePrototype">updatePrototype</a></li><li><a href="global.html#updateTemplate">updateTemplate</a></li><li><a href="global.html#writeStore">writeStore</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Dec 06 2016 17:42:28 GMT-0500 (EST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
