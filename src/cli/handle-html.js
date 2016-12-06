@@ -22,7 +22,7 @@ export default htmlHandler;
 function updateTemplate(filepath, section, store) {
   const file = path.parse(filepath);
   const content = fs.readFileSync(filepath, 'utf8');
-  let newSection = section;
+  const newSection = section;
 
   if (content) {
     newSection.templatePath = utils.writeFile(

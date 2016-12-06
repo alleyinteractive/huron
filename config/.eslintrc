@@ -58,6 +58,7 @@
     "spaced-comment": [2, "always"],
     "no-confusing-arrow": ["error", {"allowParens": true}], // See eslint config for reasons
     "no-constant-condition": ["error"],
-    "arrow-parens": ["error", "always"]
+    "arrow-parens": ["error", "always"],
+    "no-console": 0,
   }
 }

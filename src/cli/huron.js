@@ -1,24 +1,23 @@
 // CLI for Huron
 
-// Modules
-const cwd = process.cwd(); // Current working directory
-const kss = require('kss'); // node implementation of KSS: a methodology for documenting CSS and generating style guides
-const path = require('path');
-const fs = require('fs-extra');
-const Gaze = require('gaze').Gaze;
-const Immutable = require('immutable');
-const chalk = require('chalk'); // Colorize terminal output
-
 // Local imports
 import { program } from './parse-args';
 import { initFiles, updateFile, deleteFile } from './actions';
 import { requireTemplates, writeStore } from './require-templates';
-import { utils } from './utils';
 import generateConfig from './generate-config';
 import startWebpack from './server';
 
+// Modules
+const cwd = process.cwd(); // Current working directory
+const path = require('path');
+const Gaze = require('gaze').Gaze;
+const Immutable = require('immutable');
+const chalk = require('chalk'); // Colorize terminal output
+
 // Set vars
+/* eslint-disable */
 const localConfig = require(path.join(cwd, program.config));
+/* eslint-enable */
 const config = generateConfig(localConfig);
 const huron = config.huron;
 const extenstions = [
@@ -26,10 +25,11 @@ const extenstions = [
   '.html',
   '.handlebars',
   '.hbs',
-  '.json'
+  '.json',
 ];
 
 // Create initial data structure
+/* eslint-disable */
 const dataStructure = Immutable.Map({
   types: [
     'template',
@@ -50,12 +50,13 @@ const dataStructure = Immutable.Map({
   sectionTemplatePath: '',
   referenceDelimiter: '.',
 });
+/* eslint-enable */
 let store = null; // All updates to store will be here
 
 // Generate watch list for Gaze, start gaze
 const gazeWatch = [];
 gazeWatch.push(path.resolve(__dirname, huron.sectionTemplate));
-extenstions.forEach(ext => {
+extenstions.forEach((ext) => {
   gazeWatch.push(`${huron.kss}/**/*${ext}`);
 });
 const gaze = new Gaze(gazeWatch);
@@ -65,10 +66,9 @@ store = initFiles(gaze.watched(), dataStructure);
 requireTemplates(store);
 writeStore(store);
 
-if (!program.production) {
+if (! program.production) {
   // file changed
   gaze.on('changed', (filepath) => {
-    const file = path.parse(filepath);
     store = updateFile(filepath, store);
     console.log(chalk.green(`${filepath} updated!`));
   });

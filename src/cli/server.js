@@ -1,25 +1,30 @@
-const webpack = require('webpack');
-const webpackDevServer = require('webpack-dev-server');
 import { program } from './parse-args';
+
+const webpack = require('webpack');
+const WebpackDevServer = require('webpack-dev-server');
 
 export default function startWebpack(config) {
   const huron = config.huron;
   const compiler = webpack(config);
 
   if (program.progress) {
-    compiler.apply(new webpack.ProgressPlugin(function(percentage, msg) {
-      console.log((percentage * 100) + '%', msg);
-    }));
+    compiler.apply(
+      new webpack.ProgressPlugin(
+        (percentage, msg) => {
+          console.log(`${(percentage * 100)}% `, msg);
+        }
+      )
+    );
   }
 
   if (program.production) {
-    compiler.run((err, stats) => {
+    compiler.run((err) => {
       if (err) {
         console.log(err);
       }
     });
   } else {
-    const server = new webpackDevServer(compiler, {
+    const server = new WebpackDevServer(compiler, {
       hot: true,
       quiet: false,
       noInfo: false,
@@ -37,12 +42,17 @@ export default function startWebpack(config) {
       contentBase: huron.root,
       publicPath: `http://localhost:${huron.port}/${huron.root}`,
     });
-    server.listen(huron.port, 'localhost', function (err, result) {
-      if (err) {
-        return console.log(err);
-      }
+    server.listen(
+      huron.port,
+      'localhost',
+      (err) => {
+        if (err) {
+          return console.log(err);
+        }
 
-      console.log(`Listening at http://localhost:${huron.port}/`);
-    });
+        console.log(`Listening at http://localhost:${huron.port}/`);
+        return true;
+      }
+    );
   }
 }

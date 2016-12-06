@@ -5,9 +5,7 @@ import { kssHandler } from './handle-kss';
 import { utils } from './utils';
 
 // Requires
-const cwd = process.cwd(); // Current working directory
 const path = require('path');
-const fs = require('fs-extra');
 const chalk = require('chalk'); // Colorize terminal output
 
 // EXPORTED FUNCTIONS
@@ -96,16 +94,13 @@ export function updateFile(filepath, store) {
 
       if (section) {
         return templateHandler.updateTemplate(filepath, section, store);
-      } else {
-        console.log(chalk.red(`Could not find associated KSS section for ${filepath}`));
       }
 
+      /* eslint-disable */
       console.log(
-        chalk.red(
-          `No pairing (data or template) file
-          was found for template ${filepath}`
-        )
+        chalk.red(`Could not find associated KSS section for ${filepath}`)
       );
+      /* eslint-enable */
       break;
 
     // KSS documentation (default extension is `.css`)
@@ -131,6 +126,7 @@ export function updateFile(filepath, store) {
 export function deleteFile(filepath, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
+  let field = '';
   let section = null;
   let newStore = store;
 
@@ -168,7 +164,11 @@ export function deleteFile(filepath, store) {
       break;
 
     default:
-      consle.log(`Could not delete: ${file.name}`);
+      /* eslint-disable */
+      console.warn(
+        chalk.red(`Could not delete: ${file.name}`)
+      );
+      /* eslint-enable */
       break;
   }
 

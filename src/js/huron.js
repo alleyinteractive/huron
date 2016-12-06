@@ -1,3 +1,4 @@
+/* eslint-disable no-underscore-dangle */
 const md5 = require('js-md5');
 
 // Accept the huron.js module for Huron development
@@ -38,14 +39,14 @@ class InsertNodes {
    * @param {string} modifier - target modifier
    * @param {object} meta - module metadata
    */
-  applyModifier(modifier, meta) {
+  static applyModifier(modifier, meta) {
     let rendered = false;
     let data = meta.data;
 
     if (data) {
       // If we have a modifier, use it, otherwise use the entire data set
       if (modifier && meta.data[modifier]) {
-        data = Object.assign({}, meta.data[modifier], {modifier});
+        data = Object.assign({}, meta.data[modifier], { modifier });
       }
 
       rendered = meta.render(data);
@@ -61,11 +62,68 @@ class InsertNodes {
    *
    * @param {string} content String corresponding to markup
    */
-  convertToElement(content) {
-    let el = document.createElement('div');
+  static convertToElement(content) {
+    const el = document.createElement('div');
 
     el.innerHTML = content;
     return el.firstElementChild;
+  }
+
+  /**
+   * Filter module object by module key or module type
+   *
+   * @param {object} filter - Filter for modules. Options:
+   * @param {string} filter.property - Which property to filter ('key' or 'type')
+   * @param {array}  filter.values - Values for property
+   * @param {bool}   filter.include - Whether the values should be included or excluded (true = include, false = exclude)
+   * @param {object} moduleMeta  Filter for modules. Fields explained in the filterModules() function docs
+   */
+  static filterModules(filter, moduleMeta) {
+    let match = true;
+
+    // Check if we should filter out any modules
+    if (
+      'object' === typeof filter &&
+      {}.hasOwnProperty.call(filter, 'property') &&
+      {}.hasOwnProperty.call(filter, 'values') &&
+      {}.hasOwnProperty.call(filter, 'include')
+    ) {
+      match = filter.values.filter(
+        (value) => moduleMeta[filter.property] === value
+      );
+      return Boolean(match.length) === filter.include;
+    }
+
+    console.log(`
+      filter ${filter} is not in a valid format.
+      module filters must include 'property', 'values', and 'include' properties
+    `);
+
+    return match;
+  }
+
+  /**
+   * Generate a hash string from a module key
+   *
+   * @param {string} key - module key (require path) to convert into a hash
+   */
+  static generateModuleHash(key) {
+    return md5(key);
+  }
+
+  /**
+   * Check if this tag is a styleguide helper
+   *
+   * @param {object} tag - tag to check
+   * @param {object} meta - module metadata
+   */
+  static isSectionHelper(tag, meta) {
+    if ('prototype' === meta.type) {
+      return tag.hasAttribute('huron-sections') ||
+        tag.hasAttribute('huron-menu');
+    }
+
+    return false;
   }
 
   /**
@@ -76,7 +134,6 @@ class InsertNodes {
    */
   cycleModules(context = false, filter = false) {
     let moduleList = {};
-    let moduleChildren = null;
     let elementList = context;
 
     // We're replacing top-level elements
@@ -151,47 +208,6 @@ class InsertNodes {
   }
 
   /**
-   * Filter module object by module key or module type
-   *
-   * @param {object} filter - Filter for modules. Options:
-   * @param {string} filter.property - Which property to filter ('key' or 'type')
-   * @param {array}  filter.values - Values for property
-   * @param {bool}   filter.include - Whether the values should be included or excluded (true = include, false = exclude)
-   * @param {object} moduleMeta  Filter for modules. Fields explained in the filterModules() function docs
-   */
-  filterModules(filter, moduleMeta) {
-    const moduleKeys = Object.keys(this._modules);
-    let match = true;
-
-    // Check if we should filter out any modules
-    if (
-      'object' === typeof filter &&
-      filter.hasOwnProperty('property') &&
-      filter.hasOwnProperty('values') &&
-      filter.hasOwnProperty('include')
-    ) {
-      match = filter.values.filter((value) => moduleMeta[filter.property] === value);
-      return Boolean(match.length) === filter.include;
-    }
-
-    console.log(`
-      filter ${filter} is not in a valid format.
-      module filters must include 'property', 'values', and 'include' properties
-    `);
-
-    return match;
-  }
-
-  /**
-   * Generate a hash string from a module key
-   *
-   * @param {string} key - module key (require path) to convert into a hash
-   */
-  generateModuleHash(key) {
-    return md5(key);
-  }
-
-  /**
    * Get module metadata from a module require path
    *
    * @param  {string} key - Module require path
@@ -203,11 +219,13 @@ class InsertNodes {
    */
   getMetaFromPath(key, module) {
     const sections = this._sections.sectionsByPath;
-    const templateTypes = this._types.filter((type) => type !== 'prototype');
+    const templateTypes = this._types.filter((type) => 'prototype' !== type);
     let id = false;
     let type = false;
 
-    if (key.indexOf(`./prototypes`) !== -1) {
+    /* eslint-disable space-unary-ops */
+    if (-1 !== key.indexOf('./prototypes')) {
+    /* eslint-enable space-unary-ops */
       const prototype = Object.keys(this._prototypes)
         .filter((name) => this._prototypes[name] === key);
 
@@ -216,17 +234,31 @@ class InsertNodes {
         type = 'prototype';
       }
     } else if (key === this._sectionTemplatePath) {
-      id = 'sections-template',
+      id = 'sections-template';
       type = 'sections-template';
     } else {
-      for (let section in sections) {
-        const testTypes = templateTypes.filter((type) => sections[section][`${type}Path`] === key);
+      let testTypes = [];
+      const testSections = Object.keys(sections).filter((section) => {
+        const tempTypes = templateTypes.filter(
+          (currentType) => sections[section][`${currentType}Path`] === key
+        );
 
-        if (testTypes.length) {
-          id = sections[section].referenceURI;
-          type = testTypes[0];
-          break;
+        if (tempTypes.length) {
+          testTypes = tempTypes;
+          return true;
         }
+
+        return false;
+      });
+
+      if (
+        testSections &&
+        testSections.length &&
+        testTypes &&
+        testTypes.length
+      ) {
+        id = sections[testSections[0]].referenceURI;
+        type = testTypes[0];
       }
     }
 
@@ -236,11 +268,14 @@ class InsertNodes {
       const hash = this.generateModuleHash(hashKey);
 
       if (renderData) {
-        return Object.assign({id, type, key, hash, module}, renderData);
+        return Object.assign({ id, type, key, hash, module }, renderData);
       }
     }
 
-    console.warn(`Could not find module '${key}' or module cannot be hot reloaded`);
+    console.warn(
+      `Module '${key}' does not exist on the page
+      or is no longer in use`
+    );
     return false;
   }
 
@@ -293,7 +328,7 @@ class InsertNodes {
 
           Object.keys(newList).forEach((key) => {
             moduleList[key] = moduleList[key] ?
-              modulList[key].concat(newList[key]) :
+              moduleList[key].concat(newList[key]) :
               newList[key];
           });
         }
@@ -348,22 +383,7 @@ class InsertNodes {
 
     // Only need render, as data will be left empty for static HTML
     if (render) {
-      return {render, data};
-    }
-
-    return false;
-  }
-
-  /**
-   * Check if this tag is a styleguide helper
-   *
-   * @param {object} tag - tag to check
-   * @param {object} meta - module metadata
-   */
-  isSectionHelper(tag, meta) {
-    if ('prototype' === meta.type) {
-      return tag.hasAttribute('huron-sections') ||
-        tag.hasAttribute('huron-menu');
+      return { render, data };
     }
 
     return false;
@@ -408,9 +428,9 @@ class InsertNodes {
    */
   outputMenu(parent, el, sections = this._sections.sorted) {
     let templateId = null;
-    let wrapper = null;
+    let newEl = el;
 
-    for (let section in sections) {
+    Object.keys(sections).forEach((section) => {
       const hasSubmenu = Object.keys(sections[section]).length;
       let menuTarget;
       let nextMenu;
@@ -421,7 +441,7 @@ class InsertNodes {
         templateId = section;
       }
 
-      if (el) {
+      if (newEl) {
         const title = this._sections
             .sectionsByURI[templateId] ?
           this._sections
@@ -437,10 +457,10 @@ class InsertNodes {
         menuItem.innerHTML = link;
 
         // Check if this is a UL and, if not, create one
-        if ('UL' !== el.tagName) {
+        if ('UL' !== newEl.tagName) {
           menuTarget = sectionMenu.cloneNode();
-          el.appendChild(menuTarget);
-          el = menuTarget;
+          newEl.appendChild(menuTarget);
+          newEl = menuTarget;
         }
 
         // Has subsections
@@ -451,7 +471,7 @@ class InsertNodes {
           menuItem.appendChild(nextMenu);
         }
 
-        el.appendChild(menuItem);
+        newEl.appendChild(menuItem);
 
         if (hasSubmenu) {
           this.outputMenu(
@@ -461,7 +481,7 @@ class InsertNodes {
           );
         }
       }
-    }
+    });
   }
 
   /**
@@ -474,8 +494,7 @@ class InsertNodes {
     let templateId = null;
     let placeholder = null;
 
-    for (let section in sections) {
-      let currentHash = false;
+    Object.keys(sections).forEach((section) => {
       let istopLevel = false;
       let topLevelWrapper = null;
       let topLevelSection = null;
@@ -505,7 +524,7 @@ class InsertNodes {
           topLevelSection.classList.add('section', 'section--top-level');
 
           // Append wrappers to huron-sections element
-          topLevelSection.appendChild(placeholder)
+          topLevelSection.appendChild(placeholder);
           topLevelWrapper.appendChild(topLevelSection);
           el.appendChild(topLevelWrapper);
           insertionEl = topLevelWrapper;
@@ -523,18 +542,18 @@ class InsertNodes {
           sections[section]
         );
       }
-    }
+    });
   }
 
   /**
    * Regenerate module meta cache
    */
   regenCache() {
-    for (let moduleKey in this._modules) {
+    Object.keys(this._modules).forEach((moduleKey) => {
       this.meta[moduleKey] = this.getMetaFromPath(
         moduleKey, this._modules[moduleKey]
       );
-    }
+    });
   }
 
   /**
@@ -546,14 +565,13 @@ class InsertNodes {
    */
   removeOldTags(hash, tag) {
     if (tag && tag.dataset) {
-
       if (tag.dataset.selfHash === hash) {
         // This is another instance of this module
         return;
       } else if (tag.dataset.parentHash === hash) {
         // This is a child of the current module,
         // so remove it and its children (if applicable)
-        let childrenHash = tag.dataset.selfHash;
+        const childrenHash = tag.dataset.selfHash;
         let nextTag = tag.previousSibling;
 
         if (childrenHash) {
@@ -576,60 +594,64 @@ class InsertNodes {
    */
   replaceTemplate(meta, replaceElements) {
     const type = this.validateType(meta.type);
-    let tags = [];
+    const tags = [];
+    let replace = replaceElements;
     let hasStyleguideHelpers = false;
 
-    if (!replaceElements) {
-      replaceElements = document.querySelectorAll(
+    if (! replace) {
+      replace = document.querySelectorAll(
         '[data-huron-id][data-huron-type]'
       );
     }
 
     if (type) {
-      replaceElements.forEach((tag) => {
+      replace.forEach((tag) => {
         if (
           tag.dataset &&
           tag.dataset.huronId === meta.id &&
           tag.dataset.huronType === type
         ) {
-           tags.push(tag);
+          tags.push(tag);
         }
       });
 
       if (tags && tags.length && meta.render) {
         tags.forEach((currentTag) => {
-          const modifier = currentTag.dataset.huronModifier;
-          const parent = currentTag.parentNode;
+          const modifiedPlaceholder = currentTag;
+          const modifier = modifiedPlaceholder.dataset.huronModifier;
+          const parent = modifiedPlaceholder.parentNode;
           const rendered = this.applyModifier(modifier, meta);
           const renderedTemplate = this.convertToElement(rendered)
               .querySelector('template');
           let renderedContents = null;
 
           // Remove existing module tags
-          this.removeOldTags(meta.hash, currentTag.previousSibling);
+          this.removeOldTags(meta.hash, modifiedPlaceholder.previousSibling);
 
           // Get the contents of the rendered template
           renderedContents = [
-            ...renderedTemplate.content.children
+            ...renderedTemplate.content.children,
           ];
 
           // Insert each tag of the template contents before placeholder
           renderedContents.forEach((element) => {
-            if (1 === element.nodeType) {
-              element.dataset.parentHash = meta.hash;
+            const newEl = element;
+
+            if (1 === newEl.nodeType) {
+              newEl.dataset.parentHash = meta.hash;
               hasStyleguideHelpers = ! hasStyleguideHelpers ?
-                this.isSectionHelper(element, meta) :
+                this.isSectionHelper(newEl, meta) :
                 hasStyleguideHelpers;
 
-              parent.insertBefore(element, currentTag);
+              parent.insertBefore(newEl, modifiedPlaceholder);
             }
           });
 
           // Add module hash to this placeholder
-          currentTag.dataset.selfHash = meta.hash;
+          modifiedPlaceholder.dataset.selfHash = meta.hash;
 
           // Hide the placeholder
-          currentTag.style.display = 'none';
+          modifiedPlaceholder.style.display = 'none';
 
           // Recursively load modules, excluding the current one
           this.cycleModules(renderedContents, {
@@ -665,7 +687,7 @@ class InsertNodes {
       return 'template';
     }
 
-    if (!this._types.includes(type)) {
+    if (! this._types.includes(type)) {
       return false;
     }
 
@@ -690,9 +712,10 @@ class InsertNodes {
     this._templates = store.templates;
     this._prototypes = store.prototypes;
     this._types = store.types;
-    this._sectionTemplatePath = store.sectionTemplatePath
+    this._sectionTemplatePath = store.sectionTemplatePath;
   }
 }
+/* eslint-enable no-underscore-dangle */
 
 // Create a new instance of the InsertNodes class
 /*eslint-disable*/
