@@ -1,5 +1,3 @@
-/** @module web */
-
 const md5 = require('js-md5');
 
 /* eslint-disable no-underscore-dangle */
@@ -8,26 +6,33 @@ if (module.hot) {
   module.hot.accept();
 }
 
-/** Class for inserting HTML snippets at particular insertion points
- *
+/** Class for inserting HTML snippets at particular insertion points.
  * Uses require() to grab html partials, then inserts that html
- * into an element with an attribute `huron-id` corresponding to the template filename.
+ * into an element with attribute [huron-id] corresponding to the reference URI of the target KSS section,
+ * and [huron-type] corresponding with the required KSS field
  */
 class InsertNodes {
 
   constructor(modules, store) {
+    /** webpack module list in which keys are relative require paths and values are the module contents */
     this._modules = modules;
+    /** array of module keys */
     this._moduleIds = Object.keys(modules);
+    /** reference to the huron config */
     this._config = null;
+    /** KSS sections organized in various formats including by reference URI, by module key, and modules sorted by parent/child */
     this._sections = null;
+    /** Key/value pairs of partner data and template files */
     this._templates = null;
+    /** array of prototypes */
     this._prototypes = null;
+    /** array of valid huron placeholder types */
     this._types = null;
 
-    // Module caches
+    /** Cache for module metadata */
     this.meta = {};
 
-    // Set store values
+    /** Reference to entire memory store */
     this.store = store;
 
     // Inits
@@ -558,10 +563,10 @@ class InsertNodes {
    */
   removeOldTags(hash, tag) {
     if (tag && tag.dataset) {
-      if (tag.dataset.selfHash === hash) {
-        // This is another instance of this module
-        return;
-      } else if (tag.dataset.parentHash === hash) {
+      if (
+        tag.dataset.parentHash === hash &&
+        tag.dataset.selfHash !== hash
+      ) {
         // This is a child of the current module,
         // so remove it and its children (if applicable)
         const childrenHash = tag.dataset.selfHash;

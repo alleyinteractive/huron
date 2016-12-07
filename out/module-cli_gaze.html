@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Module: cli/actions</title>
+    <title>JSDoc: Module: cli/gaze</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Module: cli/actions</h1>
+    <h1 class="page-title">Module: cli/gaze</h1>
 
     
 
@@ -54,21 +54,23 @@
     
 
     
-        <h3 class="subsection-title">Methods</h3>
+
+    
+        <h3 class="subsection-title">Type Definitions</h3>
 
         
-            
+                
 
     
 
-    <h4 class="name" id=".deleteFile"><span class="type-signature">(static) </span>deleteFile<span class="signature">(filepath, store)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="~added"><span class="type-signature"></span>added<span class="signature">(filepath)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Logic for deleting file information and files based on file type (extension)
+    Anonymous handler for Gaze 'added' event indicating a file has been added to the watched directories
 </div>
 
 
@@ -120,30 +122,7 @@
 
             
 
-            <td class="description last">path to updated file. usually passed in from Gaze</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>store</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">memory store</td>
+            <td class="description last">absolute path of changed file</td>
         </tr>
 
     
@@ -184,7 +163,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cli_actions.js.html">cli/actions.js</a>, <a href="cli_actions.js.html#line128">line 128</a>
+        <a href="cli_huron-cli.js.html">cli/huron-cli.js</a>, <a href="cli_huron-cli.js.html#line113">line 113</a>
     </li></ul></dd>
     
 
@@ -201,6 +180,10 @@
 
 
 
+<h5>Listens to Events:</h5>
+<ul>
+    <li>gaze:added</li>
+</ul>
 
 
 
@@ -210,196 +193,20 @@
 
 
 
-        
+
             
+                
 
     
 
-    <h4 class="name" id=".initFiles"><span class="type-signature">(static) </span>initFiles<span class="signature">(data, store, huron)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="~changed"><span class="type-signature"></span>changed<span class="signature">(filepath)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Recursively loop through initial watched files list from Gaze.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>data</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">object containing directory and file paths</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>store</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">memory store</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>huron</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">huron configuration options</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cli_actions.js.html">cli/actions.js</a>, <a href="cli_actions.js.html#line22">line 22</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".updateFile"><span class="type-signature">(static) </span>updateFile<span class="signature">(filepath, store)</span><span class="type-signature"></span></h4>
-
-    
-
-
-
-<div class="description">
-    Logic for updating and writing file information based on file type (extension)
+    Anonymous handler for Gaze 'changed' event indicating a file has changed
 </div>
 
 
@@ -451,30 +258,7 @@
 
             
 
-            <td class="description last">path to updated file. usually passed in from Gaze</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>store</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">memory store</td>
+            <td class="description last">absolute path of changed file</td>
         </tr>
 
     
@@ -515,7 +299,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cli_actions.js.html">cli/actions.js</a>, <a href="cli_actions.js.html#line64">line 64</a>
+        <a href="cli_huron-cli.js.html">cli/huron-cli.js</a>, <a href="cli_huron-cli.js.html#line101">line 101</a>
     </li></ul></dd>
     
 
@@ -532,6 +316,10 @@
 
 
 
+<h5>Listens to Events:</h5>
+<ul>
+    <li>gaze:changed</li>
+</ul>
 
 
 
@@ -541,9 +329,280 @@
 
 
 
-        
+
+            
+                
+
     
 
+    <h4 class="name" id="~deleted"><span class="type-signature"></span>deleted<span class="signature">(filepath)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Anonymous handler for Gaze 'deleted' event indicating a file has been removed
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filepath</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">absolute path of changed file</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="cli_huron-cli.js.html">cli/huron-cli.js</a>, <a href="cli_huron-cli.js.html#line140">line 140</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+<h5>Listens to Events:</h5>
+<ul>
+    <li>gaze:deleted</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+            
+                
+
+    
+
+    <h4 class="name" id="~renamed"><span class="type-signature"></span>renamed<span class="signature">(filepath)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Anonymous handler for Gaze 'renamed' event indicating a file has been renamed
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filepath</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">absolute path of changed file</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="cli_huron-cli.js.html">cli/huron-cli.js</a>, <a href="cli_huron-cli.js.html#line126">line 126</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+<h5>Listens to Events:</h5>
+<ul>
+    <li>gaze:renamed</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+            
     
 
     

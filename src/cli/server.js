@@ -5,6 +5,13 @@ import program from './parse-args';
 const webpack = require('webpack');
 const WebpackDevServer = require('webpack-dev-server');
 
+/**
+ * Spin up webpack-dev-server or, if production flag is set, run webpack a single time
+ *
+ * @function startWebpack
+ * @param {object} config - webpack configuration, preprocessed by {@link module:cli/generate-config generateConfig}
+ * @see {@link module:cli/generate-config generateConfig}
+ */
 export default function startWebpack(config) {
   const huron = config.huron;
   const compiler = webpack(config);

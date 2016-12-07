@@ -12,6 +12,7 @@ const huronScript = fs.readFileSync(
 /**
  * Write code for requiring all generated huron assets
  *
+ * @function requireTemplates
  * @param {object} store - memory store
  */
 export const requireTemplates = function requireTemplates(store) {
@@ -94,6 +95,7 @@ ${prepend}\n\n${huronScript}\n\n${append}\n
 /**
  * Output entire data store to a JS object and handle if any KSS data has changed
  *
+ * @function writeStore
  * @param {object} store - memory store
  * @param {string} changed - filepath of changed KSS section, if applicable
  */

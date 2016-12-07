@@ -28,13 +28,12 @@
 
 <header>
     
-        <h2>
-            <span class="ancestors"><a href="module-web.html">web</a>~</span>InsertNodes</h2>
+        <h2>InsertNodes</h2>
         
-            <div class="class-description">Class for inserting HTML snippets at particular insertion points
-
+            <div class="class-description">Class for inserting HTML snippets at particular insertion points.
 Uses require() to grab html partials, then inserts that html
-into an element with an attribute `huron-id` corresponding to the template filename.</div>
+into an element with attribute [huron-id] corresponding to the reference URI of the target KSS section,
+and [huron-type] corresponding with the required KSS field</div>
         
     
 </header>
@@ -95,7 +94,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line16">line 16</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line14">line 14</a>
     </li></ul></dd>
     
 
@@ -134,6 +133,568 @@ into an element with an attribute `huron-id` corresponding to the template filen
 
     
 
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="_config"><span class="type-signature"></span>_config<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    reference to the huron config
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line22">line 22</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_moduleIds"><span class="type-signature"></span>_moduleIds<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    array of module keys
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line20">line 20</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_modules"><span class="type-signature"></span>_modules<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    webpack module list in which keys are relative require paths and values are the module contents
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line18">line 18</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_prototypes"><span class="type-signature"></span>_prototypes<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    array of prototypes
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line28">line 28</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_sections"><span class="type-signature"></span>_sections<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    KSS sections organized in various formats including by reference URI, by module key, and modules sorted by parent/child
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line24">line 24</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_templates"><span class="type-signature"></span>_templates<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Key/value pairs of partner data and template files
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line26">line 26</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="_types"><span class="type-signature"></span>_types<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    array of valid huron placeholder types
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line30">line 30</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="meta"><span class="type-signature"></span>meta<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Cache for module metadata
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line33">line 33</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="store"><span class="type-signature"></span>store<span class="type-signature"></span></h4>
+
+
+
+
+<div class="description">
+    Reference to entire memory store
+</div>
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line36">line 36</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
     
 
     
@@ -267,7 +828,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line44">line 44</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line49">line 49</a>
     </li></ul></dd>
     
 
@@ -398,7 +959,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line67">line 67</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line72">line 72</a>
     </li></ul></dd>
     
 
@@ -647,7 +1208,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line83">line 83</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line88">line 88</a>
     </li></ul></dd>
     
 
@@ -778,7 +1339,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line112">line 112</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line117">line 117</a>
     </li></ul></dd>
     
 
@@ -932,7 +1493,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line122">line 122</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line127">line 127</a>
     </li></ul></dd>
     
 
@@ -1100,7 +1661,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line137">line 137</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line142">line 142</a>
     </li></ul></dd>
     
 
@@ -1182,7 +1743,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line165">line 165</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line170">line 170</a>
     </li></ul></dd>
     
 
@@ -1264,7 +1825,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line176">line 176</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line181">line 181</a>
     </li></ul></dd>
     
 
@@ -1395,7 +1956,7 @@ into an element with an attribute `huron-id` corresponding to the template filen
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line218">line 218</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line223">line 223</a>
     </li></ul></dd>
     
 
@@ -1549,7 +2110,7 @@ return its associated module key
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line286">line 286</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line291">line 291</a>
     </li></ul></dd>
     
 
@@ -1703,7 +2264,7 @@ return its associated module key
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line308">line 308</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line313">line 313</a>
     </li></ul></dd>
     
 
@@ -1857,7 +2418,7 @@ return its associated module key
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line346">line 346</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line351">line 351</a>
     </li></ul></dd>
     
 
@@ -2102,7 +2663,7 @@ return its associated module key
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line396">line 396</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line401">line 401</a>
     </li></ul></dd>
     
 
@@ -2186,7 +2747,7 @@ Recurses over sorted styleguide sections and inserts a <section> tag with [huron
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line486">line 486</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line491">line 491</a>
     </li></ul></dd>
     
 
@@ -2268,7 +2829,7 @@ Recurses over sorted styleguide sections and inserts a <section> tag with [huron
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line544">line 544</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line549">line 549</a>
     </li></ul></dd>
     
 
@@ -2423,7 +2984,7 @@ Recurses over sorted styleguide sections and inserts a <section> tag with [huron
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line559">line 559</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line564">line 564</a>
     </li></ul></dd>
     
 
@@ -2577,7 +3138,7 @@ Recurses over sorted styleguide sections and inserts a <section> tag with [huron
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line588">line 588</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line593">line 593</a>
     </li></ul></dd>
     
 
@@ -2708,7 +3269,7 @@ Recurses over sorted styleguide sections and inserts a <section> tag with [huron
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line676">line 676</a>
+        <a href="web_huron.js.html">web/huron.js</a>, <a href="web_huron.js.html#line681">line 681</a>
     </li></ul></dd>
     
 
@@ -2772,13 +3333,13 @@ Recurses over sorted styleguide sections and inserts a <section> tag with [huron
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-cli.html">cli</a></li><li><a href="module-cli_actions.html">cli/actions</a></li><li><a href="module-cli_generate-config.html">cli/generate-config</a></li><li><a href="module-cli_html-handler.html">cli/html-handler</a></li><li><a href="module-cli_kss-handler.html">cli/kss-handler</a></li><li><a href="module-cli_parse-arguments.html">cli/parse-arguments</a></li><li><a href="module-cli_require-templates.html">cli/require-templates</a></li><li><a href="module-cli_template-handler.html">cli/template-handler</a></li><li><a href="module-cli_utilities.html">cli/utilities</a></li><li><a href="module-cli_webpack-server.html">cli/webpack-server</a></li><li><a href="module-web.html">web</a></li></ul><h3>Classes</h3><ul><li><a href="module-web-InsertNodes.html">InsertNodes</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-cli_actions.html">cli/actions</a></li><li><a href="module-cli_gaze.html">cli/gaze</a></li><li><a href="module-cli_generate-config.html">cli/generate-config</a></li><li><a href="module-cli_html-handler.html">cli/html-handler</a></li><li><a href="module-cli_kss-handler.html">cli/kss-handler</a></li><li><a href="module-cli_parse-arguments.html">cli/parse-arguments</a></li><li><a href="module-cli_require-templates.html">cli/require-templates</a></li><li><a href="module-cli_template-handler.html">cli/template-handler</a></li><li><a href="module-cli_utilities.html">cli/utilities</a></li><li><a href="module-cli_webpack-server.html">cli/webpack-server</a></li></ul><h3>Classes</h3><ul><li><a href="InsertNodes.html">InsertNodes</a></li></ul><h3>Global</h3><ul><li><a href="global.html#dataStructure">dataStructure</a></li><li><a href="global.html#extenstions">extenstions</a></li><li><a href="global.html#gaze">gaze</a></li><li><a href="global.html#huron">huron</a></li><li><a href="global.html#program">program</a></li><li><a href="global.html#store">store</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Dec 06 2016 18:44:59 GMT-0500 (EST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Dec 07 2016 10:31:31 GMT-0500 (EST)
 </footer>
 
 <script> prettyPrint(); </script>

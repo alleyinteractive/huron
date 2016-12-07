@@ -14,6 +14,7 @@ const cwd = process.cwd();
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
  *
+ * @function generateConfig
  * @param {object} config - local webpack config
  */
 export default function generateConfig(config) {
