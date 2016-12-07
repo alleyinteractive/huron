@@ -1,15 +1,27 @@
-/** @module cli/generate-config */
+'use strict';
 
-import program from './parse-args';
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 
-const defaultConfig = require('../../config/webpack.config');
-const webpack = require('webpack');
-const path = require('path');
-const url = require('url');
-const fs = require('fs-extra');
-const HTMLWebpackPlugin = require('html-webpack-plugin');
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /** @module cli/generate-config */
 
-const cwd = process.cwd();
+exports.default = generateConfig;
+
+var _parseArgs = require('./parse-args');
+
+var _parseArgs2 = _interopRequireDefault(_parseArgs);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var defaultConfig = require('../../config/webpack.config');
+var webpack = require('webpack');
+var path = require('path');
+var url = require('url');
+var fs = require('fs-extra');
+var HTMLWebpackPlugin = require('html-webpack-plugin');
+
+var cwd = process.cwd();
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -17,11 +29,11 @@ const cwd = process.cwd();
  * @function generateConfig
  * @param {object} config - local webpack config
  */
-export default function generateConfig(config) {
-  let newConfig = config;
+function generateConfig(config) {
+  var newConfig = config;
 
   newConfig.huron = Object.assign({}, defaultConfig.huron, config.huron);
-  const huron = newConfig.huron;
+  var huron = newConfig.huron;
 
   // configure entries
   newConfig = configureEntries(huron, newConfig);
@@ -43,8 +55,8 @@ export default function generateConfig(config) {
   delete newConfig.devServer;
 
   // Set publicPath
-  if (! program.production) {
-    newConfig.output.publicPath = `http://localhost:${huron.port}/${huron.root}`;
+  if (!_parseArgs2.default.production) {
+    newConfig.output.publicPath = 'http://localhost:' + huron.port + '/' + huron.root;
   } else {
     newConfig.output.publicPath = '';
   }
@@ -59,20 +71,15 @@ export default function generateConfig(config) {
  * @param {object} config - webpack configuration object
  */
 function configureEntries(huron, config) {
-  const entry = config.entry[huron.entry];
-  const newConfig = config;
+  var entry = config.entry[huron.entry];
+  var newConfig = config;
 
   newConfig.entry = {};
 
-  if (! program.production) {
-    newConfig.entry[huron.entry] = [
-      `webpack-dev-server/client?http://localhost:${huron.port}`,
-      'webpack/hot/dev-server',
-      path.join(cwd, huron.root, 'huron-assets/huron'),
-    ].concat(entry);
+  if (!_parseArgs2.default.production) {
+    newConfig.entry[huron.entry] = ['webpack-dev-server/client?http://localhost:' + huron.port, 'webpack/hot/dev-server', path.join(cwd, huron.root, 'huron-assets/huron')].concat(entry);
   } else {
-    newConfig.entry[huron.entry] = [path.join(cwd, huron.root, 'huron')]
-      .concat(entry);
+    newConfig.entry[huron.entry] = [path.join(cwd, huron.root, 'huron')].concat(entry);
   }
 
   return newConfig;
@@ -85,13 +92,13 @@ function configureEntries(huron, config) {
  * @param {object} config - webpack configuration object
  */
 function configurePlugins(huron, config) {
-  const newConfig = config;
+  var newConfig = config;
 
-  if (! program.production) {
+  if (!_parseArgs2.default.production) {
     if (newConfig.plugins && newConfig.plugins.length) {
-      newConfig.plugins = newConfig.plugins.filter(
-        (plugin) => 'HotModuleReplacementPlugin' !== plugin.constructor.name
-      );
+      newConfig.plugins = newConfig.plugins.filter(function (plugin) {
+        return 'HotModuleReplacementPlugin' !== plugin.constructor.name;
+      });
     }
     newConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
   }
@@ -107,25 +114,21 @@ function configurePlugins(huron, config) {
  */
 function configureLoaders(huron, config) {
   // Manage loaders
-  const templatesLoader = huron.templates.loader;
-  const newConfig = config;
+  var templatesLoader = huron.templates.loader;
+  var newConfig = config;
 
   templatesLoader.include = [path.join(cwd, huron.root)];
   newConfig.module = newConfig.module || {};
   newConfig.module.loaders = newConfig.module.loaders || [];
-  newConfig.module.loaders.push(
-    {
-      test: /\.html$/,
-      loaders: ['html'],
-      include: [path.join(cwd, huron.root)],
-    },
-    {
-      test: /\.json$/,
-      loaders: ['json'],
-      include: [path.join(cwd, huron.root)],
-    },
-    templatesLoader
-  );
+  newConfig.module.loaders.push({
+    test: /\.html$/,
+    loaders: ['html'],
+    include: [path.join(cwd, huron.root)]
+  }, {
+    test: /\.json$/,
+    loaders: ['json'],
+    include: [path.join(cwd, huron.root)]
+  }, templatesLoader);
 
   return newConfig;
 }
@@ -137,11 +140,8 @@ function configureLoaders(huron, config) {
  * @param {object} config - webpack configuration object
  */
 function configurePrototypes(huron, config) {
-  const wrapperTemplate = fs.readFileSync(
-    path.join(__dirname, '../../templates/prototype-template.ejs'),
-    'utf8'
-  );
-  const defaultHTMLPluginOptions = {
+  var wrapperTemplate = fs.readFileSync(path.join(__dirname, '../../templates/prototype-template.ejs'), 'utf8');
+  var defaultHTMLPluginOptions = {
     title: '',
     window: huron.window,
     js: [],
@@ -149,33 +149,27 @@ function configurePrototypes(huron, config) {
     filename: 'index.html',
     template: path.join(huron.root, 'huron-assets/prototype-template.ejs'),
     inject: false,
-    chunks: [huron.entry],
+    chunks: [huron.entry]
   };
-  const newConfig = config;
+  var newConfig = config;
 
   // Write prototype template file for HTML webpack plugin
-  fs.outputFileSync(
-    path.join(cwd, huron.root, 'huron-assets/prototype-template.ejs'),
-    wrapperTemplate
-  );
+  fs.outputFileSync(path.join(cwd, huron.root, 'huron-assets/prototype-template.ejs'), wrapperTemplate);
 
-  huron.prototypes.forEach((prototype) => {
-    const newPrototype = prototype;
-    let opts = {};
+  huron.prototypes.forEach(function (prototype) {
+    var newPrototype = prototype;
+    var opts = {};
 
     // Merge configured settings with default settings
     if ('string' === typeof prototype) {
       opts = Object.assign({}, defaultHTMLPluginOptions, {
         title: prototype,
-        filename: `${prototype}.html`,
+        filename: prototype + '.html'
       });
-    } else if (
-      'object' === typeof prototype &&
-      {}.hasOwnProperty.call(prototype, 'title')
-    ) {
+    } else if ('object' === (typeof prototype === 'undefined' ? 'undefined' : _typeof(prototype)) && {}.hasOwnProperty.call(prototype, 'title')) {
       // Create filename based on configured title if not provided
-      if (! prototype.filename) {
-        newPrototype.filename = `${prototype.title}.html`;
+      if (!prototype.filename) {
+        newPrototype.filename = prototype.title + '.html';
       }
 
       // Move css assets for this prototype,
@@ -196,24 +190,18 @@ function configurePrototypes(huron, config) {
     // Move global css assets,
     // reset css option with new file paths
     if (huron.css.length) {
-      opts.css = opts.css.concat(
-        moveAdditionalAssets(huron.css, 'css', huron)
-      );
+      opts.css = opts.css.concat(moveAdditionalAssets(huron.css, 'css', huron));
     }
 
     // Move global js assets,
     // reset js option with new file paths
     if (huron.js.length) {
-      opts.js = opts.js.concat(
-        moveAdditionalAssets(huron.js, 'js', huron)
-      );
+      opts.js = opts.js.concat(moveAdditionalAssets(huron.js, 'js', huron));
     }
 
     // Push a new plugin for each configured prototype
     if (Object.keys(opts).length) {
-      newConfig.plugins.push(
-        new HTMLWebpackPlugin(opts)
-      );
+      newConfig.plugins.push(new HTMLWebpackPlugin(opts));
     }
   });
 
@@ -227,28 +215,26 @@ function configurePrototypes(huron, config) {
  * @param {string} subdir - subdirectory in huron root from which to load additional asset
  * @param {object} huron - huron configuration object
  */
-function moveAdditionalAssets(assets, subdir = '', huron) {
-  const currentAssets = [].concat(assets);
-  const assetResults = [];
+function moveAdditionalAssets(assets) {
+  var subdir = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+  var huron = arguments[2];
 
-  currentAssets.forEach((asset) => {
-    const assetInfo = path.parse(asset);
-    const assetURL = url.parse(asset);
-    const sourcePath = path.join(cwd, asset);
-    const outputPath = path.resolve(cwd, huron.root, subdir, assetInfo.base);
-    const loadPath = program.production ?
-      path.join(subdir, assetInfo.base) :
-      path.join('/', subdir, assetInfo.base); // Use absolute path in development
-    let contents = false;
+  var currentAssets = [].concat(assets);
+  var assetResults = [];
 
-    if (
-      ! path.isAbsolute(asset) &&
-      ! assetURL.protocol
-    ) {
+  currentAssets.forEach(function (asset) {
+    var assetInfo = path.parse(asset);
+    var assetURL = url.parse(asset);
+    var sourcePath = path.join(cwd, asset);
+    var outputPath = path.resolve(cwd, huron.root, subdir, assetInfo.base);
+    var loadPath = _parseArgs2.default.production ? path.join(subdir, assetInfo.base) : path.join('/', subdir, assetInfo.base); // Use absolute path in development
+    var contents = false;
+
+    if (!path.isAbsolute(asset) && !assetURL.protocol) {
       try {
         contents = fs.readFileSync(sourcePath);
       } catch (e) {
-        console.warn(`could not read ${sourcePath}`);
+        console.warn('could not read ' + sourcePath);
       }
 
       if (contents) {

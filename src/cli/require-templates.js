@@ -1,3 +1,5 @@
+/** @module cli/require-templates */
+
 const path = require('path');
 const fs = require('fs-extra');
 
@@ -7,6 +9,12 @@ const huronScript = fs.readFileSync(
   'utf8'
 );
 
+/**
+ * Write code for requiring all generated huron assets
+ *
+ * @function requireTemplates
+ * @param {object} store - memory store
+ */
 export const requireTemplates = function requireTemplates(store) {
   const huron = store.get('config');
   const outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
@@ -87,6 +95,7 @@ ${prepend}\n\n${huronScript}\n\n${append}\n
 /**
  * Output entire data store to a JS object and handle if any KSS data has changed
  *
+ * @function writeStore
  * @param {object} store - memory store
  * @param {string} changed - filepath of changed KSS section, if applicable
  */

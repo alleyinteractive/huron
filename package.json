@@ -5,6 +5,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
+    "doc": "./node_modules/.bin/jsdoc src -r -c ./config/jsdoc.json",
     "help": "./node_modules/.bin/babel-node src/cli/huron.js -h",
     "build": "babel src/cli -d dist/cli && babel src/web -d dist/web",
     "prebuild": "./node_modules/eslint/bin/eslint.js -c config/.eslintrc src/**"
@@ -41,11 +42,13 @@
     "babel-loader": "^6.2.4",
     "babel-preset-es2015": "^6.9.0",
     "babel-preset-latest": "^6.16.0",
-    "eslint": "^2.13",
-    "eslint-config-airbnb": "^8.0.0",
-    "eslint-loader": "^1.3.0",
-    "eslint-plugin-import": "^1.15.0",
-    "eslint-plugin-jsx-a11y": "^3.0.1",
-    "jasmine-node": "^1.14.5"
+    "eslint": "^3.11.1",
+    "eslint-config-airbnb": "^13.0.0",
+    "eslint-loader": "^1.6.1",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^2.2.3",
+    "eslint-plugin-react": "^6.8.0",
+    "jasmine-node": "^1.14.5",
+    "jsdoc": "^3.4.3"
   }
 }

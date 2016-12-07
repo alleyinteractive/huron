@@ -3,5 +3,4 @@ node_modules
 *.DS_Store
 Thumbs.db
 .sublime-project
-/dist/*
-
+source-docs/*

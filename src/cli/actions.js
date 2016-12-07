@@ -1,5 +1,7 @@
+/** @module cli/actions */
+
 // Imports
-import htmlHandler from './handle-html';
+import { htmlHandler } from './handle-html';
 import { templateHandler } from './handle-templates';
 import { kssHandler } from './handle-kss';
 import { utils } from './utils';
