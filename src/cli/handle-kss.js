@@ -57,7 +57,7 @@ kssHandler.updateKSS = function updateKSS(filepath, store) {
       return newStore;
     }
 
-    console.log(chalk.magenta(`No KSS found in ${filepath}`));
+    console.log(chalk.magenta(`No KSS found in ${filepath}`)); // eslint-disable-line no-console
     return newStore;
   }
 
@@ -65,7 +65,7 @@ kssHandler.updateKSS = function updateKSS(filepath, store) {
     newStore = kssHandler.deleteKSS(filepath, oldSection, newStore);
   }
 
-  console.log(chalk.red(`${filepath} not found or empty`));
+  console.log(chalk.red(`${filepath} not found or empty`)); // eslint-disable-line no-console
   return newStore;
 };
 

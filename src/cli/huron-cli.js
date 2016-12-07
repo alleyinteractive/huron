@@ -15,9 +15,7 @@ const Immutable = require('immutable');
 const chalk = require('chalk'); // Colorize terminal output
 
 // Set vars
-/* eslint-disable */
-const localConfig = require(path.join(cwd, program.config));
-/* eslint-enable */
+const localConfig = require(path.join(cwd, program.config)); // eslint-disable-line import/no-dynamic-require
 const config = generateConfig(localConfig);
 const huron = config.huron;
 const extenstions = [
@@ -29,7 +27,6 @@ const extenstions = [
 ];
 
 // Create initial data structure
-/* eslint-disable */
 const dataStructure = Immutable.Map({
   types: [
     'template',
@@ -50,7 +47,6 @@ const dataStructure = Immutable.Map({
   sectionTemplatePath: '',
   referenceDelimiter: '.',
 });
-/* eslint-enable */
 let store = null; // All updates to store will be here
 
 // Generate watch list for Gaze, start gaze

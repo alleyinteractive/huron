@@ -94,7 +94,7 @@ class InsertNodes {
       return Boolean(match.length) === filter.include;
     }
 
-    console.log(`
+    console.log(` // eslint-disable-line no-console
       filter ${filter} is not in a valid format.
       module filters must include 'property', 'values', and 'include' properties
     `);
@@ -272,7 +272,7 @@ class InsertNodes {
       }
     }
 
-    console.warn(
+    console.warn( // eslint-disable-line no-console
       `Module '${key}' does not exist on the page
       or is no longer in use`
     );
@@ -565,10 +565,10 @@ class InsertNodes {
    */
   removeOldTags(hash, tag) {
     if (tag && tag.dataset) {
-      if (tag.dataset.selfHash === hash) {
-        // This is another instance of this module
-        return;
-      } else if (tag.dataset.parentHash === hash) {
+      if (
+        tag.dataset.parentHash === hash &&
+        tag.dataset.selfHash !== hash
+      ) {
         // This is a child of the current module,
         // so remove it and its children (if applicable)
         const childrenHash = tag.dataset.selfHash;
@@ -666,7 +666,7 @@ class InsertNodes {
         });
       }
     } else {
-      console.warn(
+      console.warn( // eslint-disable-line no-console
         `Could not render module
         section: ${meta.id}
         type: ${meta.type}`
