@@ -1,4 +1,4 @@
-# Browser (front end) script
+# Browser (front-end) script
 
 This directory contains the source code for the Huron browser script, used to insert or replace markup in the DOM at the location of huron placeholder tags. This script is also used to handle the implementation of HMR for replacing that markup when some aspect of it has changed. This HMR functionality will be triggered from changes to:
 	* Templates (HTML or Handlebars)
