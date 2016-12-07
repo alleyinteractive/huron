@@ -26,7 +26,7 @@ Huron's configuration object must currently be a top-level `huron` property of t
  * **templates** {object} : default
 
   ```javascript
- 	{
+  {
     loader: {
       test: /\.hbs$/,
       loader: 'handlebars-loader',

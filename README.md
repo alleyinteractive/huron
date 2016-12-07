@@ -30,12 +30,15 @@ KSS is a documentation syntax and styleguide generator. All documentation should
  	** A reference to an external Handlebars template
  * Data - If you're using a handlebars template in your markup field, you may also provide a reference to an external JSON data file. This file may be written in one of two formats:
  	** All data fields at the top level of your JSON. This indicates the same data should be used every time you render the template. This probably won't happen too often, as you might consider just using a static HTML file if you only have one variant. Example:
+
  	```json
  	{
 		"title": "Lorem ipusm dolor sit amet",
 		"excerpt": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Impedit nemo accusamus nobis sunt nihil, voluptatem qui itaque. Eius saepe rem perspiciatis beatae ea nulla, sed facilis exercitationem a aspernatur ullam?"
  	}```
+
  	** Variants listed at the top level of your JSON, and all data fields (and variations thereof) directly beneath them. Example:
+
  	```json
  	{
  		"type-one": {
