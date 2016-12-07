@@ -68,7 +68,7 @@ export const kssHandler = {
       newStore = kssHandler.deleteKSS(filepath, oldSection, newStore);
     }
 
-    console.log(chalk.red(`${filepath} not found or empty`));
+    console.log(chalk.red(`${filepath} not found or empty`)); // eslint-disable-line no-console
     return newStore;
   },
 

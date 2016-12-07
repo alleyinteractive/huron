@@ -98,11 +98,9 @@ export function updateFile(filepath, store) {
         return templateHandler.updateTemplate(filepath, section, store);
       }
 
-      /* eslint-disable */
-      console.log(
+      console.log( // eslint-disable-line no-console
         chalk.red(`Could not find associated KSS section for ${filepath}`)
       );
-      /* eslint-enable */
       break;
 
     // KSS documentation (default extension is `.css`)
@@ -166,11 +164,9 @@ export function deleteFile(filepath, store) {
       break;
 
     default:
-      /* eslint-disable */
-      console.warn(
+      console.warn(  // eslint-disable-line no-console
         chalk.red(`Could not delete: ${file.name}`)
       );
-      /* eslint-enable */
       break;
   }
 

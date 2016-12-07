@@ -40,7 +40,10 @@ export const utils = {
 
     if (! outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
       sectionFileInfo = path.parse(section.kssPath);
-      outputPath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
+      outputPath = path.join(
+        sectionFileInfo.dir,
+        `${sectionFileInfo.name}.json`
+      );
     }
 
     // Output section data
@@ -54,7 +57,7 @@ export const utils = {
       );
     }
 
-    console.warn(
+    console.warn( // eslint-disable-line no-console
       chalk.red(`Failed to write section data for ${section.referenceURI}`)
     );
     return false;
@@ -175,9 +178,9 @@ ${content}
 
     try {
       fs.outputFileSync(outputPath, newContent);
-      console.log(chalk.green(`Writing ${outputRelative}`));
+      console.log(chalk.green(`Writing ${outputRelative}`)); // eslint-disable-line no-console
     } catch (e) {
-      console.log(chalk.red(`Failed to write ${outputRelative}`));
+      console.log(chalk.red(`Failed to write ${outputRelative}`)); // eslint-disable-line no-console
     }
 
     return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
@@ -208,9 +211,9 @@ ${content}
 
     try {
       fs.removeSync(outputPath);
-      console.log(chalk.green(`Removing ${outputRelative}`));
+      console.log(chalk.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console
     } catch (e) {
-      console.log(
+      console.log( // eslint-disable-line no-console
         chalk.red(`${outputRelative} does not exist or cannot be deleted`)
       );
     }
@@ -239,7 +242,7 @@ ${content}
 
     // Move huron script and section template into huron root
     fs.outputFileSync(output, sectionTemplate);
-    console.log(chalk.green(`writing section template to ${output}`));
+    console.log(chalk.green(`writing section template to ${output}`)); // eslint-disable-line no-console
 
     return store.set('sectionTemplatePath', componentPath);
   },
