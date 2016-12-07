@@ -1,5 +1,4 @@
 # Huron: A Prototype Build System built by Alley Interactive
-===========================================================
 
 Huron is intended as a one-stop shop for generating both an in-browser styleguide and a series of in-browser prototypes. Huron utilizes a custom CLI to process Knyle Style Sheets [(KSS)](http://warpspire.com/kss/) documentation and webpack to build the styleguides and prototoypes. In addition, Huron makes heavy use of webpack's Hot Module Reloading [HMR](https://webpack.github.io/docs/hot-module-replacement.html) system to provide a quick and seamless development experience.
 
