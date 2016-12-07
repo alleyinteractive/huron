@@ -4,7 +4,7 @@
 Huron is intended as a one-stop shop for generating both an in-browser styleguide and a series of in-browser prototypes. Huron utilizes a custom CLI to process Knyle Style Sheets [(KSS)](http://warpspire.com/kss/) documentation and webpack to build the styleguides and prototoypes. In addition, Huron makes heavy use of webpack's Hot Module Reloading [HMR](https://webpack.github.io/docs/hot-module-replacement.html) system to provide a quick and seamless development experience.
 
 ## Table of contents
-This file contains basic information on installation and writing prototypes. However, there are several other subsections of this documentation:
+This file contains basic information on Huron installation and writing prototypes. However, there are several other subsections of this documentation:
 
  * [Configuration](config/README.md) - Configuration for huron and for your local webpack setup
  * [Templates](templates/README.md) - Peripheral template documentation
@@ -17,6 +17,7 @@ This file contains basic information on installation and writing prototypes. How
  * Don't forget to run `npm install` once you're done!
  * Once `npm install` finishes, you'll need to write a configuration or use the default. The default settings and how to modify them is documented in the configuration section of this readme.
  * Start the CLI using the `dist/cli/huron-cli.js` file.
+ * Once the CLI has started, if you didn't run the CLI with the `--production` flag, you can access your prototype(s) at `localhost:[huron.port]/[huron.root]/[prototype-name].html`. You can find the defaults for the `port` and `root` options and how to change them in the config documentation, but using the defaults this URL would resolve to `localhost:8080/dist/index.html`.
 
 ## Writing KSS, templates and data
 KSS is a documentation syntax and styleguide generator. All documentation should be located in your stylesheets, and should largely follow the regular [KSS syntax](http://warpspire.com/kss/syntax/). However, Huron uses [kss-node](https://github.com/kss-node/kss-node) which includes some changes, and there are a few differences specific to Huron as well. All your KSS should include the following:
