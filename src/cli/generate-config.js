@@ -71,7 +71,8 @@ function configureEntries(huron, config) {
       path.join(cwd, huron.root, 'huron-assets/huron'),
     ].concat(entry);
   } else {
-    newConfig.entry[huron.entry] = [path.join(cwd, huron.root, 'huron')]
+    newConfig.entry[huron.entry] =
+      [path.join(cwd, huron.root, 'huron-assets/huron')]
       .concat(entry);
   }
 
