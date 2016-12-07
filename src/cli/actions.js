@@ -1,14 +1,12 @@
-// Requires
-const cwd = process.cwd(); // Current working directory
-const path = require('path');
-const fs = require('fs-extra');
-const chalk = require('chalk'); // Colorize terminal output
-
 // Imports
-import { htmlHandler } from './handle-html';
+import htmlHandler from './handle-html';
 import { templateHandler } from './handle-templates';
 import { kssHandler } from './handle-kss';
 import { utils } from './utils';
+
+// Requires
+const path = require('path');
+const chalk = require('chalk'); // Colorize terminal output
 
 // EXPORTED FUNCTIONS
 
@@ -20,32 +18,39 @@ import { utils } from './utils';
  * @param {object} huron - huron configuration options
  */
 export function initFiles(data, store, depth = 0) {
-  const huron = store.get('config');
-  const type = Object.prototype.toString.call( data );
-  const currentDepth = depth++;
+  const type = Object.prototype.toString.call(data);
+  let newStore = store;
+  let info;
+  let files;
 
   switch (type) {
     case '[object Object]':
-      for (let file in data) {
-        store = initFiles(data[file], store, depth);
-      }
+      files = Object.keys(data);
+      newStore = files.reduce(
+        (prevStore, file) => initFiles(data[file], prevStore, depth),
+        newStore
+      );
       break;
 
     case '[object Array]':
-      data.forEach(file => {
-        store = initFiles(file, store, depth);
-      });
+      newStore = data.reduce(
+        (prevStore, file) => initFiles(file, prevStore, depth),
+        newStore
+      );
       break;
 
     case '[object String]':
-      const info = path.parse(data);
+      info = path.parse(data);
       if (info.ext) {
-        store = updateFile(data, store)
+        newStore = updateFile(data, store);
       }
+      break;
+
+    default:
       break;
   }
 
-  return store;
+  return newStore;
 }
 
 /**
@@ -57,10 +62,11 @@ export function initFiles(data, store, depth = 0) {
 export function updateFile(filepath, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
-  let section = null;
+  let field;
+  let section;
 
-  if (filepath.indexOf(huron.get('sectionTemplate')) !== -1) {
-      return utils.writeSectionTemplate(filepath, store);
+  if (- 1 !== filepath.indexOf(huron.get('sectionTemplate'))) {
+    return utils.writeSectionTemplate(filepath, store);
   }
 
   switch (file.ext) {
@@ -69,29 +75,30 @@ export function updateFile(filepath, store) {
       section = utils.getSection(file.base, 'markup', store);
 
       if (section) {
-        return htmlHandler.updateTempate(filepath, section, store);
+        return htmlHandler.updateTemplate(filepath, section, store);
       } else if (
-        file.dir.indexOf('prototypes') !== -1 &&
-        file.name.indexOf('prototype-') !== -1
+        - 1 !== file.dir.indexOf('prototypes') &&
+        - 1 !== file.name.indexOf('prototype-')
       ) {
         return htmlHandler.updatePrototype(filepath, store);
-      } else {
-        console.log(chalk.red(`Failed to write file: ${file.name}`));
       }
 
+      console.log(chalk.red(`Failed to write file: ${file.name}`));
       break;
 
     // Handlebars template, external
     case huron.get('templates').extension:
     case '.json':
-      const field = ('.json' === file.ext) ? 'data' : 'markup';
+      field = ('.json' === file.ext) ? 'data' : 'markup';
       section = utils.getSection(file.base, field, store);
 
       if (section) {
         return templateHandler.updateTemplate(filepath, section, store);
-      } else {
-        console.log(chalk.red(`Could not find associated KSS section for ${filepath}`));
       }
+
+      console.log( // eslint-disable-line no-console
+        chalk.red(`Could not find associated KSS section for ${filepath}`)
+      );
       break;
 
     // KSS documentation (default extension is `.css`)
@@ -99,12 +106,10 @@ export function updateFile(filepath, store) {
     // Note: inline markup does _not_ support handlebars currently
     case huron.get('kssExtension'):
       return kssHandler.updateKSS(filepath, store);
-      break;
 
     // This should never happen if Gaze is working properly
     default:
       return store;
-      break;
   }
 
   return store;
@@ -119,6 +124,7 @@ export function updateFile(filepath, store) {
 export function deleteFile(filepath, store) {
   const huron = store.get('config');
   const file = path.parse(filepath);
+  let field = '';
   let section = null;
   let newStore = store;
 
@@ -130,8 +136,8 @@ export function deleteFile(filepath, store) {
       if (section) {
         newStore = htmlHandler.deleteTemplate(filepath, section, store);
       } else if (
-        file.dir.indexOf('prototypes') !== -1 &&
-        file.name.indexOf('prototype-') !== -1
+        - 1 !== file.dir.indexOf('prototypes') &&
+        - 1 !== file.name.indexOf('prototype-')
       ) {
         newStore = htmlHandler.deletePrototype(filepath, store);
       }
@@ -139,7 +145,7 @@ export function deleteFile(filepath, store) {
 
     case huron.get('templates').extension:
     case '.json':
-      const field = ('.json' === file.ext) ? 'data' : 'markup';
+      field = ('.json' === file.ext) ? 'data' : 'markup';
       section = utils.getSection(file.base, field, store);
 
       if (section) {
@@ -156,7 +162,9 @@ export function deleteFile(filepath, store) {
       break;
 
     default:
-      consle.log(`Could not delete: ${file.name}`);
+      console.warn(  // eslint-disable-line no-console
+        chalk.red(`Could not delete: ${file.name}`)
+      );
       break;
   }
 

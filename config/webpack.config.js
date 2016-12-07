@@ -2,12 +2,12 @@ var webpack = require('webpack'),
     path = require('path'),
     cwd = process.cwd();
 
-export const defaultConfig = {
+module.exports = {
   entry: {},
   output: {
     // path: [huron root directory],
     filename: '[name].js',
-    chunkFilename: '[name].chunk.min.js'
+    chunkFilename: '[name].chunk.min.js',
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
@@ -37,8 +37,8 @@ export const defaultConfig = {
         test: /\.json?$/,
         loaders: ['json'],
         // include: [path.join(cwd, huron.root)]
-      }
-    ]
+      },
+    ],
   },
   huron: {
     css: [],
@@ -59,10 +59,10 @@ export const defaultConfig = {
     templates: {
       loader: {
         test: /\.hbs$/,
-        loader: 'handlebars-loader'
+        loader: 'handlebars-loader',
       },
-      extension: '.hbs'
+      extension: '.hbs',
     },
     window: {},
-  }
+  },
 };

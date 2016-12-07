@@ -1,11 +1,12 @@
 import { utils } from './utils';
 
+/* eslint-disable */
 export const templateHandler = {};
+/* eslint-enable */
 
-const cwd = process.cwd(); // Current working directory
 const path = require('path');
 const fs = require('fs-extra');
-const chalk = require('chalk')
+const chalk = require('chalk');
 
 /**
  * Handle update of a template or data (json) file
@@ -14,24 +15,32 @@ const chalk = require('chalk')
  * @param {object} section - contains KSS section data
  * @param {object} store - memory store
  */
-templateHandler.updateTemplate = function(filepath, section, store) {
-  const huron = store.get('config');
+templateHandler.updateTemplate = function updateTemplate(
+  filepath,
+  section,
+  store
+) {
   const file = path.parse(filepath);
-  const dest = path.resolve(cwd, huron.get('output'));
   const pairPath = utils.getTemplateDataPair(file, section, store);
   const type = '.json' === file.ext ? 'data' : 'template';
   const newSection = section;
-  let newStore = store;
+  const newStore = store;
   let content = false;
 
   try {
     content = fs.readFileSync(filepath, 'utf8');
-  } catch(e) {
+  } catch (e) {
     console.log(chalk.red(`${filepath} does not exist`));
   }
 
   if (content) {
-    let requirePath = utils.writeFile(newSection.referenceURI, type, filepath, content, newStore);
+    const requirePath = utils.writeFile(
+      newSection.referenceURI,
+      type,
+      filepath,
+      content,
+      newStore
+    );
     newSection[`${type}Path`] = requirePath;
 
     if ('template' === type) {
@@ -57,7 +66,7 @@ templateHandler.updateTemplate = function(filepath, section, store) {
   }
 
   return newStore;
-}
+};
 
 /**
  * Handle removal of a template or data (json) file
@@ -66,16 +75,23 @@ templateHandler.updateTemplate = function(filepath, section, store) {
  * @param {object} section - contains KSS section data
  * @param {object} store - memory store
  */
-templateHandler.deleteTemplate = function(filepath, section, store) {
-  const huron = store.get('config');
+templateHandler.deleteTemplate = function deleteTemplate(
+  filepath,
+  section,
+  store
+) {
   const file = path.parse(filepath);
-  const dest = path.resolve(cwd, huron.get('output'));
   const type = '.json' === file.ext ? 'data' : 'template';
   const newSection = section;
-  let newStore = store;
+  const newStore = store;
 
   // Remove partner
-  let requirePath = utils.removeFile(newSection.referenceURI, type, filepath, newStore);
+  const requirePath = utils.removeFile(
+    newSection.referenceURI,
+    type,
+    filepath,
+    newStore
+  );
   delete newSection[`${type}Path`];
 
   return newStore
@@ -88,4 +104,4 @@ templateHandler.deleteTemplate = function(filepath, section, store) {
       ['sections', 'sectionsByURI', newSection.referenceURI],
       newSection
     );
-}
+};

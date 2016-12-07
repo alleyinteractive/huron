@@ -1,10 +1,16 @@
-const cwd = process.cwd(); // Current working directory
+import { utils } from './utils';
+
 const path = require('path');
 const fs = require('fs-extra');
 
-import { utils } from './utils';
+const htmlHandler = {
+  updateTemplate,
+  deleteTemplate,
+  updatePrototype,
+  deletePrototype,
+};
 
-export const htmlHandler = {};
+export default htmlHandler;
 
 /**
  * Handle update of an HMTL template
@@ -13,11 +19,10 @@ export const htmlHandler = {};
  * @param {object} section - contains KSS section data
  * @param {object} store - memory store
  */
-htmlHandler.updateTempate = function(filepath, section, store) {
-  const huron = store.get('config');
+function updateTemplate(filepath, section, store) {
   const file = path.parse(filepath);
   const content = fs.readFileSync(filepath, 'utf8');
-  let newSection = section;
+  const newSection = section;
 
   if (content) {
     newSection.templatePath = utils.writeFile(
@@ -41,10 +46,10 @@ htmlHandler.updateTempate = function(filepath, section, store) {
         ['sections', 'sectionsByURI', section.referenceURI],
         newSection
       );
-  } else {
-    console.log(`File ${file.base} could not be read`);
-    return store;
   }
+
+  console.log(`File ${file.base} could not be read`);
+  return store;
 }
 
 /**
@@ -54,16 +59,21 @@ htmlHandler.updateTempate = function(filepath, section, store) {
  * @param {object} section - contains KSS section data
  * @param {object} store - memory store
  */
-htmlHandler.deleteTempate = function(filepath, section, store) {
-  const huron = store.get('config');
-  const file = path.parse(filepath);
+function deleteTemplate(filepath, section, store) {
+  const newSection = section;
 
-  requirePath = utils.removeFile(section.referenceURI, 'template', filepath, store);
-  delete section.templatePath;
+  utils.removeFile(
+    newSection.referenceURI,
+    'template',
+    filepath,
+    store
+  );
+
+  delete newSection.templatePath;
 
   return store.deleteIn(
-      ['sections', 'sectionsByPath', section.kssPath],
-      section
+      ['sections', 'sectionsByPath', newSection.kssPath],
+      newSection
     );
 }
 
@@ -73,22 +83,27 @@ htmlHandler.deleteTempate = function(filepath, section, store) {
  * @param {string} filepath - filepath of changed file (comes from gaze)
  * @param {object} store - memory store
  */
-htmlHandler.updatePrototype = function(filepath, store) {
-  const huron = store.get('config');
+function updatePrototype(filepath, store) {
   const file = path.parse(filepath);
   const content = fs.readFileSync(filepath, 'utf8');
 
   if (content) {
-    const requirePath = utils.writeFile(file.name, 'prototype', filepath, content, store);
+    const requirePath = utils.writeFile(
+      file.name,
+      'prototype',
+      filepath,
+      content,
+      store
+    );
 
     return store.setIn(
         ['prototypes', file.name],
         requirePath
       );
-  } else {
-    console.log(`File ${file.base} could not be read`);
-    return store;
   }
+
+  console.log(`File ${file.base} could not be read`);
+  return store;
 }
 
 /**
@@ -97,11 +112,14 @@ htmlHandler.updatePrototype = function(filepath, store) {
  * @param {string} filepath - filepath of changed file (comes from gaze)
  * @param {object} store - memory store
  */
-htmlHandler.deletePrototype = function(filepath, store) {
-  const huron = store.get('config');
+function deletePrototype(filepath, store) {
   const file = path.parse(filepath);
-
-  requirePath = utils.removeFile(file.name, 'prototype', filepath, store);
+  const requirePath = utils.removeFile(
+    file.name,
+    'prototype',
+    filepath,
+    store
+  );
 
   return store.setIn(
       ['prototypes', file.name],
