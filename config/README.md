@@ -10,13 +10,13 @@ Huron's configuration object must currently be a top-level `huron` property of t
  * **kss** {string} : default `'/css'` - relative path to KSS source directory. Currently you may only provide a single directory, but in the future we may allow an array.
  * **kssExtension** {string} : default `'.css'` - Extension of files containing your KSS documentation
  * **kssOptions**: {object} default
- 	```js
+ 	```javascript
  	{
-      multiline: true,
-      markdown: true,
-      custom: ['data'],
-    }
-    ```
+    multiline: true,
+    markdown: true,
+    custom: ['data'],
+  }
+  ```
     Object containing options to pass through to KSS-node. I can't find a good source of the available options here, but I'll keep looking.
  * **output** {string} : default `'partials'` - Relative path (relative to the `huron.root` option) to the directory where you want your templates to be generated.
  * **port** {number} : default `8080` - Localhost port from which to server your prototypes via webpack-dev-server
@@ -24,17 +24,45 @@ Huron's configuration object must currently be a top-level `huron` property of t
  * **root** {string} : default `'dist/'` - Root directory for `webpack-dev-server`. All static assets you need for your prototype(s) should be located in this directory. The `output` option should be relative to this path.
  * **sectionTemplate** {string} : default `path.join(__dirname, '../templates/section.hbs')` - Override for the template used to produce styleguide sections. This should always be a handlebars file, and will utilize the KSS data as its source.
  * **templates** {object} : default
- 	```js
+ 	```javascript
  	{
+    loader: {
+      test: /\.hbs$/,
+      loader: 'handlebars-loader',
+    },
+    extension: '.hbs',
+  }
+  ```
+    Object containing a webpack loader for your template files and a corresponding file extension. Instructions for configuring a webpack loader can be found [here](https://webpack.github.io/docs/configuration.html#module-loaders).
+ * **window** {object} : default `{}` - Object containing variables that should be attached to the global `window` object on every prototype.
+ * Complete default huron configuration object:
+ ```javascript
+ huron: {
+    css: [],
+    entry: 'huron',
+    js: [],
+    kss: 'css/',
+    kssExtension: '.css',
+    kssOptions: {
+      multiline: true,
+      markdown: true,
+      custom: ['data'],
+    },
+    output: 'partials',
+    port: 8080,
+    prototypes: ['index'],
+    root: 'dist/',
+    sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
+    templates: {
       loader: {
         test: /\.hbs$/,
         loader: 'handlebars-loader',
       },
       extension: '.hbs',
-    }
-    ```
-    Object containing a webpack loader for your template files and a corresponding file extension. Instructions for configuring a webpack loader can be found [here](https://webpack.github.io/docs/configuration.html#module-loaders).
- * **window** {object} : default `{}` - Object containing variables that should be attached to the global `window` object on every prototype.
+    },
+    window: {},
+  }
+  ```
 
 ## Webpack
 Huron will attempt to merge its own configuration requirements for webpack with your local configuration, allowing you to use the same build tools (and resulting scripts and styles) in your prototypes as you do on your live site.
