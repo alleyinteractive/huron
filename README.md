@@ -35,7 +35,8 @@ KSS is a documentation syntax and styleguide generator. All documentation should
  	{
 		"title": "Lorem ipusm dolor sit amet",
 		"excerpt": "Lorem ipsum dolor sit amet, consectetur adipisicing elit. Impedit nemo accusamus nobis sunt nihil, voluptatem qui itaque. Eius saepe rem perspiciatis beatae ea nulla, sed facilis exercitationem a aspernatur ullam?"
- 	}```
+ 	}
+ 	```
 
  	** Variants listed at the top level of your JSON, and all data fields (and variations thereof) directly beneath them. Example:
 
@@ -49,7 +50,9 @@ KSS is a documentation syntax and styleguide generator. All documentation should
 			"title": "Dolor sit amet adipscing elit",
 			"excerpt": "Doloribus veniam debitis, perferendis pariatur, eligendi id non modi! Nesciunt suscipit sint dolorum praesentium!"
 		}
- 	}```
+ 	}
+ 	```
+
  * Styleguide reference - This is a required field, and must be written in the format `Styleguide [styleguide-section].[styleguide-subsection]`. You may have as many subsections as you like. You'll use this section reference when inserting markup in your prototypes by converting all `.` separators to `-`, creating a URI-like structure. We'll discuss this further in the next section.
  * NOTE: As of now, Huron only supports one KSS documentation block per file, meaning it's heavily geared toward CSS preprocessors like SASS or LESS. This is an issue on our radar, however, and will be implemented at some point.
 
