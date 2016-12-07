@@ -308,7 +308,8 @@ export const kssHandler = {
     const sorted = store.getIn(['sections', 'sorted']);
     const kssPath = path.format(file);
     const dataFilepath = path.join(file.dir, `${file.name}.json`);
-    const isInline = null !== section.markup.match(/<\/[^>]*>/);
+    const isInline = section.markup &&
+      null !== section.markup.match(/<\/[^>]*>/);
     const newSort = kssHandler.unsortSection(
       sorted,
       section.reference,
