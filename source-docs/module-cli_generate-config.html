@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Module: cli/html-handler</title>
+    <title>JSDoc: Module: cli/generate-config</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Module: cli/html-handler</h1>
+    <h1 class="page-title">Module: cli/generate-config</h1>
 
     
 
@@ -61,14 +61,14 @@
 
     
 
-    <h4 class="name" id="~deletePrototype"><span class="type-signature">(inner) </span>deletePrototype<span class="signature">(filepath, store)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="~configureEntries"><span class="type-signature">(inner) </span>configureEntries<span class="signature">(huron, config)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Handle removal of a prototype file
+    Configure and manage webpack entry points
 </div>
 
 
@@ -104,30 +104,7 @@
 
         <tr>
             
-                <td class="name"><code>filepath</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filepath of changed file (comes from gaze)</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>store</code></td>
+                <td class="name"><code>huron</code></td>
             
 
             <td class="type">
@@ -143,7 +120,30 @@
 
             
 
-            <td class="description last">memory store</td>
+            <td class="description last">huron configuration object</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>config</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">webpack configuration object</td>
         </tr>
 
     
@@ -184,7 +184,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cli_handle-html.js.html">cli/handle-html.js</a>, <a href="cli_handle-html.js.html#line109">line 109</a>
+        <a href="cli_generate-config.js.html">cli/generate-config.js</a>, <a href="cli_generate-config.js.html#line61">line 61</a>
     </li></ul></dd>
     
 
@@ -215,14 +215,14 @@
 
     
 
-    <h4 class="name" id="~deleteTemplate"><span class="type-signature">(inner) </span>deleteTemplate<span class="signature">(filepath, section, store)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="~configureLoaders"><span class="type-signature">(inner) </span>configureLoaders<span class="signature">(huron, config)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Handle removal of an HMTL template
+    Configure and manage webpack loaders
 </div>
 
 
@@ -258,30 +258,7 @@
 
         <tr>
             
-                <td class="name"><code>filepath</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filepath of changed file (comes from gaze)</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>section</code></td>
+                <td class="name"><code>huron</code></td>
             
 
             <td class="type">
@@ -297,14 +274,14 @@
 
             
 
-            <td class="description last">contains KSS section data</td>
+            <td class="description last">huron configuration object</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>store</code></td>
+                <td class="name"><code>config</code></td>
             
 
             <td class="type">
@@ -320,7 +297,7 @@
 
             
 
-            <td class="description last">memory store</td>
+            <td class="description last">webpack configuration object</td>
         </tr>
 
     
@@ -361,7 +338,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cli_handle-html.js.html">cli/handle-html.js</a>, <a href="cli_handle-html.js.html#line53">line 53</a>
+        <a href="cli_generate-config.js.html">cli/generate-config.js</a>, <a href="cli_generate-config.js.html#line108">line 108</a>
     </li></ul></dd>
     
 
@@ -392,14 +369,14 @@
 
     
 
-    <h4 class="name" id="~updatePrototype"><span class="type-signature">(inner) </span>updatePrototype<span class="signature">(filepath, store)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="~configurePlugins"><span class="type-signature">(inner) </span>configurePlugins<span class="signature">(huron, config)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Handle update for a prototype file
+    Configure and manage webpack plugins
 </div>
 
 
@@ -435,30 +412,7 @@
 
         <tr>
             
-                <td class="name"><code>filepath</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filepath of changed file (comes from gaze)</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>store</code></td>
+                <td class="name"><code>huron</code></td>
             
 
             <td class="type">
@@ -474,7 +428,30 @@
 
             
 
-            <td class="description last">memory store</td>
+            <td class="description last">huron configuration object</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>config</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">webpack configuration object</td>
         </tr>
 
     
@@ -515,7 +492,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cli_handle-html.js.html">cli/handle-html.js</a>, <a href="cli_handle-html.js.html#line79">line 79</a>
+        <a href="cli_generate-config.js.html">cli/generate-config.js</a>, <a href="cli_generate-config.js.html#line87">line 87</a>
     </li></ul></dd>
     
 
@@ -546,14 +523,14 @@
 
     
 
-    <h4 class="name" id="~updateTemplate"><span class="type-signature">(inner) </span>updateTemplate<span class="signature">(filepath, section, store)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="~configurePrototypes"><span class="type-signature">(inner) </span>configurePrototypes<span class="signature">(huron, config)</span><span class="type-signature"></span></h4>
 
     
 
 
 
 <div class="description">
-    Handle update of an HMTL template
+    Create an HTML webpack plugin for each configured prototype
 </div>
 
 
@@ -589,30 +566,7 @@
 
         <tr>
             
-                <td class="name"><code>filepath</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">string</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">filepath of changed file (comes from gaze)</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>section</code></td>
+                <td class="name"><code>huron</code></td>
             
 
             <td class="type">
@@ -628,14 +582,14 @@
 
             
 
-            <td class="description last">contains KSS section data</td>
+            <td class="description last">huron configuration object</td>
         </tr>
 
     
 
         <tr>
             
-                <td class="name"><code>store</code></td>
+                <td class="name"><code>config</code></td>
             
 
             <td class="type">
@@ -651,7 +605,7 @@
 
             
 
-            <td class="description last">memory store</td>
+            <td class="description last">webpack configuration object</td>
         </tr>
 
     
@@ -692,7 +646,318 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="cli_handle-html.js.html">cli/handle-html.js</a>, <a href="cli_handle-html.js.html#line12">line 12</a>
+        <a href="cli_generate-config.js.html">cli/generate-config.js</a>, <a href="cli_generate-config.js.html#line139">line 139</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~generateConfig"><span class="type-signature">(inner) </span>generateConfig<span class="signature">(config)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Generate a mutant hybrid of the huron default webpack config and your local webpack config
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>config</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">local webpack config</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="cli_generate-config.js.html">cli/generate-config.js</a>, <a href="cli_generate-config.js.html#line14">line 14</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="~moveAdditionalAssets"><span class="type-signature">(inner) </span>moveAdditionalAssets<span class="signature">(assets, subdir, huron)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+<div class="description">
+    Move relative (and local) js and css assets provided in huron options
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>assets</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">array</span>
+|
+
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">array of assets or single asset</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>subdir</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">subdirectory in huron root from which to load additional asset</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>huron</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">object</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">huron configuration object</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="cli_generate-config.js.html">cli/generate-config.js</a>, <a href="cli_generate-config.js.html#line230">line 230</a>
     </li></ul></dd>
     
 
@@ -740,7 +1005,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Dec 07 2016 10:31:31 GMT-0500 (EST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Wed Dec 07 2016 11:56:01 GMT-0500 (EST)
 </footer>
 
 <script> prettyPrint(); </script>

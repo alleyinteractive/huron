@@ -5,7 +5,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "doc": "./node_modules/.bin/jsdoc src -r",
+    "doc": "./node_modules/.bin/jsdoc src -r -c ./config/jsdoc.json",
     "help": "./node_modules/.bin/babel-node src/cli/huron.js -h",
     "build": "babel src/cli -d dist/cli && babel src/web -d dist/web",
     "prebuild": "./node_modules/eslint/bin/eslint.js -c config/.eslintrc src/**"
