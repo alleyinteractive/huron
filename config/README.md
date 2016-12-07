@@ -24,7 +24,8 @@ Huron's configuration object must currently be a top-level `huron` property of t
  * **root** {string} : default `'dist/'` - Root directory for `webpack-dev-server`. All static assets you need for your prototype(s) should be located in this directory. The `output` option should be relative to this path.
  * **sectionTemplate** {string} : default `path.join(__dirname, '../templates/section.hbs')` - Override for the template used to produce styleguide sections. This should always be a handlebars file, and will utilize the KSS data as its source.
  * **templates** {object} : default
- 	```javascript
+
+  ```javascript
  	{
     loader: {
       test: /\.hbs$/,
@@ -33,9 +34,11 @@ Huron's configuration object must currently be a top-level `huron` property of t
     extension: '.hbs',
   }
   ```
+
     Object containing a webpack loader for your template files and a corresponding file extension. Instructions for configuring a webpack loader can be found [here](https://webpack.github.io/docs/configuration.html#module-loaders).
  * **window** {object} : default `{}` - Object containing variables that should be attached to the global `window` object on every prototype.
  * Complete default huron configuration object:
+
  ```javascript
  huron: {
     css: [],
