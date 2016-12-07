@@ -2,7 +2,6 @@
   "name": "huron",
   "description": "An in-browser prototyping tool built on top of webpack and kss-node",
   "author": "Owen Stowe",
-  "private": true,
   "version": "1.0.0",
   "scripts": {
     "doc": "./node_modules/.bin/jsdoc src -r -c ./config/jsdoc.json",
