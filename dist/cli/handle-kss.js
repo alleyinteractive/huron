@@ -221,7 +221,7 @@ var kssHandler = exports.kssHandler = {
     var sorted = store.getIn(['sections', 'sorted']);
     var kssPath = path.format(file);
     var dataFilepath = path.join(file.dir, file.name + '.json');
-    var isInline = null !== section.markup.match(/<\/[^>]*>/);
+    var isInline = section.markup && null !== section.markup.match(/<\/[^>]*>/);
     var newSort = kssHandler.unsortSection(sorted, section.reference, store.get('referenceDelimiter'));
     var newStore = store;
 
