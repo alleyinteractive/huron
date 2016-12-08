@@ -69,11 +69,13 @@ function configureEntries(huron, config) {
       `webpack-dev-server/client?http://localhost:${huron.port}`,
       'webpack/hot/dev-server',
       path.join(cwd, huron.root, 'huron-assets/huron'),
-    ].concat(entry);
+      ...entry,
+    ];
   } else {
-    newConfig.entry[huron.entry] =
-      [path.join(cwd, huron.root, 'huron-assets/huron')]
-      .concat(entry);
+    newConfig.entry[huron.entry] = [
+      path.join(cwd, huron.root, 'huron-assets/huron'),
+      ...entry,
+    ];
   }
 
   return newConfig;
