@@ -4,10 +4,12 @@
 	<!-- description -->
 	<div class="section__meta">
 		<h3 class="section__field-title section__reference">Reference: <span>{{ reference }}</span></h3>
-		<h3 class="section__field-title section__description-header">Description:</h3>
-		<div class="section__description">
-			<div data-huron-id="{{ referenceURI }}" data-huron-type="description"></div>
-		</div>
+		{{#if description}}
+			<h3 class="section__field-title section__description-header">Description:</h3>
+			<div class="section__description">
+				<div data-huron-id="{{ referenceURI }}" data-huron-type="description"></div>
+			</div>
+		{{/if}}
 	</div>
 
 	<!-- markup -->
@@ -17,7 +19,10 @@
 			{{#if modifiers}}
 				{{#each modifiers}}
 					<div class="section__modifier">
-						<h4 class="section__modifier-name">Modifier: <span>{{ this.name }}</span></h4>
+						<h4 class="section__modifier-header">Modifier:
+							<span class="section__modifier-name">{{ this.name }}</span> -
+							<span class="section__modifier-description">{{ this.description }}</span>
+						</h4>
 						<div class="section__modifier-content">
 							<div data-huron-id="{{ ../referenceURI }}"
 								data-huron-type="template"
