@@ -70,8 +70,13 @@ export const htmlHandler = {
 
     delete newSection.templatePath;
 
-    return store.deleteIn(
-        ['sections', 'sectionsByPath', newSection.kssPath],
+    return store
+      .setIn(
+        ['sections', 'sectionsByPath', section.kssPath],
+        newSection
+      )
+      .setIn(
+        ['sections', 'sectionsByURI', section.referenceURI],
         newSection
       );
   },

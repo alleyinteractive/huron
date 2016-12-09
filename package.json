@@ -3,10 +3,14 @@
   "description": "An in-browser prototyping tool built on top of webpack and kss-node",
   "author": "Alley Interactive",
   "version": "1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alleyinteractive/huron"
+  },
   "scripts": {
     "doc": "./node_modules/.bin/jsdoc src -r -c ./config/jsdoc.json",
     "help": "./node_modules/.bin/babel-node src/cli/huron.js -h",
-    "build": "babel src/cli -d dist/cli && babel src/web -d dist/web",
+    "build": "babel src/cli -d dist/cli --source-maps && babel src/web -d dist/web --source-maps",
     "prebuild": "./node_modules/eslint/bin/eslint.js -c config/.eslintrc src/**"
   },
   "bin": {

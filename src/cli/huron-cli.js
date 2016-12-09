@@ -26,17 +26,16 @@ const config = generateConfig(localConfig);
 const huron = config.huron;
 
 /**
- * Available file extensions
+ * Available file extensions. Extensions should not include the leading '.'
  *
  * @global
  */
-const extenstions = [
+const extensions = [
   huron.kssExtension,
-  '.html',
-  '.handlebars',
-  '.hbs',
-  '.json',
-];
+  huron.templates.extension,
+  'html',
+  'json',
+].map((extension) => extension.replace('.', ''));
 
 // Create initial data structure
 /* eslint-disable */
@@ -76,9 +75,21 @@ let store = null; // All updates to store will be here
 
 // Generate watch list for Gaze, start gaze
 const gazeWatch = [];
+const kssSource = [...huron.kss];
+
 gazeWatch.push(path.resolve(__dirname, huron.sectionTemplate));
-extenstions.forEach((ext) => {
-  gazeWatch.push(`${huron.kss}/**/*${ext}`);
+kssSource.forEach((sourceDir) => {
+  let gazeDir = sourceDir;
+
+  /* eslint-disable space-unary-ops */
+  if ('/' === sourceDir.slice(-1)) {
+    gazeDir = sourceDir.slice(0, -1);
+  }
+  /* eslint-enable space-unary-ops */
+
+  gazeWatch.push(
+    `${gazeDir}/**/*.+(${extensions.join('|')})`
+  );
 });
 
 /**

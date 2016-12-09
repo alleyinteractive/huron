@@ -19,11 +19,13 @@ var _server2 = _interopRequireDefault(_server);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-// Modules
-var cwd = process.cwd(); // Current working directory
-
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 // Local imports
+
+
+// Modules
+var cwd = process.cwd(); // Current working directory
 var path = require('path');
 var Gaze = require('gaze').Gaze;
 var Immutable = require('immutable');
@@ -41,11 +43,13 @@ var config = (0, _generateConfig2.default)(localConfig);
 var huron = config.huron;
 
 /**
- * Available file extensions
+ * Available file extensions. Extensions should not include the leading '.'
  *
  * @global
  */
-var extenstions = [huron.kssExtension, '.html', '.handlebars', '.hbs', '.json'];
+var extensions = [huron.kssExtension, huron.templates.extension, 'html', 'json'].map(function (extension) {
+  return extension.replace('.', '');
+});
 
 // Create initial data structure
 /* eslint-disable */
@@ -78,9 +82,19 @@ var store = null; // All updates to store will be here
 
 // Generate watch list for Gaze, start gaze
 var gazeWatch = [];
+var kssSource = [].concat(_toConsumableArray(huron.kss));
+
 gazeWatch.push(path.resolve(__dirname, huron.sectionTemplate));
-extenstions.forEach(function (ext) {
-  gazeWatch.push(huron.kss + '/**/*' + ext);
+kssSource.forEach(function (sourceDir) {
+  var gazeDir = sourceDir;
+
+  /* eslint-disable space-unary-ops */
+  if ('/' === sourceDir.slice(-1)) {
+    gazeDir = sourceDir.slice(0, -1);
+  }
+  /* eslint-enable space-unary-ops */
+
+  gazeWatch.push(gazeDir + '/**/*.+(' + extensions.join('|') + ')');
 });
 
 /**
@@ -155,3 +169,4 @@ if (!_parseArgs2.default.production) {
 
 // Start webpack or build for production
 (0, _server2.default)(config);
+//# sourceMappingURL=huron-cli.js.map

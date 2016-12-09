@@ -58,7 +58,7 @@ var htmlHandler = exports.htmlHandler = {
 
     delete newSection.templatePath;
 
-    return store.deleteIn(['sections', 'sectionsByPath', newSection.kssPath], newSection);
+    return store.setIn(['sections', 'sectionsByPath', section.kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
   },
 
 
@@ -98,3 +98,4 @@ var htmlHandler = exports.htmlHandler = {
     return store.setIn(['prototypes', file.name], requirePath);
   }
 };
+//# sourceMappingURL=handle-html.js.map
