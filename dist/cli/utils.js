@@ -3,9 +3,6 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 /** @module cli/utilities */
 
 var cwd = process.cwd(); // Current working directory
@@ -268,7 +265,7 @@ var utils = exports.utils = {
    * @param {obj} sections - sections memory store
    */
   matchKssDir: function matchKssDir(filepath, huron) {
-    var kssSource = [].concat(_toConsumableArray(huron.get('kss')));
+    var kssSource = huron.get('kss');
     /* eslint-disable space-unary-ops */
     var kssMatch = kssSource.filter(function (dir) {
       return -1 !== filepath.indexOf(dir);

@@ -19,13 +19,11 @@ var _server2 = _interopRequireDefault(_server);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
-// Local imports
-
-
 // Modules
 var cwd = process.cwd(); // Current working directory
+
+
+// Local imports
 var path = require('path');
 var Gaze = require('gaze').Gaze;
 var Immutable = require('immutable');
@@ -41,6 +39,9 @@ var config = (0, _generateConfig2.default)(localConfig);
  * @global
  */
 var huron = config.huron;
+
+// Make sure the kss option is represented as an array
+huron.kss = Array.isArray(huron.kss) ? huron.kss : [huron.kss];
 
 /**
  * Available file extensions. Extensions should not include the leading '.'
@@ -73,19 +74,12 @@ var dataStructure = Immutable.Map({
 });
 /* eslint-enable */
 
-/**
- * Data store, to be initialized with dataStructure
- *
- * @global
- */
-var store = null; // All updates to store will be here
-
 // Generate watch list for Gaze, start gaze
 var gazeWatch = [];
-var kssSource = [].concat(_toConsumableArray(huron.kss));
 
+// Push KSS source directories and section template to Gaze
 gazeWatch.push(path.resolve(__dirname, huron.sectionTemplate));
-kssSource.forEach(function (sourceDir) {
+huron.kss.forEach(function (sourceDir) {
   var gazeDir = sourceDir;
 
   /* eslint-disable space-unary-ops */
@@ -104,65 +98,73 @@ kssSource.forEach(function (sourceDir) {
  */
 var gaze = new Gaze(gazeWatch);
 
-// Initialize all files watched by gaze
-store = (0, _actions.initFiles)(gaze.watched(), dataStructure);
+/**
+ * Initialize data store with files from gaze and original data structure
+ *
+ * @global
+ */
+var store = (0, _actions.initFiles)(gaze.watched(), dataStructure);
+
 (0, _requireTemplates.requireTemplates)(store);
 (0, _requireTemplates.writeStore)(store);
 
 if (!_parseArgs2.default.production) {
-  /** @module cli/gaze */
+  (function () {
+    /** @module cli/gaze */
+    var newStore = store;
 
-  /**
-   * Anonymous handler for Gaze 'changed' event indicating a file has changed
-   *
-   * @callback changed
-   * @listens gaze:changed
-   * @param {string} filepath - absolute path of changed file
-   */
-  gaze.on('changed', function (filepath) {
-    store = (0, _actions.updateFile)(filepath, store);
-    console.log(chalk.green(filepath + ' updated!'));
-  });
+    /**
+     * Anonymous handler for Gaze 'changed' event indicating a file has changed
+     *
+     * @callback changed
+     * @listens gaze:changed
+     * @param {string} filepath - absolute path of changed file
+     */
+    gaze.on('changed', function (filepath) {
+      newStore = (0, _actions.updateFile)(filepath, newStore);
+      console.log(chalk.green(filepath + ' updated!'));
+    });
 
-  /**
-   * Anonymous handler for Gaze 'added' event indicating a file has been added to the watched directories
-   *
-   * @callback added
-   * @listens gaze:added
-   * @param {string} filepath - absolute path of changed file
-   */
-  gaze.on('added', function (filepath) {
-    store = (0, _actions.updateFile)(filepath, store);
-    (0, _requireTemplates.writeStore)(store);
-    console.log(chalk.blue(filepath + ' added!'));
-  });
+    /**
+     * Anonymous handler for Gaze 'added' event indicating a file has been added to the watched directories
+     *
+     * @callback added
+     * @listens gaze:added
+     * @param {string} filepath - absolute path of changed file
+     */
+    gaze.on('added', function (filepath) {
+      newStore = (0, _actions.updateFile)(filepath, newStore);
+      (0, _requireTemplates.writeStore)(newStore);
+      console.log(chalk.blue(filepath + ' added!'));
+    });
 
-  /**
-   * Anonymous handler for Gaze 'renamed' event indicating a file has been renamed
-   *
-   * @callback renamed
-   * @listens gaze:renamed
-   * @param {string} filepath - absolute path of changed file
-   */
-  gaze.on('renamed', function (newPath, oldPath) {
-    store = (0, _actions.deleteFile)(oldPath, store);
-    store = (0, _actions.updateFile)(newPath, store);
-    (0, _requireTemplates.writeStore)(store);
-    console.log(chalk.blue(newPath + ' added!'));
-  });
+    /**
+     * Anonymous handler for Gaze 'renamed' event indicating a file has been renamed
+     *
+     * @callback renamed
+     * @listens gaze:renamed
+     * @param {string} filepath - absolute path of changed file
+     */
+    gaze.on('renamed', function (newPath, oldPath) {
+      newStore = (0, _actions.deleteFile)(oldPath, newStore);
+      newStore = (0, _actions.updateFile)(newPath, newStore);
+      (0, _requireTemplates.writeStore)(newStore);
+      console.log(chalk.blue(newPath + ' added!'));
+    });
 
-  /**
-   * Anonymous handler for Gaze 'deleted' event indicating a file has been removed
-   *
-   * @callback deleted
-   * @listens gaze:deleted
-   * @param {string} filepath - absolute path of changed file
-   */
-  gaze.on('deleted', function (filepath) {
-    store = (0, _actions.deleteFile)(filepath, store);
-    (0, _requireTemplates.writeStore)(store);
-    console.log(chalk.red(filepath + ' deleted'));
-  });
+    /**
+     * Anonymous handler for Gaze 'deleted' event indicating a file has been removed
+     *
+     * @callback deleted
+     * @listens gaze:deleted
+     * @param {string} filepath - absolute path of changed file
+     */
+    gaze.on('deleted', function (filepath) {
+      newStore = (0, _actions.deleteFile)(filepath, newStore);
+      (0, _requireTemplates.writeStore)(newStore);
+      console.log(chalk.red(filepath + ' deleted'));
+    });
+  })();
 } else {
   gaze.close();
 }

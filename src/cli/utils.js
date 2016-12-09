@@ -299,7 +299,7 @@ ${content}
    * @param {obj} sections - sections memory store
    */
   matchKssDir(filepath, huron) {
-    const kssSource = [...huron.get('kss')];
+    const kssSource = huron.get('kss');
     /* eslint-disable space-unary-ops */
     const kssMatch = kssSource.filter((dir) => -1 !== filepath.indexOf(dir));
     /* eslint-enable space-unary-ops */
