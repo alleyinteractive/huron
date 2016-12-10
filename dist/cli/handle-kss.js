@@ -310,3 +310,4 @@ var kssHandler = exports.kssHandler = {
     return oldSection && (oldSection[field] !== newSection[field] || oldSection.referenceURI !== newSection.referenceURI) || !oldSection;
   }
 };
+//# sourceMappingURL=handle-kss.js.map

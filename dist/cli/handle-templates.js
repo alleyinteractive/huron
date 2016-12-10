@@ -76,3 +76,4 @@ var templateHandler = exports.templateHandler = {
     return newStore.deleteIn(['templates', requirePath]).setIn(['sections', 'sectionsByPath', newSection.kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);
   }
 };
+//# sourceMappingURL=handle-templates.js.map

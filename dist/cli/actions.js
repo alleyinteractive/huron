@@ -176,3 +176,4 @@ function deleteFile(filepath, store) {
 
   return newStore;
 }
+//# sourceMappingURL=actions.js.map

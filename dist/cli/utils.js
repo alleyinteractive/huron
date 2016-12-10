@@ -71,13 +71,19 @@ var utils = exports.utils = {
    */
   getTemplateDataPair: function getTemplateDataPair(file, section, store) {
     var huron = store.get('config');
-    var componentPath = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
-    var partnerType = '.json' === file.ext ? 'template' : 'data';
-    var partnerExt = '.json' === file.ext ? huron.get('templates').extension : '.json';
+    var kssDir = utils.matchKssDir(file.dir, huron);
 
-    var pairPath = path.join(componentPath, utils.generateFilename(section.referenceURI, partnerType, partnerExt, store));
+    if (kssDir) {
+      var componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
+      var partnerType = '.json' === file.ext ? 'template' : 'data';
+      var partnerExt = '.json' === file.ext ? huron.get('templates').extension : '.json';
 
-    return './' + pairPath;
+      var pairPath = path.join(componentPath, utils.generateFilename(section.referenceURI, partnerType, partnerExt, store));
+
+      return './' + pairPath;
+    }
+
+    return false;
   },
 
 
@@ -144,23 +150,29 @@ var utils = exports.utils = {
     var huron = store.get('config');
     var file = path.parse(filepath);
     var filename = utils.generateFilename(id, type, file.ext, store);
-    var componentPath = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
-    var outputRelative = path.join(huron.get('output'), componentPath, '' + filename);
-    var outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
-    var newContent = content;
+    var kssDir = utils.matchKssDir(filepath, huron);
 
-    if ('data' !== type && 'section' !== type) {
-      newContent = utils.wrapMarkup(content, id);
+    if (kssDir) {
+      var componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
+      var outputRelative = path.join(huron.get('output'), componentPath, '' + filename);
+      var outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+      var newContent = content;
+
+      if ('data' !== type && 'section' !== type) {
+        newContent = utils.wrapMarkup(content, id);
+      }
+
+      try {
+        fs.outputFileSync(outputPath, newContent);
+        console.log(chalk.green('Writing ' + outputRelative)); // eslint-disable-line no-console
+      } catch (e) {
+        console.log(chalk.red('Failed to write ' + outputRelative)); // eslint-disable-line no-console
+      }
+
+      return './' + outputRelative.replace(huron.get('output') + '/', '');
     }
 
-    try {
-      fs.outputFileSync(outputPath, newContent);
-      console.log(chalk.green('Writing ' + outputRelative)); // eslint-disable-line no-console
-    } catch (e) {
-      console.log(chalk.red('Failed to write ' + outputRelative)); // eslint-disable-line no-console
-    }
-
-    return './' + outputRelative.replace(huron.get('output') + '/', '');
+    return false;
   },
 
 
@@ -176,19 +188,25 @@ var utils = exports.utils = {
     var huron = store.get('config');
     var file = path.parse(filepath);
     var filename = utils.generateFilename(id, type, file.ext, store);
-    var componentPath = path.relative(path.resolve(cwd, huron.get('kss')), file.dir);
-    var outputRelative = path.join(huron.get('output'), componentPath, '' + filename);
-    var outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+    var kssDir = utils.matchKssDir(filepath, huron);
 
-    try {
-      fs.removeSync(outputPath);
-      console.log(chalk.green('Removing ' + outputRelative)); // eslint-disable-line no-console
-    } catch (e) {
-      console.log( // eslint-disable-line no-console
-      chalk.red(outputRelative + ' does not exist or cannot be deleted'));
+    if (kssDir) {
+      var componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
+      var outputRelative = path.join(huron.get('output'), componentPath, '' + filename);
+      var outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+
+      try {
+        fs.removeSync(outputPath);
+        console.log(chalk.green('Removing ' + outputRelative)); // eslint-disable-line no-console
+      } catch (e) {
+        console.log( // eslint-disable-line no-console
+        chalk.red(outputRelative + ' does not exist or cannot be deleted'));
+      }
+
+      return './' + outputRelative.replace(huron.get('output') + '/', '');
     }
 
-    return './' + outputRelative.replace(huron.get('output') + '/', '');
+    return false;
   },
 
 
@@ -235,5 +253,31 @@ var utils = exports.utils = {
     }
 
     return selectedSection;
+  },
+
+
+  /**
+   * Match which configured KSS directory the current file
+   *
+   * @function matchKssDir
+   * @param {string} search - key on which to match section
+   * @param {field} string - field in which to look to determine section
+   * @param {obj} sections - sections memory store
+   */
+  matchKssDir: function matchKssDir(filepath, huron) {
+    var kssSource = huron.get('kss');
+    /* eslint-disable space-unary-ops */
+    var kssMatch = kssSource.filter(function (dir) {
+      return -1 !== filepath.indexOf(dir);
+    });
+    /* eslint-enable space-unary-ops */
+
+    if (kssMatch.length) {
+      return kssMatch[0];
+    }
+
+    console.error(chalk.red('filepath ' + filepath + ' does not exist in any\n      of the configured KSS directories'));
+    return false;
   }
 };
+//# sourceMappingURL=utils.js.map

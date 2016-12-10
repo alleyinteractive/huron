@@ -48,3 +48,4 @@ var writeStore = exports.writeStore = function writeStore(store) {
   // @todo lint this file.
   fs.outputFileSync(path.join(outputPath, 'huron-store.js'), '/*eslint-disable*/\n    module.exports = ' + JSON.stringify(store.toJSON()) + '\n    /*eslint-disable*/\n');
 };
+//# sourceMappingURL=require-templates.js.map
