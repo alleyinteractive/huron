@@ -13,6 +13,9 @@ var huronScript = fs.readFileSync(path.resolve(__dirname, '../web/huron.js'), 'u
 
 /**
  * Write code for requiring all generated huron assets
+ * Note: prepended and appended code in this file should roughly follow es5 syntax for now,
+ *  as it will not pass through the Huron internal babel build nor can we assume the user is
+ *  working with babel.
  *
  * @function requireTemplates
  * @param {object} store - memory store
@@ -24,7 +27,7 @@ var requireTemplates = exports.requireTemplates = function requireTemplates(stor
   var requirePath = '\'../' + huron.get('output') + '\'';
 
   // Initialize templates, js, css and HMR acceptance logic
-  var prepend = '\nlet store = require(\'./huron-store.js\');\nconst assets = require.context(' + requirePath + ', true, ' + requireRegex + ');\nconst modules = {};\n\nassets.keys().forEach(function(key) {\n  modules[key] = assets(key);\n});\n\nif (module.hot) {\n  module.hot.accept(\n    assets.id,\n    () => {\n      const newAssets = require.context(\n        ' + requirePath + ',\n        true,\n        ' + requireRegex + '\n      );\n      const newModules = newAssets.keys()\n        .map((key) => {\n          return [key, newAssets(key)];\n        })\n        .filter((newModule) => {\n          return modules[newModule[0]] !== newModule[1];\n        });\n\n      updateStore(require(\'./huron-store.js\'));\n\n      newModules.forEach((module) => {\n        modules[module[0]] = module[1];\n        hotReplace(module[0], module[1], modules);\n      });\n    }\n  );\n\n  module.hot.accept(\n    \'./huron-store.js\',\n    () => {\n      updateStore(require(\'./huron-store.js\'));\n    }\n  );\n}\n';
+  var prepend = '\nvar store = require(\'./huron-store.js\');\nvar assets = require.context(' + requirePath + ', true, ' + requireRegex + ');\nvar modules = {};\n\nassets.keys().forEach(function(key) {\n  modules[key] = assets(key);\n});\n\nif (module.hot) {\n  module.hot.accept(\n    assets.id,\n    () => {\n      var newAssets = require.context(\n        ' + requirePath + ',\n        true,\n        ' + requireRegex + '\n      );\n      var newModules = newAssets.keys()\n        .map((key) => {\n          return [key, newAssets(key)];\n        })\n        .filter((newModule) => {\n          return modules[newModule[0]] !== newModule[1];\n        });\n\n      updateStore(require(\'./huron-store.js\'));\n\n      newModules.forEach((module) => {\n        modules[module[0]] = module[1];\n        hotReplace(module[0], module[1], modules);\n      });\n    }\n  );\n\n  module.hot.accept(\n    \'./huron-store.js\',\n    () => {\n      updateStore(require(\'./huron-store.js\'));\n    }\n  );\n}\n';
 
   var append = '\nfunction hotReplace(key, module, modules) {\n  insert.modules = modules;\n  if (key === store.sectionTemplatePath) {\n    insert.cycleSections();\n  } else {\n    insert.inserted = [];\n    insert.loadModule(key, module, false);\n  }\n};\n\nfunction updateStore(newStore) {\n  insert.store = newStore;\n}\n';
 
