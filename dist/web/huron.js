@@ -84,7 +84,7 @@ var InsertNodes = function () {
         this.regenCache();
 
         // Find all top-level huron placeholders
-        elementList = document.querySelectorAll('[data-huron-id][data-huron-type]');
+        elementList = [].concat(_toConsumableArray(document.querySelectorAll('[data-huron-id][data-huron-type]')));
       }
 
       moduleList = this.getModuleListFromTags(elementList);
@@ -230,8 +230,10 @@ var InsertNodes = function () {
   }, {
     key: 'getModuleKeyFromTag',
     value: function getModuleKeyFromTag(tag) {
-      var type = tag.dataset.huronType;
-      var id = tag.dataset.huronId;
+      // Safari/webkit has some trouble parsing dataset in certain cases.
+      // This is a fallback method of accessing the same data.
+      var type = InsertNodes.getDataAttribute(tag, 'huron-type');
+      var id = InsertNodes.getDataAttribute(tag, 'huron-id');
       var section = this._sections.sectionsByURI[id];
 
       if (id && type) {
@@ -514,11 +516,14 @@ var InsertNodes = function () {
   }, {
     key: 'removeOldTags',
     value: function removeOldTags(hash, tag) {
-      if (tag && tag.dataset) {
-        if (tag.dataset.parentHash === hash && tag.dataset.selfHash !== hash) {
+      if (tag) {
+        var parentHash = InsertNodes.getDataAttribute(tag, 'parent-hash');
+        var selfHash = InsertNodes.getDataAttribute(tag, 'self-hash');
+
+        if (parentHash === hash && selfHash !== hash) {
           // This is a child of the current module,
           // so remove it and its children (if applicable)
-          var childrenHash = tag.dataset.selfHash;
+          var childrenHash = selfHash;
           var nextTag = tag.previousSibling;
 
           if (childrenHash) {
@@ -556,7 +561,10 @@ var InsertNodes = function () {
 
       if (type) {
         replace.forEach(function (tag) {
-          if (tag.dataset && tag.dataset.huronId === meta.id && tag.dataset.huronType === type) {
+          var tagType = InsertNodes.getDataAttribute(tag, 'huron-type');
+          var tagId = InsertNodes.getDataAttribute(tag, 'huron-id');
+
+          if (tagId === meta.id && tagType === type) {
             tags.push(tag);
           }
         });
@@ -564,7 +572,7 @@ var InsertNodes = function () {
         if (tags && tags.length && meta.render) {
           tags.forEach(function (currentTag) {
             var modifiedPlaceholder = currentTag;
-            var modifier = modifiedPlaceholder.dataset.huronModifier;
+            var modifier = InsertNodes.getDataAttribute(modifiedPlaceholder, 'huron-modifier');
             var parent = modifiedPlaceholder.parentNode;
             var rendered = InsertNodes.applyModifier(modifier, meta);
             var renderedTemplate = InsertNodes.convertToElement(rendered).querySelector('template');
@@ -732,6 +740,32 @@ var InsertNodes = function () {
     key: 'generateModuleHash',
     value: function generateModuleHash(key) {
       return md5(key);
+    }
+
+    /**
+     * Retrieve a data attribute from a tag using one of two methods
+     *
+     * @param {HTMLElement} tag - DOM node on which to check for a data attribute
+     * @param {string} attr - attribute to check for
+     * @returns {string} data - contents of data attribute
+     */
+
+  }, {
+    key: 'getDataAttribute',
+    value: function getDataAttribute(tag, attr) {
+      var data = false;
+
+      // Check if element has dataset and, if so, use it
+      if (tag.dataset) {
+        data = tag.dataset[attr];
+      }
+
+      // Fallback to getAttribute for ugly old Safari
+      if (!data && tag.getAttribute) {
+        data = tag.getAttribute('data-' + attr);
+      }
+
+      return data;
     }
 
     /**

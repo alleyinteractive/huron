@@ -11,6 +11,9 @@ const huronScript = fs.readFileSync(
 
 /**
  * Write code for requiring all generated huron assets
+ * Note: prepended and appended code in this file should roughly follow es5 syntax for now,
+ *  as it will not pass through the Huron internal babel build nor can we assume the user is
+ *  working with babel.
  *
  * @function requireTemplates
  * @param {object} store - memory store
@@ -25,9 +28,9 @@ export const requireTemplates = function requireTemplates(store) {
 
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
-let store = require('./huron-store.js');
-const assets = require.context(${requirePath}, true, ${requireRegex});
-const modules = {};
+var store = require('./huron-store.js');
+var assets = require.context(${requirePath}, true, ${requireRegex});
+var modules = {};
 
 assets.keys().forEach(function(key) {
   modules[key] = assets(key);
@@ -37,12 +40,12 @@ if (module.hot) {
   module.hot.accept(
     assets.id,
     () => {
-      const newAssets = require.context(
+      var newAssets = require.context(
         ${requirePath},
         true,
         ${requireRegex}
       );
-      const newModules = newAssets.keys()
+      var newModules = newAssets.keys()
         .map((key) => {
           return [key, newAssets(key)];
         })
