@@ -16,6 +16,7 @@ export const htmlHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - contains KSS section data
    * @param {object} store - memory store
+   * @return {object} modified huron configuration
    */
   updateTemplate(filepath, section, store) {
     const file = path.parse(filepath);
@@ -57,6 +58,7 @@ export const htmlHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - contains KSS section data
    * @param {object} store - memory store
+   * @return {object} modified huron configuration
    */
   deleteTemplate(filepath, section, store) {
     const newSection = section;
@@ -87,6 +89,7 @@ export const htmlHandler = {
    * @function updatePrototype
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} store - memory store
+   * @return {object} modified huron configuration
    */
   updatePrototype(filepath, store) {
     const file = path.parse(filepath);
@@ -117,6 +120,7 @@ export const htmlHandler = {
    * @function deletePrototype
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} store - memory store
+   * @return {object} modified huron configuration
    */
   deletePrototype(filepath, store) {
     const file = path.parse(filepath);
