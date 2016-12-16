@@ -19,6 +19,7 @@ export const kssHandler = {
    * @function updateKSS
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} store - memory store
+   * @return {object} map object of updated huron configuration
    */
   updateKSS(filepath, store) {
     const kssSource = fs.readFileSync(filepath, 'utf8');
@@ -79,6 +80,7 @@ export const kssHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - KSS section data
    * @param {object} store - memory store
+   * @return {object} map object of updated huron configuration
    */
   deleteKSS(filepath, section, store) {
     const file = path.parse(filepath);
@@ -94,6 +96,7 @@ export const kssHandler = {
    * @param {object} section - contains updated section data
    * @param {string} kssPath - path to KSS section
    * @param {object} store - memory store
+   * @return {object} map object of updated huron configuration
    */
   updateSectionData(kssPath, section, oldSection, store) {
     const sectionFileInfo = path.parse(kssPath);
@@ -303,6 +306,7 @@ export const kssHandler = {
    * @param {string} file - file object from path.parse()
    * @param {object} store - memory store
    * @param {bool} removed - has the file been removed or just the section information changed?
+   * @return {object} updated memory store with new descripton path info
    */
   unsetSection(section, file, store, removed) {
     const sorted = store.getIn(['sections', 'sorted']);
@@ -349,6 +353,7 @@ export const kssHandler = {
    * @function sortSection
    * @param {object} sorted - currently sorted sections
    * @param {string} reference - reference URI of section to sort
+   * @return {object} updated memory store with new descripton path info
    */
   sortSection(sorted, reference, delimiter) {
     const parts = reference.split(delimiter);
@@ -375,6 +380,7 @@ export const kssHandler = {
    * @function unsortSection
    * @param {object} sorted - currently sorted sections
    * @param {string} reference - reference URI of section to sort
+   * @return {object} updated memory store with new descripton path info
    */
   unsortSection(sorted, reference, delimiter) {
     const parts = reference.split(delimiter);
@@ -405,6 +411,7 @@ export const kssHandler = {
    * @param {object} oldSection - currently sorted sections
    * @param {object} newSection - reference URI of section to sort
    * @param {string} field - KSS field to check
+   * @return {bool} output a new module for the KSS field?
    */
   fieldShouldOutput(oldSection, newSection, field) {
     return (oldSection &&
