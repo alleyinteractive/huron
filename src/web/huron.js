@@ -45,6 +45,7 @@ class InsertNodes {
    *
    * @param {string} modifier - target modifier
    * @param {object} meta - module metadata
+   * @return {string} rendered - the modified HTML module
    */
   static applyModifier(modifier, meta) {
     let rendered = false;
@@ -68,6 +69,7 @@ class InsertNodes {
    * Get markup from any type of module (html, json or template)
    *
    * @param {string} content - String corresponding to markup
+   * @return {object} el.firstElementChild - HTML module
    */
   static convertToElement(content) {
     const el = document.createElement('div');
@@ -84,6 +86,7 @@ class InsertNodes {
    * @param {array} filter.values - Values for property
    * @param {bool} filter.include - Whether the values should be included or excluded (true = include, false = exclude)
    * @param {object} moduleMeta - Filter for modules. Fields explained in the filterModules() function docs
+   * @return {bool} match - determine if modules need to be filtered
    */
   static filterModules(filter, moduleMeta) {
     let match = true;
@@ -113,6 +116,7 @@ class InsertNodes {
    * Generate a hash string from a module key
    *
    * @param {string} key - module key (require path) to convert into a hash
+   * @return {string} key - generated MD5 Hash
    */
   static generateModuleHash(key) {
     return md5(key);
@@ -146,6 +150,7 @@ class InsertNodes {
    *
    * @param {object} tag - tag to check
    * @param {object} meta - module metadata
+   * @return {bool}
    */
   static isSectionHelper(tag, meta) {
     if ('prototype' === meta.type) {
@@ -310,6 +315,7 @@ class InsertNodes {
    * return its associated module key
    *
    * @param {object} tag - tag to check
+   * @return {bool} associated module key
    */
   getModuleKeyFromTag(tag) {
     // Safari/webkit has some trouble parsing dataset in certain cases.
@@ -334,6 +340,7 @@ class InsertNodes {
    *
    * @param {array} tags - array of DOM nodes
    * @param {bool} recurse - should we recurse this function with a new array
+   * @return {object} moduleList - Huron placeholder DOM node
    */
   getModuleListFromTags(elements, recurse = true) {
     const moduleList = {};
@@ -701,7 +708,7 @@ class InsertNodes {
    * Verify specified element is using an acceptable huron type
    *
    * @param  {string} type - type of partial (template, data, description, section or prototype )
-   * @return {string} huron type or 'template' if invalid
+   * @return {string} type - huron type or 'template' if invalid
    */
   validateType(type) {
     if ('data' === type) {

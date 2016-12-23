@@ -20,6 +20,7 @@ var utils = exports.utils = {
    *
    * @function normalizeSectionData
    * @param {object} section - section data
+   * @return {object} section data
    */
   normalizeSectionData: function normalizeSectionData(section) {
     var data = section.data || section;
@@ -68,6 +69,7 @@ var utils = exports.utils = {
    * @function getTemplateDataPair
    * @param {object} file - file object from path.parse()
    * @param {object} section - KSS section data
+   * @return {string} relative path to module JSON file
    */
   getTemplateDataPair: function getTemplateDataPair(file, section, store) {
     var huron = store.get('config');
@@ -92,6 +94,7 @@ var utils = exports.utils = {
    *
    * @function normalizeHeader
    * @param {string} header - section header extracted from KSS documentation
+   * @return {string} modified header, lowercase and words separated by dash
    */
   normalizeHeader: function normalizeHeader(header) {
     return header.toLowerCase().replace(/\s?\W\s?/g, '-');
@@ -104,6 +107,7 @@ var utils = exports.utils = {
    * @function wrapMarkup
    * @param {string} content - html or template markup
    * @param {string} templateId - id of template (should be section reference)
+   * @return {string} modified HTML
    */
   wrapMarkup: function wrapMarkup(content, templateId) {
     return '<dom-module>\n<template id="' + templateId + '">\n' + content + '\n</template>\n</dom-module>\n';
@@ -238,7 +242,7 @@ var utils = exports.utils = {
    * @function writeSectionTemplate
    * @param {string} search - key on which to match section
    * @param {field} string - field in which to look to determine section
-   * @param {obj} sections - sections memory store
+   * @param {obj} store - sections memory store
    */
   getSection: function getSection(search, field, store) {
     var sectionValues = store.getIn(['sections', 'sectionsByPath']).valueSeq();
@@ -263,6 +267,7 @@ var utils = exports.utils = {
    * @param {string} search - key on which to match section
    * @param {field} string - field in which to look to determine section
    * @param {obj} sections - sections memory store
+   * @return {string} kssMatch - relative path to KSS directory
    */
   matchKssDir: function matchKssDir(filepath, huron) {
     var kssSource = huron.get('kss');

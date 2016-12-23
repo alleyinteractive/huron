@@ -22,6 +22,7 @@ var templateHandler = exports.templateHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - contains KSS section data
    * @param {object} store - memory store
+   * @return {object} updated memory store
    */
   updateTemplate: function updateTemplate(filepath, section, store) {
     var file = path.parse(filepath);
@@ -62,6 +63,7 @@ var templateHandler = exports.templateHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - contains KSS section data
    * @param {object} store - memory store
+   * @return {object} updated memory store
    */
   deleteTemplate: function deleteTemplate(filepath, section, store) {
     var file = path.parse(filepath);

@@ -15,6 +15,7 @@ export const utils = {
    *
    * @function normalizeSectionData
    * @param {object} section - section data
+   * @return {object} section data
    */
   normalizeSectionData(section) {
     const data = section.data || section;
@@ -69,6 +70,7 @@ export const utils = {
    * @function getTemplateDataPair
    * @param {object} file - file object from path.parse()
    * @param {object} section - KSS section data
+   * @return {string} relative path to module JSON file
    */
   getTemplateDataPair(file, section, store) {
     const huron = store.get('config');
@@ -105,6 +107,7 @@ export const utils = {
    *
    * @function normalizeHeader
    * @param {string} header - section header extracted from KSS documentation
+   * @return {string} modified header, lowercase and words separated by dash
    */
   normalizeHeader(header) {
     return header
@@ -118,6 +121,7 @@ export const utils = {
    * @function wrapMarkup
    * @param {string} content - html or template markup
    * @param {string} templateId - id of template (should be section reference)
+   * @return {string} modified HTML
    */
   wrapMarkup(content, templateId) {
     return `<dom-module>
@@ -271,7 +275,7 @@ ${content}
    * @function writeSectionTemplate
    * @param {string} search - key on which to match section
    * @param {field} string - field in which to look to determine section
-   * @param {obj} sections - sections memory store
+   * @param {obj} store - sections memory store
    */
   getSection(search, field, store) {
     const sectionValues = store
@@ -297,6 +301,7 @@ ${content}
    * @param {string} search - key on which to match section
    * @param {field} string - field in which to look to determine section
    * @param {obj} sections - sections memory store
+   * @return {string} kssMatch - relative path to KSS directory
    */
   matchKssDir(filepath, huron) {
     const kssSource = huron.get('kss');

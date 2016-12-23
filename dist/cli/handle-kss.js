@@ -27,6 +27,7 @@ var kssHandler = exports.kssHandler = {
    * @function updateKSS
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   updateKSS: function updateKSS(filepath, store) {
     var kssSource = fs.readFileSync(filepath, 'utf8');
@@ -74,6 +75,7 @@ var kssHandler = exports.kssHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - KSS section data
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   deleteKSS: function deleteKSS(filepath, section, store) {
     var file = path.parse(filepath);
@@ -90,6 +92,7 @@ var kssHandler = exports.kssHandler = {
    * @param {object} section - contains updated section data
    * @param {string} kssPath - path to KSS section
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   updateSectionData: function updateSectionData(kssPath, section, oldSection, store) {
     var sectionFileInfo = path.parse(kssPath);
@@ -130,7 +133,7 @@ var kssHandler = exports.kssHandler = {
    * @function updateInlineTemplate
    * @param {string} oldSection - previous iteration of KSS data, if updated
    * @param {object} section - KSS section data
-   * @return {object} updated memory store with new template path info
+   * @return {object} updated data store with new template path info
    */
   updateInlineTemplate: function updateInlineTemplate(filepath, oldSection, section, store) {
     var newSection = section;
@@ -154,7 +157,7 @@ var kssHandler = exports.kssHandler = {
    * @function updateDescription
    * @param {string} oldSection - previous iteration of KSS data, if updated
    * @param {object} section - KSS section data
-   * @return {object} updated memory store with new descripton path info
+   * @return {object} updated data store with new descripton path info
    */
   updateDescription: function updateDescription(filepath, oldSection, section, store) {
     var newSection = section;
@@ -216,6 +219,7 @@ var kssHandler = exports.kssHandler = {
    * @param {string} file - file object from path.parse()
    * @param {object} store - memory store
    * @param {bool} removed - has the file been removed or just the section information changed?
+   * @return {object} updated data store with new descripton path info
    */
   unsetSection: function unsetSection(section, file, store, removed) {
     var sorted = store.getIn(['sections', 'sorted']);
@@ -251,6 +255,7 @@ var kssHandler = exports.kssHandler = {
    * @function sortSection
    * @param {object} sorted - currently sorted sections
    * @param {string} reference - reference URI of section to sort
+   * @return {object} updated data store with new descripton path info
    */
   sortSection: function sortSection(sorted, reference, delimiter) {
     var parts = reference.split(delimiter);
@@ -276,6 +281,7 @@ var kssHandler = exports.kssHandler = {
    * @function unsortSection
    * @param {object} sorted - currently sorted sections
    * @param {string} reference - reference URI of section to sort
+   * @return {object} updated data store with new descripton path info
    */
   unsortSection: function unsortSection(sorted, reference, delimiter) {
     var parts = reference.split(delimiter);
@@ -305,6 +311,7 @@ var kssHandler = exports.kssHandler = {
    * @param {object} oldSection - currently sorted sections
    * @param {object} newSection - reference URI of section to sort
    * @param {string} field - KSS field to check
+   * @return {bool} output a new module for the KSS field
    */
   fieldShouldOutput: function fieldShouldOutput(oldSection, newSection, field) {
     return oldSection && (oldSection[field] !== newSection[field] || oldSection.referenceURI !== newSection.referenceURI) || !oldSection;

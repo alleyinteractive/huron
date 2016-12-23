@@ -22,6 +22,7 @@ var htmlHandler = exports.htmlHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - contains KSS section data
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   updateTemplate: function updateTemplate(filepath, section, store) {
     var file = path.parse(filepath);
@@ -50,6 +51,7 @@ var htmlHandler = exports.htmlHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - contains KSS section data
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   deleteTemplate: function deleteTemplate(filepath, section, store) {
     var newSection = section;
@@ -68,6 +70,7 @@ var htmlHandler = exports.htmlHandler = {
    * @function updatePrototype
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   updatePrototype: function updatePrototype(filepath, store) {
     var file = path.parse(filepath);
@@ -90,6 +93,7 @@ var htmlHandler = exports.htmlHandler = {
    * @function deletePrototype
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   deletePrototype: function deletePrototype(filepath, store) {
     var file = path.parse(filepath);
