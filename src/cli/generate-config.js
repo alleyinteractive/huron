@@ -16,7 +16,7 @@ const cwd = process.cwd();
  *
  * @function generateConfig
  * @param {object} config - local webpack config
- * @return {object} newConfig - updated webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 export default function generateConfig(config) {
   let newConfig = config;
@@ -58,7 +58,7 @@ export default function generateConfig(config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
- * @return {object} newConfig - updated webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configureEntries(huron, config) {
   const entry = config.entry[huron.entry];
@@ -88,7 +88,7 @@ function configureEntries(huron, config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
- * @return {object} newConfig - updated webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configurePlugins(huron, config) {
   const newConfig = config;
@@ -110,7 +110,7 @@ function configurePlugins(huron, config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
- * @return {object} newConfig - updated webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configureLoaders(huron, config) {
   // Manage loaders
@@ -142,7 +142,7 @@ function configureLoaders(huron, config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
- * @return {object} newConfig - updated webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configurePrototypes(huron, config) {
   const wrapperTemplate = fs.readFileSync(
