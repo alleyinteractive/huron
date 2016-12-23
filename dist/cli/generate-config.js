@@ -30,6 +30,7 @@ var cwd = process.cwd();
  *
  * @function generateConfig
  * @param {object} config - local webpack config
+ * @return {object} newConfig - updated data store
  */
 function generateConfig(config) {
   var newConfig = config;
@@ -71,6 +72,7 @@ function generateConfig(config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configureEntries(huron, config) {
   var entry = config.entry[huron.entry];
@@ -92,6 +94,7 @@ function configureEntries(huron, config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configurePlugins(huron, config) {
   var newConfig = config;
@@ -113,6 +116,7 @@ function configurePlugins(huron, config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configureLoaders(huron, config) {
   // Manage loaders
@@ -140,6 +144,7 @@ function configureLoaders(huron, config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configurePrototypes(huron, config) {
   var wrapperTemplate = fs.readFileSync(path.join(__dirname, '../../templates/prototype-template.ejs'), 'utf8');
@@ -216,6 +221,7 @@ function configurePrototypes(huron, config) {
  * @param {array|string} assets - array of assets or single asset
  * @param {string} subdir - subdirectory in huron root from which to load additional asset
  * @param {object} huron - huron configuration object
+ * @return {array} assetResults - paths to js and css assets
  */
 function moveAdditionalAssets(assets) {
   var subdir = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';

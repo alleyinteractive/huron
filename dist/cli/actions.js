@@ -30,6 +30,7 @@ var chalk = require('chalk'); // Colorize terminal output
  * @param {object} data - object containing directory and file paths
  * @param {object} store - memory store
  * @param {object} huron - huron configuration options
+ * @return {object} newStore - map object of entire data store
  */
 function initFiles(data, store) {
   var depth = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
@@ -72,6 +73,7 @@ function initFiles(data, store) {
  *
  * @param {string} filepath - path to updated file. usually passed in from Gaze
  * @param {object} store - memory store
+ * @return {object} store - map object of map object of entire data store
  */
 function updateFile(filepath, store) {
   var huron = store.get('config');
@@ -130,6 +132,7 @@ function updateFile(filepath, store) {
  *
  * @param {string} filepath - path to updated file. usually passed in from Gaze
  * @param {object} store - memory store
+ * @return {object} newStore - map object of map object of entire data store
  */
 function deleteFile(filepath, store) {
   var huron = store.get('config');
