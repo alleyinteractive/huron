@@ -30,7 +30,7 @@ class InsertNodes {
     this._types = null;
 
     /** Cache for module metadata */
-    this.meta = {};
+    this.moduleCache = new Map();
 
     /** Reference to entire memory store */
     this.store = store;
@@ -167,13 +167,14 @@ class InsertNodes {
    * @param {string} context - The hash context for the module
    * @param {object} filter - Filter for modules. Fields explained in the filterModules() function docs
    */
-  cycleModules(context = false, filter = false) {
+  cycleModules(context = false, cache = false, filter = false) {
     let moduleList = {};
     let elementList = context;
+    let shouldLoad = true;
 
     // We're replacing top-level elements
     if (! elementList) {
-      this.regenCache();
+      // this.regenCache();
 
       // Find all top-level huron placeholders
       elementList = [...document.querySelectorAll(
@@ -181,22 +182,53 @@ class InsertNodes {
       )];
     }
 
-    moduleList = this.getModuleListFromTags(elementList);
+    elementList.forEach((element) => {
+      const moduleKey = this.getModuleKeyFromElement(element);
+      let cache = {};
 
-    // Loop through modules array
-    Object.keys(moduleList).forEach((key) => {
-      const module = this._modules[key];
-      const replaceElements = moduleList[key];
+      // refresh cache, if required
+      if (moduleKey && !cache) {
+        cache = this.validateCache(moduleKey);
 
-      this.loadModule(key, module, replaceElements, true, filter);
+        // Add element to module nodes manifest, update cache
+        cache.nodes.add(element);
+
+        // Add meta to cache
+        cache.meta = this.getMetaFromPath(key);
+
+        // Reset cache
+        this.moduleCache.set(moduleKey, cache);
+      } else {
+        cache = this.moduleCache.get(moduleKey);
+      }
+
+      // Check filter
+      if (
+        ! filter ||
+        (filter && InsertNodes.filterModules(filter, cache.meta))
+      ) {
+        this.loadModule(moduleKey);
+      }
     });
+
+    // Update moduleCache with modules in element list
+    // if (!cache) {
+    //   this.getModuleListFromTags(elementList);
+    // }
+
+    // // Loop through modules array
+    // for (const [key, value] of this.moduleCache) {
+    //   const module = this._modules[key];
+
+    //   this.loadModule(key, module, elementList, true, filter);
+    // };
   }
 
   /**
    * Helper for reloading sections only
    */
   cycleSections() {
-    this.cycleModules(false, {
+    this.cycleModules(false, false, {
       property: 'type',
       values: ['section'],
       include: true,
@@ -248,9 +280,10 @@ class InsertNodes {
    * @param  {string} key - Module require path
    * @return {object} containing module id, module type, key and the module contents
    */
-  getMetaFromPath(key, module) {
+  getMetaFromPath(key) {
     const sections = this._sections.sectionsByPath;
-    const templateTypes = this._types.filter((type) => 'prototype' !== type);
+    const templateTypes = this._types.filter((type) => 'prototype' !== type);c
+    const module = this._modules[key];
     let id = false;
     let type = false;
 
@@ -311,28 +344,29 @@ class InsertNodes {
   }
 
   /**
-   * Check if a tag is a huron placeholder and, if so,
+   * Check if a element is a huron placeholder and, if so,
    * return its associated module key
    *
-   * @param {object} tag - tag to check
+   * @param {object} element - element to check
    * @return {bool} associated module key
    */
-  getModuleKeyFromTag(tag) {
+  getModuleKeyFromElement(element) {
     // Safari/webkit has some trouble parsing dataset in certain cases.
     // This is a fallback method of accessing the same data.
-    const type = InsertNodes.getDataAttribute(tag, 'huron-type');
-    const id = InsertNodes.getDataAttribute(tag, 'huron-id');
+    const type = InsertNodes.getDataAttribute(element, 'huron-type');
+    const id = InsertNodes.getDataAttribute(element, 'huron-id');
     const section = this._sections.sectionsByURI[id];
+    let moduleKey = false;
 
     if (id && type) {
       if (section) {
-        return section[`${type}Path`];
+        moduleKey = section[`${type}Path`];
       } else if ('prototype' === type) {
-        return this._prototypes[id];
+        moduleKey = this._prototypes[id];
       }
     }
 
-    return false;
+    return moduleKey;
   }
 
   /**
@@ -342,45 +376,49 @@ class InsertNodes {
    * @param {bool} recurse - should we recurse this function with a new array
    * @return {object} moduleList - Huron placeholder DOM node
    */
-  getModuleListFromTags(elements, recurse = true) {
-    const moduleList = {};
-    let newList = {};
+  // getModuleListFromTags(elements, recurse = true) {
+  //   let newList = {};
 
-    if (elements && elements.length) {
-      elements.forEach((element) => {
-        const moduleKey = this.getModuleKeyFromTag(element);
+  //   if (elements && elements.length) {
+  //     elements.forEach((element) => {
+  //       const moduleKey = this.getModuleKeyFromTag(element);
 
-        if (moduleKey) {
-          if (! moduleList[moduleKey]) {
-            moduleList[moduleKey] = [];
-          }
-          moduleList[moduleKey].push(element);
-        } else if (recurse) {
-          newList = this.getModuleListFromTags(
-            [...element.querySelectorAll('[data-huron-id][data-huron-type]')],
-            false
-          );
+  //       if (moduleKey) {
+  //         const cache =
 
-          Object.keys(newList).forEach((key) => {
-            moduleList[key] = moduleList[key] ?
-              moduleList[key].concat(newList[key]) :
-              newList[key];
-          });
-        }
-      });
+  //         // Add element to module nodes manifest, update cache
+  //         cache.nodes.add(element);
+  //         this.moduleCache.set(moduleKey, cache);
+  //       } else if (recurse) {
+  //         newList = this.getModuleListFromTags(
+  //           [...element.querySelectorAll('[data-huron-id][data-huron-type]')],
+  //           false
+  //         );
+  //       }
+  //     });
+  //   }
+  // }
+
+  validateCache(moduleKey) {
+    const cache = this.moduleCache.get(moduleKey) || {};
+
+    // re-initialize nodes set and update cache
+    if (!cache.nodes) {
+      cache.nodes = new Set();
+      this.moduleCache.set(moduleKey, cache);
     }
 
-    return moduleList;
+    return cache;
   }
 
   /**
    * Transform every module into a predictable object
    *
    * @param {object} type - Module metadata
-   * @param {mixed} module - Module contents
    * @return {object} containing render function, render data and module id
    */
-  getModuleRender(type, key, module) {
+  getModuleRender(type, key) {
+    const module = this._modules[key];
     let render = false;
     let data = false;
 
@@ -430,26 +468,8 @@ class InsertNodes {
    * @param {bool} cached - Whether or not to use cached values for module replacement
    * @param {object} filter - Filter for modules. Fields explained in the filterModules() function docs
    */
-  loadModule(key, module, replaceElements, cached = false, filter = false) {
-    let shouldLoad = true;
-    let moduleMeta = false;
-
-    // Check if we should load from internal module metadata cache
-    if (cached) {
-      moduleMeta = this.meta[key];
-    } else {
-      moduleMeta = this.meta[key] = this.getMetaFromPath(key, module);
-    }
-
-    if (moduleMeta) {
-      if (filter) {
-        shouldLoad = InsertNodes.filterModules(filter, moduleMeta);
-      }
-
-      if (shouldLoad) {
-        this.replaceTemplate(moduleMeta, replaceElements);
-      }
-    }
+  loadModule(key, filter = false) {
+    this.replaceTemplate(moduleMeta, replaceElements);
   }
 
   /*
@@ -621,8 +641,9 @@ class InsertNodes {
    *
    * @param {object} replaceElements - Array of elements to check for Huron placeholders
    * @param {object} meta - Module metadata
+   * @param {bool} cache - load this and child modules from cache
    */
-  replaceTemplate(meta, replaceElements) {
+  replaceTemplate(meta, replaceElements, cache = false) {
     const type = this.validateType(meta.type);
     const tags = [];
     let replace = replaceElements;
@@ -684,7 +705,7 @@ class InsertNodes {
           modifiedPlaceholder.style.display = 'none';
 
           // Recursively load modules, excluding the current one
-          this.cycleModules(renderedContents, {
+          this.cycleModules(renderedContents, cache, {
             property: 'key',
             values: [meta.key, this._sectionTemplatePath],
             include: false,
