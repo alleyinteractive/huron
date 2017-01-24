@@ -30,7 +30,7 @@ var Immutable = require('immutable');
 var chalk = require('chalk'); // Colorize terminal output
 
 // Set vars
-var localConfig = require(path.join(cwd, _parseArgs2.default.config)); // eslint-disable-line import/no-dynamic-require
+var localConfig = require(path.join(cwd, _parseArgs2.default.webpackConfig)); // eslint-disable-line import/no-dynamic-require
 var config = (0, _generateConfig2.default)(localConfig);
 
 /**

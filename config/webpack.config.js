@@ -27,42 +27,25 @@ module.exports = {
     ],
   },
   module: {
-    loaders: [
+    rules: [
       {
         test: /\.html?$/,
-        loader: 'dom?tag=dom-module!html',
+        use: [
+          {
+            loader: 'dom-loader',
+            options: {
+              tag: 'dom-module',
+            }
+          },
+          'html-loader'
+        ]
         // include: ['path/to/templates']
       },
       {
         test: /\.json?$/,
-        loaders: ['json'],
+        use: 'json-loader',
         // include: [path.join(cwd, huron.root)]
       },
     ],
-  },
-  huron: {
-    css: [],
-    entry: 'huron',
-    js: [],
-    kss: 'css/',
-    kssExtension: '.css',
-    kssOptions: {
-      multiline: true,
-      markdown: true,
-      custom: ['data'],
-    },
-    output: 'partials',
-    port: 8080,
-    prototypes: ['index'],
-    root: 'dist/',
-    sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
-    templates: {
-      loader: {
-        test: /\.hbs$/,
-        loader: 'handlebars-loader',
-      },
-      extension: '.hbs',
-    },
-    window: {},
   },
 };

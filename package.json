@@ -28,7 +28,8 @@
     "dom-loader": "^1.0.4",
     "fs-extra": "^0.30.0",
     "gaze": "^0.5.2",
-    "handlebars": "^4.0.5",
+    "handlebars": "^4.0.6",
+    "handlebars-loader": "^1.4.0",
     "html-loader": "^0.4.3",
     "html-webpack-plugin": "^2.21.0",
     "immutable": "^3.8.1",
@@ -36,7 +37,7 @@
     "json-loader": "^0.5.4",
     "kss": "^3.0.0-beta.14",
     "style-loader": "^0.13.1",
-    "webpack": "^1.13.1",
+    "webpack": "^2.2.0",
     "webpack-dev-server": "^1.14.1"
   },
   "devDependencies": {
