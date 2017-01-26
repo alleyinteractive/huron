@@ -128,15 +128,17 @@ function configureLoaders(huron, config) {
   var templatesLoader = huron.templates.rule;
   var newConfig = config;
 
-  // templatesLoader.include = [path.join(cwd, huron.root)];
+  templatesLoader.include = [path.join(cwd, huron.root)];
   newConfig.module = newConfig.module || {};
   newConfig.module.rules = newConfig.module.rules || [];
   newConfig.module.rules.push({
     test: /\.html$/,
-    use: 'html-loader'
+    use: 'html-loader',
+    include: [path.join(cwd, huron.root)]
   }, {
     test: /\.json$/,
-    use: 'json-loader'
+    use: 'json-loader',
+    include: [path.join(cwd, huron.root)]
   }, templatesLoader);
 
   return newConfig;

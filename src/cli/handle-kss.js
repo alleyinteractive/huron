@@ -36,26 +36,35 @@ export const kssHandler = {
           styleguide.data.sections[0]
         );
 
-        // Update or add section data
-        newStore = kssHandler.updateSectionData(
-          filepath,
-          section,
-          oldSection,
-          newStore
-        );
+        if (section.reference && section.referenceURI) {
+          // Update or add section data
+          newStore = kssHandler.updateSectionData(
+            filepath,
+            section,
+            oldSection,
+            newStore
+          );
 
-        // Remove old section data if reference URI has changed
-        if (oldSection &&
-          oldSection.referenceURI &&
-          oldSection.referenceURI !== section.referenceURI
-        ) {
-          newStore = this.unsetSection(oldSection, file, newStore, false);
+          // Remove old section data if reference URI has changed
+          if (oldSection &&
+            oldSection.referenceURI &&
+            oldSection.referenceURI !== section.referenceURI
+          ) {
+            newStore = this.unsetSection(oldSection, file, newStore, false);
+          }
+
+          writeStore(newStore);
+          console.log(
+            chalk.green(
+              `KSS source in ${filepath} changed or added`
+            )
+          );
+          return newStore;
         }
 
-        writeStore(newStore);
         console.log(
-          chalk.green(
-            `KSS source in ${filepath} changed or added`
+          chalk.magenta(
+            `KSS section in ${filepath} is missing a section reference`
           )
         );
         return newStore;
