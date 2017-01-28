@@ -107,10 +107,10 @@ function configurePlugins(huron, config) {
   if (!_parseArgs2.default.production) {
     if (newConfig.plugins && newConfig.plugins.length) {
       newConfig.plugins = newConfig.plugins.filter(function (plugin) {
-        return 'HotModuleReplacementPlugin' !== plugin.constructor.name;
+        return 'HotModuleReplacementPlugin' !== plugin.constructor.name && 'NamedModulesPlugin' !== plugin.constructor.name;
       });
     }
-    newConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
+    newConfig.plugins = newConfig.plugins.concat([new webpack.HotModuleReplacementPlugin(), new webpack.NamedModulesPlugin()]);
   }
 
   return newConfig;

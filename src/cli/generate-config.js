@@ -101,10 +101,15 @@ function configurePlugins(huron, config) {
   if (! program.production) {
     if (newConfig.plugins && newConfig.plugins.length) {
       newConfig.plugins = newConfig.plugins.filter(
-        (plugin) => 'HotModuleReplacementPlugin' !== plugin.constructor.name
+        (plugin) => 'HotModuleReplacementPlugin' !== plugin.constructor.name &&
+          'NamedModulesPlugin' !== plugin.constructor.name
       );
     }
-    newConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
+    newConfig.plugins = newConfig.plugins
+      .concat([
+        new webpack.HotModuleReplacementPlugin(),
+        new webpack.NamedModulesPlugin(),
+      ]);
   }
 
   return newConfig;

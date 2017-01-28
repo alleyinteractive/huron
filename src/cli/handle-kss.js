@@ -94,8 +94,12 @@ export const kssHandler = {
   deleteKSS(filepath, section, store) {
     const file = path.parse(filepath);
 
-    // Remove section data from memory store
-    return kssHandler.unsetSection(section, file, store, true);
+    if (section.reference && section.referenceURI) {
+      // Remove section data from memory store
+      return kssHandler.unsetSection(section, file, store, true);
+    }
+
+    return store;
   },
 
   /**

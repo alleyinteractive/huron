@@ -85,8 +85,12 @@ var kssHandler = exports.kssHandler = {
   deleteKSS: function deleteKSS(filepath, section, store) {
     var file = path.parse(filepath);
 
-    // Remove section data from memory store
-    return kssHandler.unsetSection(section, file, store, true);
+    if (section.reference && section.referenceURI) {
+      // Remove section data from memory store
+      return kssHandler.unsetSection(section, file, store, true);
+    }
+
+    return store;
   },
 
 
