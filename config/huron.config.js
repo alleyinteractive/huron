@@ -18,8 +18,8 @@ module.exports = {
   sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
   templates: {
     rule: {
-      test: /\.hbs$/,
-      use: 'handlebars-loader',
+      test: /\.(hbs|handlebars)$/,
+      use: 'handlebars-template-loader',
     },
     extension: '.hbs',
   },

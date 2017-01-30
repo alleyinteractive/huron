@@ -124,7 +124,7 @@ function configurePlugins(huron, config) {
  */
 function configureLoaders(huron, config) {
   // Manage loaders
-  const templatesLoader = huron.templates.rule;
+  const templatesLoader = huron.templates.rule || {};
   const newConfig = config;
 
   templatesLoader.include = [path.join(cwd, huron.root)];
