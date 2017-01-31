@@ -24,7 +24,8 @@ var WebpackDevServer = require('webpack-dev-server');
  */
 function startWebpack(config) {
   var huron = config.huron;
-  var compiler = webpack(config);
+  var webpackConfig = config.webpack;
+  var compiler = webpack(webpackConfig);
 
   if (_parseArgs2.default.progress) {
     compiler.apply(new webpack.ProgressPlugin(function (percentage, msg) {

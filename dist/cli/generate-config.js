@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /** @module cli/generate-config */
 
 exports.default = generateConfig;
 
@@ -14,16 +14,18 @@ var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } } /** @module cli/generate-config */
-
-var defaultConfig = require('../../config/webpack.config');
-var webpack = require('webpack');
+var cwd = process.cwd();
 var path = require('path');
 var url = require('url');
 var fs = require('fs-extra');
+var defaultConfig = require('../../config/webpack.config');
+var defaultHuron = require('../../config/huron.config');
+var webpack = require('webpack');
 var HTMLWebpackPlugin = require('html-webpack-plugin');
 
-var cwd = process.cwd();
+/* eslint-disable import/no-dynamic-require */
+var localHuron = require(path.join(cwd, _parseArgs2.default.huronConfig));
+/* eslint-enable */
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -34,9 +36,7 @@ var cwd = process.cwd();
  */
 function generateConfig(config) {
   var newConfig = config;
-
-  newConfig.huron = Object.assign({}, defaultConfig.huron, config.huron);
-  var huron = newConfig.huron;
+  var huron = Object.assign({}, defaultHuron, localHuron);
 
   // configure entries
   newConfig = configureEntries(huron, newConfig);
@@ -64,7 +64,10 @@ function generateConfig(config) {
     newConfig.output.publicPath = '';
   }
 
-  return newConfig;
+  return {
+    huron: huron,
+    webpack: newConfig
+  };
 }
 
 /**
@@ -81,9 +84,9 @@ function configureEntries(huron, config) {
   newConfig.entry = {};
 
   if (!_parseArgs2.default.production) {
-    newConfig.entry[huron.entry] = ['webpack-dev-server/client?http://localhost:' + huron.port, 'webpack/hot/dev-server', path.join(cwd, huron.root, 'huron-assets/huron')].concat(_toConsumableArray(entry));
+    newConfig.entry[huron.entry] = ['webpack-dev-server/client?http://localhost:' + huron.port, 'webpack/hot/dev-server', path.join(cwd, huron.root, 'huron-assets/huron')].concat(entry);
   } else {
-    newConfig.entry[huron.entry] = [path.join(cwd, huron.root, 'huron-assets/huron')].concat(_toConsumableArray(entry));
+    newConfig.entry[huron.entry] = [path.join(cwd, huron.root, 'huron-assets/huron')].concat(entry);
   }
 
   return newConfig;
@@ -99,13 +102,15 @@ function configureEntries(huron, config) {
 function configurePlugins(huron, config) {
   var newConfig = config;
 
+  newConfig.plugins = config.plugins || [];
+
   if (!_parseArgs2.default.production) {
     if (newConfig.plugins && newConfig.plugins.length) {
       newConfig.plugins = newConfig.plugins.filter(function (plugin) {
-        return 'HotModuleReplacementPlugin' !== plugin.constructor.name;
+        return 'HotModuleReplacementPlugin' !== plugin.constructor.name && 'NamedModulesPlugin' !== plugin.constructor.name;
       });
     }
-    newConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
+    newConfig.plugins = newConfig.plugins.concat([new webpack.HotModuleReplacementPlugin(), new webpack.NamedModulesPlugin()]);
   }
 
   return newConfig;
@@ -120,19 +125,19 @@ function configurePlugins(huron, config) {
  */
 function configureLoaders(huron, config) {
   // Manage loaders
-  var templatesLoader = huron.templates.loader;
+  var templatesLoader = huron.templates.rule || {};
   var newConfig = config;
 
   templatesLoader.include = [path.join(cwd, huron.root)];
   newConfig.module = newConfig.module || {};
-  newConfig.module.loaders = newConfig.module.loaders || [];
-  newConfig.module.loaders.push({
+  newConfig.module.rules = newConfig.module.rules || [];
+  newConfig.module.rules.push({
     test: /\.html$/,
-    loaders: ['html'],
+    use: 'html-loader',
     include: [path.join(cwd, huron.root)]
   }, {
     test: /\.json$/,
-    loaders: ['json'],
+    use: 'json-loader',
     include: [path.join(cwd, huron.root)]
   }, templatesLoader);
 

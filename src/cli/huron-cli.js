@@ -15,7 +15,7 @@ const Immutable = require('immutable');
 const chalk = require('chalk'); // Colorize terminal output
 
 // Set vars
-const localConfig = require(path.join(cwd, program.config)); // eslint-disable-line import/no-dynamic-require
+const localConfig = require(path.join(cwd, program.webpackConfig)); // eslint-disable-line import/no-dynamic-require
 const config = generateConfig(localConfig);
 
 /**

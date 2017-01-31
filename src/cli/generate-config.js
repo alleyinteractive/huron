@@ -2,14 +2,18 @@
 
 import program from './parse-args';
 
-const defaultConfig = require('../../config/webpack.config');
-const webpack = require('webpack');
+const cwd = process.cwd();
 const path = require('path');
 const url = require('url');
 const fs = require('fs-extra');
+const defaultConfig = require('../../config/webpack.config');
+const defaultHuron = require('../../config/huron.config');
+const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
 
-const cwd = process.cwd();
+/* eslint-disable import/no-dynamic-require */
+const localHuron = require(path.join(cwd, program.huronConfig));
+/* eslint-enable */
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -20,9 +24,7 @@ const cwd = process.cwd();
  */
 export default function generateConfig(config) {
   let newConfig = config;
-
-  newConfig.huron = Object.assign({}, defaultConfig.huron, config.huron);
-  const huron = newConfig.huron;
+  const huron = Object.assign({}, defaultHuron, localHuron);
 
   // configure entries
   newConfig = configureEntries(huron, newConfig);
@@ -50,7 +52,10 @@ export default function generateConfig(config) {
     newConfig.output.publicPath = '';
   }
 
-  return newConfig;
+  return {
+    huron,
+    webpack: newConfig,
+  };
 }
 
 /**
@@ -71,13 +76,11 @@ function configureEntries(huron, config) {
       `webpack-dev-server/client?http://localhost:${huron.port}`,
       'webpack/hot/dev-server',
       path.join(cwd, huron.root, 'huron-assets/huron'),
-      ...entry,
-    ];
+    ].concat(entry);
   } else {
     newConfig.entry[huron.entry] = [
       path.join(cwd, huron.root, 'huron-assets/huron'),
-      ...entry,
-    ];
+    ].concat(entry);
   }
 
   return newConfig;
@@ -93,13 +96,20 @@ function configureEntries(huron, config) {
 function configurePlugins(huron, config) {
   const newConfig = config;
 
+  newConfig.plugins = config.plugins || [];
+
   if (! program.production) {
     if (newConfig.plugins && newConfig.plugins.length) {
       newConfig.plugins = newConfig.plugins.filter(
-        (plugin) => 'HotModuleReplacementPlugin' !== plugin.constructor.name
+        (plugin) => 'HotModuleReplacementPlugin' !== plugin.constructor.name &&
+          'NamedModulesPlugin' !== plugin.constructor.name
       );
     }
-    newConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
+    newConfig.plugins = newConfig.plugins
+      .concat([
+        new webpack.HotModuleReplacementPlugin(),
+        new webpack.NamedModulesPlugin(),
+      ]);
   }
 
   return newConfig;
@@ -114,21 +124,21 @@ function configurePlugins(huron, config) {
  */
 function configureLoaders(huron, config) {
   // Manage loaders
-  const templatesLoader = huron.templates.loader;
+  const templatesLoader = huron.templates.rule || {};
   const newConfig = config;
 
   templatesLoader.include = [path.join(cwd, huron.root)];
   newConfig.module = newConfig.module || {};
-  newConfig.module.loaders = newConfig.module.loaders || [];
-  newConfig.module.loaders.push(
+  newConfig.module.rules = newConfig.module.rules || [];
+  newConfig.module.rules.push(
     {
       test: /\.html$/,
-      loaders: ['html'],
+      use: 'html-loader',
       include: [path.join(cwd, huron.root)],
     },
     {
       test: /\.json$/,
-      loaders: ['json'],
+      use: 'json-loader',
       include: [path.join(cwd, huron.root)],
     },
     templatesLoader

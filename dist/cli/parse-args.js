@@ -20,11 +20,7 @@ exports.default = program;
  */
 
 function parseArgs() {
-  program.version('0.1.0').option('--config [config]', '[config] for all huron options', path.resolve(__dirname, '../../config/webpack.config.js')).option('--production', 'compile assets once for production').parse(process.argv);
-
-  if (!program.config) {
-    console.log('No config provided');
-  }
+  program.version('1.0.1').option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options', path.resolve(__dirname, '../../config/huron.config.js')).option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options', path.resolve(__dirname, '../../config/webpack.config.js')).option('-p, --production', 'compile assets once for production').parse(process.argv);
 }
 
 parseArgs();
