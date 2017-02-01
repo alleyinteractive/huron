@@ -27,9 +27,13 @@ export default function startWebpack(config) {
   }
 
   if (program.production) {
-    compiler.run((err) => {
+    compiler.run((err, stats) => {
       if (err) {
         console.log(err);
+      }
+      if (stats.hasErrors() || stats.hasWarnings()) {
+        console.log(stats.toJson().errors);
+        console.log(stats.toJson().warnings);
       }
     });
   } else {
