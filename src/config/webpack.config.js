@@ -18,7 +18,7 @@ module.exports = function getConfig(env) {
     if ('dev' === env.process) {
       entry.cli.push('webpack/hot/poll');
     }
-    entry.cli = ['./src/cli/huron-cli.js'];
+    entry.cli = ['./src/cli/huron-cli'];
   } else {
     entry.web = [];
     if ('dev' === env.process) {
@@ -27,7 +27,7 @@ module.exports = function getConfig(env) {
         'webpack/hot/dev-server'
       );
     }
-    entry.web = ['./src/web/huron.js'];
+    entry.web = ['./src/web/huron'];
   }
 
   // Manage plugins
@@ -73,12 +73,13 @@ module.exports = function getConfig(env) {
       chunkFilename: '[name].chunk.min.js',
       publicPath: '../',
     },
-    externals: [nodeExternals()],
+    externals: ['localConfig', 'localHuron'].concat(nodeExternals()),
     node: {
       __filename: false,
       __dirname: false,
     },
     module: {
+      noParse: /get-local-configs/,
       rules: [
         {
           test: /\.js$/,

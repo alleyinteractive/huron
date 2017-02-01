@@ -562,25 +562,12 @@ var writeStore = exports.writeStore = function writeStore(store) {
 
 /***/ }),
 /* 8 */
-/***/ (function(module, exports) {
-
-function webpackEmptyContext(req) {
-	throw new Error("Cannot find module '" + req + "'.");
-}
-webpackEmptyContext.keys = function() { return []; };
-webpackEmptyContext.resolve = webpackEmptyContext;
-module.exports = webpackEmptyContext;
-webpackEmptyContext.id = 8;
-
-
-/***/ }),
-/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _actions = __webpack_require__(12);
+var _actions = __webpack_require__(11);
 
 var _requireTemplates = __webpack_require__(7);
 
@@ -588,7 +575,7 @@ var _parseArgs = __webpack_require__(4);
 
 var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
-var _generateConfig = __webpack_require__(13);
+var _generateConfig = __webpack_require__(12);
 
 var _generateConfig2 = _interopRequireDefault(_generateConfig);
 
@@ -599,20 +586,14 @@ var _server2 = _interopRequireDefault(_server);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Modules
-var cwd = process.cwd(); // Current working directory
-// Local imports
-var path = __webpack_require__(0);
+var path = __webpack_require__(0); // Local imports
+
 var Gaze = __webpack_require__(18).Gaze;
 var Immutable = __webpack_require__(20);
 var chalk = __webpack_require__(2); // Colorize terminal output
 
-console.log(path.join(cwd, _parseArgs2.default.huronConfig));
-
-// Set vars
-var localConfig = !(function webpackMissingModule() { var e = new Error("Cannot find module \".\""); e.code = 'MODULE_NOT_FOUND';; throw e; }()); // eslint-disable-line import/no-dynamic-require
-var localHuron = !(function webpackMissingModule() { var e = new Error("Cannot find module \".\""); e.code = 'MODULE_NOT_FOUND';; throw e; }()); // eslint-disable-line import/no-dynamic-require
-
-var config = (0, _generateConfig2.default)(localConfig, localHuron);
+// Merge Huron default webpack config with user config
+var config = (0, _generateConfig2.default)();
 
 /**
  * Huron configuration object
@@ -758,7 +739,7 @@ if (false) {
 }
 
 /***/ }),
-/* 10 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -793,7 +774,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 11 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -835,7 +816,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 12 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1022,7 +1003,7 @@ function deleteFile(filepath, store) {
 }
 
 /***/ }),
-/* 13 */
+/* 12 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1040,16 +1021,25 @@ var _parseArgs = __webpack_require__(4);
 
 var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
+var _getLocalConfigs = __webpack_require__(13);
+
+var _getLocalConfigs2 = _interopRequireDefault(_getLocalConfigs);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var cwd = process.cwd();
 var path = __webpack_require__(0);
 var url = __webpack_require__(22);
 var fs = __webpack_require__(1);
-var defaultConfig = __webpack_require__(11);
-var defaultHuron = __webpack_require__(10);
 var webpack = __webpack_require__(5);
 var HTMLWebpackPlugin = __webpack_require__(19);
+var defaultConfig = __webpack_require__(10);
+var defaultHuron = __webpack_require__(9);
+
+// Require configs passed in by user from CLI
+var cwd = process.cwd();
+var configs = (0, _getLocalConfigs2.default)(cwd, path, _parseArgs2.default);
+var localConfig = configs.webpack;
+var localHuron = configs.huron;
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -1058,9 +1048,9 @@ var HTMLWebpackPlugin = __webpack_require__(19);
  * @param {object} config - local webpack config
  * @return {object} newConfig - updated data store
  */
-function generateConfig(config, huron) {
-  var newConfig = config;
-  var newHuron = Object.assign({}, defaultHuron, huron);
+function generateConfig() {
+  var newConfig = localConfig;
+  var newHuron = Object.assign({}, defaultHuron, localHuron);
 
   // configure entries
   newConfig = configureEntries(newHuron, newConfig);
@@ -1089,7 +1079,7 @@ function generateConfig(config, huron) {
   }
 
   return {
-    newHuron: newHuron,
+    huron: newHuron,
     webpack: newConfig
   };
 }
@@ -1285,6 +1275,26 @@ function moveAdditionalAssets(assets) {
 
   return assetResults;
 }
+
+/***/ }),
+/* 13 */
+/***/ (function(module, exports) {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = getLocalConfigs;
+// This is real ugly, need to figure out a better way of doing this
+/* eslint-disable import/no-dynamic-require, global-require */
+function getLocalConfigs(cwd, path, program) {
+  return {
+    webpack: require(path.join(cwd, program.webpackConfig)),
+    huron: require(path.join(cwd, program.huronConfig))
+  };
+}
+/* eslint-enable */
 
 /***/ }),
 /* 14 */
@@ -1852,7 +1862,7 @@ module.exports = require("webpack-dev-server");
 /* 24 */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(9);
+module.exports = __webpack_require__(8);
 
 
 /***/ })

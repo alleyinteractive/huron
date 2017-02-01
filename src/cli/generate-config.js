@@ -1,15 +1,21 @@
 /** @module cli/generate-config */
 
 import program from './parse-args';
+import getLocalConfigs from './get-local-configs';
 
-const cwd = process.cwd();
 const path = require('path');
 const url = require('url');
 const fs = require('fs-extra');
-const defaultConfig = require('../../config/webpack.config');
-const defaultHuron = require('../../config/huron.config');
 const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
+const defaultConfig = require('../../config/webpack.config');
+const defaultHuron = require('../../config/huron.config');
+
+// Require configs passed in by user from CLI
+const cwd = process.cwd();
+const configs = getLocalConfigs(cwd, path, program);
+const localConfig = configs.webpack;
+const localHuron = configs.huron;
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -18,9 +24,9 @@ const HTMLWebpackPlugin = require('html-webpack-plugin');
  * @param {object} config - local webpack config
  * @return {object} newConfig - updated data store
  */
-export default function generateConfig(config, huron) {
-  let newConfig = config;
-  const newHuron = Object.assign({}, defaultHuron, huron);
+export default function generateConfig() {
+  let newConfig = localConfig;
+  const newHuron = Object.assign({}, defaultHuron, localHuron);
 
   // configure entries
   newConfig = configureEntries(newHuron, newConfig);
@@ -49,7 +55,7 @@ export default function generateConfig(config, huron) {
   }
 
   return {
-    newHuron,
+    huron: newHuron,
     webpack: newConfig,
   };
 }
