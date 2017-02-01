@@ -12,7 +12,7 @@
     "help": "./node_modules/.bin/babel-node src/cli/huron.js -h",
     "dev-cli": "webpack --config \"src/config/webpack.config.js\" -d --watch --progress --env.target=node --env.process=dev",
     "dev-web": "webpack-dev-server --config \"src/config/webpack.config.js\" -d --env.target=web --env.process=dev",
-    "build": "webpack --config \"src/config/webpack.config.js\" -p --env.target=node --env.process=build && webpack --config \"src/config/webpack.config.js\" -p --env.target=web --env.process=build",
+    "build": "webpack --config \"src/config/webpack.config.js\" --env.target=node --env.process=build && webpack --config \"src/config/webpack.config.js\" -p --env.target=web --env.process=build",
     "prebuild": "./node_modules/eslint/bin/eslint.js -c config/.eslintrc src/**"
   },
   "bin": {

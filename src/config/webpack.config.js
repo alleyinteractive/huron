@@ -6,11 +6,8 @@ const nodeExternals = require('webpack-node-externals');
 const CleanPlugin = require('clean-webpack-plugin');
 /* eslint-enable */
 
-// Paths
-const buildRoot = path.resolve(__dirname, '../../');
-const sourceRoot = path.join(buildRoot, 'src');
-
 module.exports = function getConfig(env) {
+  const context = path.join(__dirname, '../../');
   const entry = {};
   let plugins = [];
   let presetEnv = {};
@@ -21,7 +18,7 @@ module.exports = function getConfig(env) {
     if ('dev' === env.process) {
       entry.cli.push('webpack/hot/poll');
     }
-    entry.cli = [path.join(sourceRoot, 'cli/huron-cli.js')];
+    entry.cli = ['./src/cli/huron-cli.js'];
   } else {
     entry.web = [];
     if ('dev' === env.process) {
@@ -30,14 +27,14 @@ module.exports = function getConfig(env) {
         'webpack/hot/dev-server'
       );
     }
-    entry.web = [path.join(sourceRoot, 'web/huron.js')];
+    entry.web = ['./src/web/huron.js'];
   }
 
   // Manage plugins
   if ('node' === env.target) {
     plugins.push(
       new CleanPlugin(['dist/cli'], {
-        root: buildRoot,
+        root: context,
       })
     );
   }
@@ -65,13 +62,13 @@ module.exports = function getConfig(env) {
   }
 
   return {
-    target: env.target,
+    context,
     entry,
     plugins,
+    target: env.target,
+    devtool: 'cheap-module-source-map',
     output: {
-      path: 'node' === env.target ?
-        path.join(buildRoot, 'dist/cli') :
-        path.join(buildRoot, 'dist/web'),
+      path: 'node' === env.target ? 'dist/cli' : 'dist/web',
       filename: 'huron-[name].js',
       chunkFilename: '[name].chunk.min.js',
       publicPath: '../',

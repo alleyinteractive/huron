@@ -12,6 +12,8 @@ const Gaze = require('gaze').Gaze;
 const Immutable = require('immutable');
 const chalk = require('chalk'); // Colorize terminal output
 
+console.log(path.join(cwd, program.huronConfig));
+
 // Set vars
 const localConfig = require(path.join(cwd, program.webpackConfig)); // eslint-disable-line import/no-dynamic-require
 const localHuron = require(path.join(cwd, program.huronConfig)); // eslint-disable-line import/no-dynamic-require

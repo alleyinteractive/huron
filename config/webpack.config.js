@@ -1,6 +1,6 @@
-var webpack = require('webpack'),
-    path = require('path'),
-    cwd = process.cwd();
+const webpack = require('webpack');
+const path = require('path');
+const cwd = process.cwd();
 
 module.exports = {
   entry: {},
