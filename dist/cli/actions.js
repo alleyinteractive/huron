@@ -32,7 +32,7 @@ var chalk = require('chalk'); // Colorize terminal output
  * @param {object} huron - huron configuration options
  */
 function initFiles(data, store) {
-  var depth = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+  var depth = arguments.length <= 2 || arguments[2] === undefined ? 0 : arguments[2];
 
   var type = Object.prototype.toString.call(data);
   var newStore = store;

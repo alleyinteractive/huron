@@ -1,6 +1,6 @@
 'use strict';
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -73,8 +73,8 @@ var InsertNodes = function () {
     value: function cycleModules() {
       var _this = this;
 
-      var context = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-      var filter = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+      var context = arguments.length <= 0 || arguments[0] === undefined ? false : arguments[0];
+      var filter = arguments.length <= 1 || arguments[1] === undefined ? false : arguments[1];
 
       var moduleList = {};
       var elementList = context;
@@ -257,7 +257,7 @@ var InsertNodes = function () {
     value: function getModuleListFromTags(elements) {
       var _this3 = this;
 
-      var recurse = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+      var recurse = arguments.length <= 1 || arguments[1] === undefined ? true : arguments[1];
 
       var moduleList = {};
       var newList = {};
@@ -341,8 +341,8 @@ var InsertNodes = function () {
   }, {
     key: 'loadModule',
     value: function loadModule(key, module, replaceElements) {
-      var cached = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-      var filter = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
+      var cached = arguments.length <= 3 || arguments[3] === undefined ? false : arguments[3];
+      var filter = arguments.length <= 4 || arguments[4] === undefined ? false : arguments[4];
 
       var shouldLoad = true;
       var moduleMeta = false;
@@ -376,7 +376,7 @@ var InsertNodes = function () {
     value: function outputMenu(parent, el) {
       var _this4 = this;
 
-      var sections = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this._sections.sorted;
+      var sections = arguments.length <= 2 || arguments[2] === undefined ? this._sections.sorted : arguments[2];
 
       var templateId = null;
       var newEl = el;
@@ -437,7 +437,7 @@ var InsertNodes = function () {
     value: function outputSections(parent, el) {
       var _this5 = this;
 
-      var sections = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this._sections.sorted;
+      var sections = arguments.length <= 2 || arguments[2] === undefined ? this._sections.sorted : arguments[2];
 
       var templateId = null;
       var placeholder = null;

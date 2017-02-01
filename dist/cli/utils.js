@@ -41,7 +41,7 @@ var utils = exports.utils = {
    * @param {string} sectionPath - output destination for section data file
    */
   writeSectionData: function writeSectionData(store, section) {
-    var sectionPath = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+    var sectionPath = arguments.length <= 2 || arguments[2] === undefined ? false : arguments[2];
 
     var outputPath = sectionPath;
     var sectionFileInfo = void 0;

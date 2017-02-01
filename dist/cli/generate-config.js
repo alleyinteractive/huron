@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; /** @module cli/generate-config */
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; }; /** @module cli/generate-config */
 
 exports.default = generateConfig;
 
@@ -216,7 +216,7 @@ function configurePrototypes(huron, config) {
  * @param {object} huron - huron configuration object
  */
 function moveAdditionalAssets(assets) {
-  var subdir = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
+  var subdir = arguments.length <= 1 || arguments[1] === undefined ? '' : arguments[1];
   var huron = arguments[2];
 
   var currentAssets = [].concat(assets);

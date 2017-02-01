@@ -33,9 +33,13 @@ function startWebpack(config) {
   }
 
   if (_parseArgs2.default.production) {
-    compiler.run(function (err) {
+    compiler.run(function (err, stats) {
       if (err) {
         console.log(err);
+      }
+      if (stats.hasErrors() || stats.hasWarnings()) {
+        console.log(stats.toJson().errors);
+        console.log(stats.toJson().warnings);
       }
     });
   } else {
