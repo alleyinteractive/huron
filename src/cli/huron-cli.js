@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 // Local imports
 import { initFiles, updateFile, deleteFile } from './actions';
 import { requireTemplates, writeStore } from './require-templates';
@@ -16,7 +14,9 @@ const chalk = require('chalk'); // Colorize terminal output
 
 // Set vars
 const localConfig = require(path.join(cwd, program.webpackConfig)); // eslint-disable-line import/no-dynamic-require
-const config = generateConfig(localConfig);
+const localHuron = require(path.join(cwd, program.huronConfig)); // eslint-disable-line import/no-dynamic-require
+
+const config = generateConfig(localConfig, localHuron);
 
 /**
  * Huron configuration object
@@ -168,3 +168,7 @@ if (! program.production) {
 
 // Start webpack or build for production
 startWebpack(config);
+
+if (module.hot) {
+  module.hot.accept();
+}

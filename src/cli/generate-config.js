@@ -11,10 +11,6 @@ const defaultHuron = require('../../config/huron.config');
 const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
 
-/* eslint-disable import/no-dynamic-require */
-const localHuron = require(path.join(cwd, program.huronConfig));
-/* eslint-enable */
-
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
  *
@@ -22,38 +18,38 @@ const localHuron = require(path.join(cwd, program.huronConfig));
  * @param {object} config - local webpack config
  * @return {object} newConfig - updated data store
  */
-export default function generateConfig(config) {
+export default function generateConfig(config, huron) {
   let newConfig = config;
-  const huron = Object.assign({}, defaultHuron, localHuron);
+  const newHuron = Object.assign({}, defaultHuron, huron);
 
   // configure entries
-  newConfig = configureEntries(huron, newConfig);
+  newConfig = configureEntries(newHuron, newConfig);
 
   // configure plugins
-  newConfig = configurePlugins(huron, newConfig);
+  newConfig = configurePlugins(newHuron, newConfig);
 
   // configure loaders
-  newConfig = configureLoaders(huron, newConfig);
+  newConfig = configureLoaders(newHuron, newConfig);
 
   // Add HTMLWebpackPlugin for each configured prototype
-  newConfig = configurePrototypes(huron, newConfig);
+  newConfig = configurePrototypes(newHuron, newConfig);
 
   // Set ouput options
   newConfig.output = Object.assign({}, newConfig.output, defaultConfig.output);
-  newConfig.output.path = path.resolve(cwd, huron.root);
+  newConfig.output.path = path.resolve(cwd, newHuron.root);
 
   // Remove existing devServer settings
   delete newConfig.devServer;
 
   // Set publicPath
   if (! program.production) {
-    newConfig.output.publicPath = `http://localhost:${huron.port}/${huron.root}`;
+    newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
   } else {
     newConfig.output.publicPath = '';
   }
 
   return {
-    huron,
+    newHuron,
     webpack: newConfig,
   };
 }
