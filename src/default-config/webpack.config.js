@@ -1,6 +1,5 @@
-var webpack = require('webpack'),
-    path = require('path'),
-    cwd = process.cwd();
+const webpack = require('webpack');
+const path = require('path');
 
 module.exports = {
   entry: {},
@@ -11,6 +10,7 @@ module.exports = {
   },
   plugins: [
     new webpack.HotModuleReplacementPlugin(),
+    new webpack.NamedModulesPlugin(),
   ],
   resolve: {
     modulesDirectories: [
@@ -35,16 +35,11 @@ module.exports = {
             loader: 'dom-loader',
             options: {
               tag: 'dom-module',
-            }
+            },
           },
-          'html-loader'
-        ]
+          'html-loader',
+        ],
         // include: ['path/to/templates']
-      },
-      {
-        test: /\.json?$/,
-        use: 'json-loader',
-        // include: [path.join(cwd, huron.root)]
       },
     ],
   },
