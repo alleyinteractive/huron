@@ -5,7 +5,7 @@ const fs = require('fs-extra');
 
 const cwd = process.cwd();
 const huronScript = fs.readFileSync(
-  path.resolve(__dirname, '../web/huron.js'),
+  path.join(__dirname, '../web/huron.js'),
   'utf8'
 );
 

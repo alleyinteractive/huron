@@ -1,19 +1,22 @@
 /** @module cli/generate-config */
 
 import program from './parse-args';
+import requireExternal from './require-external';
 
 const cwd = process.cwd();
 const path = require('path');
 const url = require('url');
 const fs = require('fs-extra');
-const defaultConfig = require('../../config/webpack.config');
-const defaultHuron = require('../../config/huron.config');
 const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
+const defaultConfig = require('../default-config/webpack.config');
+const defaultHuron = require('../default-config/huron.config');
 
-/* eslint-disable import/no-dynamic-require */
-const localHuron = require(path.join(cwd, program.huronConfig));
-/* eslint-enable */
+// Require configs passed in by user from CLI
+const localConfigPath = path.join(cwd, program.webpackConfig);
+const localHuronPath = path.join(cwd, program.huronConfig);
+const localConfig = requireExternal(localConfigPath);
+const localHuron = requireExternal(localHuronPath);
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -22,38 +25,38 @@ const localHuron = require(path.join(cwd, program.huronConfig));
  * @param {object} config - local webpack config
  * @return {object} newConfig - updated data store
  */
-export default function generateConfig(config) {
-  let newConfig = config;
-  const huron = Object.assign({}, defaultHuron, localHuron);
+export default function generateConfig() {
+  let newConfig = localConfig;
+  const newHuron = Object.assign({}, defaultHuron, localHuron);
 
   // configure entries
-  newConfig = configureEntries(huron, newConfig);
+  newConfig = configureEntries(newHuron, newConfig);
 
   // configure plugins
-  newConfig = configurePlugins(huron, newConfig);
+  newConfig = configurePlugins(newHuron, newConfig);
 
   // configure loaders
-  newConfig = configureLoaders(huron, newConfig);
+  newConfig = configureLoaders(newHuron, newConfig);
 
   // Add HTMLWebpackPlugin for each configured prototype
-  newConfig = configurePrototypes(huron, newConfig);
+  newConfig = configurePrototypes(newHuron, newConfig);
 
   // Set ouput options
   newConfig.output = Object.assign({}, newConfig.output, defaultConfig.output);
-  newConfig.output.path = path.resolve(cwd, huron.root);
+  newConfig.output.path = path.resolve(cwd, newHuron.root);
 
   // Remove existing devServer settings
   delete newConfig.devServer;
 
   // Set publicPath
   if (! program.production) {
-    newConfig.output.publicPath = `http://localhost:${huron.port}/${huron.root}`;
+    newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
   } else {
     newConfig.output.publicPath = '';
   }
 
   return {
-    huron,
+    huron: newHuron,
     webpack: newConfig,
   };
 }
@@ -134,11 +137,6 @@ function configureLoaders(huron, config) {
     {
       test: /\.html$/,
       use: 'html-loader',
-      include: [path.join(cwd, huron.root)],
-    },
-    {
-      test: /\.json$/,
-      use: 'json-loader',
       include: [path.join(cwd, huron.root)],
     },
     templatesLoader
