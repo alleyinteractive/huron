@@ -139,11 +139,6 @@ function configureLoaders(huron, config) {
       use: 'html-loader',
       include: [path.join(cwd, huron.root)],
     },
-    {
-      test: /\.json$/,
-      use: 'json-loader',
-      include: [path.join(cwd, huron.root)],
-    },
     templatesLoader
   );
 

@@ -56,7 +56,6 @@
     "jasmine-node": "^1.14.5",
     "jsdoc": "^3.4.3",
     "webpack": "^2.2.1",
-    "webpack-dev-server": "^2.2.1",
     "webpack-node-externals": "^1.5.4"
   }
 }

@@ -1106,10 +1106,6 @@ function configureLoaders(huron, config) {
     test: /\.html$/,
     use: 'html-loader',
     include: [path.join(cwd, huron.root)]
-  }, {
-    test: /\.json$/,
-    use: 'json-loader',
-    include: [path.join(cwd, huron.root)]
   }, templatesLoader);
 
   return newConfig;
@@ -1819,9 +1815,6 @@ module.exports = {
           tag: 'dom-module'
         }
       }, 'html-loader']
-    }, {
-      test: /\.json?$/,
-      use: 'json-loader'
     }]
   }
 };

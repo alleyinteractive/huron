@@ -41,11 +41,6 @@ module.exports = {
         ],
         // include: ['path/to/templates']
       },
-      {
-        test: /\.json?$/,
-        use: 'json-loader',
-        // include: [path.join(cwd, huron.root)]
-      },
     ],
   },
 };
