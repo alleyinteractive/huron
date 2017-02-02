@@ -10,9 +10,9 @@
   "scripts": {
     "doc": "./node_modules/.bin/jsdoc src -r -c ./config/jsdoc.json",
     "help": "./node_modules/.bin/babel-node src/cli/huron.js -h",
-    "dev-cli": "webpack --config \"src/config/webpack.config.js\" -d --watch --progress --env.target=node --env.process=dev",
-    "dev-web": "webpack-dev-server --config \"src/config/webpack.config.js\" -d --env.target=web --env.process=dev",
-    "build": "webpack --config \"src/config/webpack.config.js\" --env.target=node --env.process=build && webpack --config \"src/config/webpack.config.js\" -p --env.target=web --env.process=build",
+    "dev-cli": "webpack --config \"config/webpack-node.config.js\" -d --watch --progress --env.process=dev",
+    "dev-web": "babel src/web -d dist/web -w --source-maps",
+    "build": "webpack --config \"config/webpack-node.config.js\" --env.process=build && babel src/web -d dist/web --source-maps",
     "prebuild": "./node_modules/eslint/bin/eslint.js -c config/.eslintrc src/**"
   },
   "bin": {

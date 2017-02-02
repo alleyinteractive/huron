@@ -1,6 +1,5 @@
 const webpack = require('webpack');
 const path = require('path');
-const cwd = process.cwd();
 
 module.exports = {
   entry: {},
@@ -36,10 +35,10 @@ module.exports = {
             loader: 'dom-loader',
             options: {
               tag: 'dom-module',
-            }
+            },
           },
-          'html-loader'
-        ]
+          'html-loader',
+        ],
         // include: ['path/to/templates']
       },
       {
