@@ -96,14 +96,14 @@ Object.defineProperty(exports, "__esModule", {
 });
 /** @module cli/utilities */
 
-var cwd = process.cwd(); // Current working directory
-var path = __webpack_require__(0);
-var fs = __webpack_require__(1);
-var chalk = __webpack_require__(2); // Colorize terminal output
+const cwd = process.cwd(); // Current working directory
+const path = __webpack_require__(0);
+const fs = __webpack_require__(1);
+const chalk = __webpack_require__(2); // Colorize terminal output
 
 // Exports
 /* eslint-disable */
-var utils = exports.utils = {
+const utils = exports.utils = {
   /* eslint-enable */
 
   /**
@@ -114,7 +114,7 @@ var utils = exports.utils = {
    * @return {object} section data
    */
   normalizeSectionData(section) {
-    var data = section.data || section;
+    const data = section.data || section;
 
     if (!data.referenceURI || '' === data.referenceURI) {
       data.referenceURI = section.referenceURI();
@@ -131,11 +131,9 @@ var utils = exports.utils = {
    * @param {object} section - section data
    * @param {string} sectionPath - output destination for section data file
    */
-  writeSectionData(store, section) {
-    var sectionPath = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-
-    var outputPath = sectionPath;
-    var sectionFileInfo = void 0;
+  writeSectionData(store, section, sectionPath = false) {
+    let outputPath = sectionPath;
+    let sectionFileInfo;
 
     if (!outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
       sectionFileInfo = path.parse(section.kssPath);
@@ -161,15 +159,15 @@ var utils = exports.utils = {
    * @return {string} relative path to module JSON file
    */
   getTemplateDataPair(file, section, store) {
-    var huron = store.get('config');
-    var kssDir = utils.matchKssDir(file.dir, huron);
+    const huron = store.get('config');
+    const kssDir = utils.matchKssDir(file.dir, huron);
 
     if (kssDir) {
-      var componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
-      var partnerType = '.json' === file.ext ? 'template' : 'data';
-      var partnerExt = '.json' === file.ext ? huron.get('templates').extension : '.json';
+      const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
+      const partnerType = '.json' === file.ext ? 'template' : 'data';
+      const partnerExt = '.json' === file.ext ? huron.get('templates').extension : '.json';
 
-      var pairPath = path.join(componentPath, utils.generateFilename(section.referenceURI, partnerType, partnerExt, store));
+      const pairPath = path.join(componentPath, utils.generateFilename(section.referenceURI, partnerType, partnerExt, store));
 
       return `./${pairPath}`;
     }
@@ -216,8 +214,8 @@ ${content}
    */
   generateFilename(id, type, ext, store) {
     // Type of file and its corresponding extension(s)
-    var types = store.get('types');
-    var outputExt = '.scss' !== ext ? ext : '.html';
+    const types = store.get('types');
+    const outputExt = '.scss' !== ext ? ext : '.html';
 
     /* eslint-disable */
     if (-1 === types.indexOf(type)) {
@@ -240,16 +238,16 @@ ${content}
    * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
    */
   writeFile(id, type, filepath, content, store) {
-    var huron = store.get('config');
-    var file = path.parse(filepath);
-    var filename = utils.generateFilename(id, type, file.ext, store);
-    var kssDir = utils.matchKssDir(filepath, huron);
+    const huron = store.get('config');
+    const file = path.parse(filepath);
+    const filename = utils.generateFilename(id, type, file.ext, store);
+    const kssDir = utils.matchKssDir(filepath, huron);
 
     if (kssDir) {
-      var componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
-      var outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
-      var outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
-      var newContent = content;
+      const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
+      const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
+      const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+      let newContent = content;
 
       if ('data' !== type && 'section' !== type) {
         newContent = utils.wrapMarkup(content, id);
@@ -277,15 +275,15 @@ ${content}
    * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
    */
   removeFile(id, type, filepath, store) {
-    var huron = store.get('config');
-    var file = path.parse(filepath);
-    var filename = utils.generateFilename(id, type, file.ext, store);
-    var kssDir = utils.matchKssDir(filepath, huron);
+    const huron = store.get('config');
+    const file = path.parse(filepath);
+    const filename = utils.generateFilename(id, type, file.ext, store);
+    const kssDir = utils.matchKssDir(filepath, huron);
 
     if (kssDir) {
-      var componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
-      var outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
-      var outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+      const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
+      const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
+      const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
 
       try {
         fs.removeSync(outputPath);
@@ -310,10 +308,10 @@ ${content}
    * @return {object} updated store
    */
   writeSectionTemplate(filepath, store) {
-    var huron = store.get('config');
-    var sectionTemplate = utils.wrapMarkup(fs.readFileSync(filepath, 'utf8'));
-    var componentPath = './huron-sections/sections.hbs';
-    var output = path.join(cwd, huron.get('root'), huron.get('output'), componentPath);
+    const huron = store.get('config');
+    const sectionTemplate = utils.wrapMarkup(fs.readFileSync(filepath, 'utf8'));
+    const componentPath = './huron-sections/sections.hbs';
+    const output = path.join(cwd, huron.get('root'), huron.get('output'), componentPath);
 
     // Move huron script and section template into huron root
     fs.outputFileSync(output, sectionTemplate);
@@ -331,13 +329,11 @@ ${content}
    * @param {obj} store - sections memory store
    */
   getSection(search, field, store) {
-    var sectionValues = store.getIn(['sections', 'sectionsByPath']).valueSeq();
-    var selectedSection = false;
+    const sectionValues = store.getIn(['sections', 'sectionsByPath']).valueSeq();
+    let selectedSection = false;
 
     if (field) {
-      selectedSection = sectionValues.filter(function (value) {
-        return value[field] === search;
-      }).get(0);
+      selectedSection = sectionValues.filter(value => value[field] === search).get(0);
     } else {
       selectedSection = store.getIn(['sections', 'sectionsByPath', search]);
     }
@@ -355,11 +351,9 @@ ${content}
    * @return {string} kssMatch - relative path to KSS directory
    */
   matchKssDir(filepath, huron) {
-    var kssSource = huron.get('kss');
+    const kssSource = huron.get('kss');
     /* eslint-disable space-unary-ops */
-    var kssMatch = kssSource.filter(function (dir) {
-      return -1 !== filepath.indexOf(dir);
-    });
+    const kssMatch = kssSource.filter(dir => -1 !== filepath.indexOf(dir));
     /* eslint-enable space-unary-ops */
 
     if (kssMatch.length) {
@@ -386,8 +380,8 @@ Object.defineProperty(exports, "__esModule", {
 
 // Requires
 /** @global */
-var program = __webpack_require__(17); // Easy program flags
-var path = __webpack_require__(0);
+const program = __webpack_require__(17); // Easy program flags
+const path = __webpack_require__(0);
 
 exports.default = program;
 
@@ -424,13 +418,13 @@ exports.templateHandler = undefined;
 
 var _utils = __webpack_require__(3);
 
-var path = __webpack_require__(0); /** @module cli/template-handler */
+const path = __webpack_require__(0); /** @module cli/template-handler */
 
-var fs = __webpack_require__(1);
-var chalk = __webpack_require__(2);
+const fs = __webpack_require__(1);
+const chalk = __webpack_require__(2);
 
 /* eslint-disable */
-var templateHandler = exports.templateHandler = {
+const templateHandler = exports.templateHandler = {
   /* eslint-enable */
   /**
    * Handle update of a template or data (json) file
@@ -442,12 +436,12 @@ var templateHandler = exports.templateHandler = {
    * @return {object} updated memory store
    */
   updateTemplate(filepath, section, store) {
-    var file = path.parse(filepath);
-    var pairPath = _utils.utils.getTemplateDataPair(file, section, store);
-    var type = '.json' === file.ext ? 'data' : 'template';
-    var newSection = section;
-    var newStore = store;
-    var content = false;
+    const file = path.parse(filepath);
+    const pairPath = _utils.utils.getTemplateDataPair(file, section, store);
+    const type = '.json' === file.ext ? 'data' : 'template';
+    const newSection = section;
+    const newStore = store;
+    let content = false;
 
     try {
       content = fs.readFileSync(filepath, 'utf8');
@@ -456,7 +450,7 @@ var templateHandler = exports.templateHandler = {
     }
 
     if (content) {
-      var requirePath = _utils.utils.writeFile(newSection.referenceURI, type, filepath, content, newStore);
+      const requirePath = _utils.utils.writeFile(newSection.referenceURI, type, filepath, content, newStore);
       newSection[`${type}Path`] = requirePath;
 
       if ('template' === type) {
@@ -482,13 +476,13 @@ var templateHandler = exports.templateHandler = {
    * @return {object} updated memory store
    */
   deleteTemplate(filepath, section, store) {
-    var file = path.parse(filepath);
-    var type = '.json' === file.ext ? 'data' : 'template';
-    var newSection = section;
-    var newStore = store;
+    const file = path.parse(filepath);
+    const type = '.json' === file.ext ? 'data' : 'template';
+    const newSection = section;
+    const newStore = store;
 
     // Remove partner
-    var requirePath = _utils.utils.removeFile(newSection.referenceURI, type, filepath, newStore);
+    const requirePath = _utils.utils.removeFile(newSection.referenceURI, type, filepath, newStore);
     delete newSection[`${type}Path`];
 
     return newStore.deleteIn(['templates', requirePath]).setIn(['sections', 'sectionsByPath', newSection.kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);
@@ -507,11 +501,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 /** @module cli/require-templates */
 
-var path = __webpack_require__(0);
-var fs = __webpack_require__(1);
+const path = __webpack_require__(0);
+const fs = __webpack_require__(1);
 
-var cwd = process.cwd();
-var huronScript = fs.readFileSync(path.join(__dirname, '../web/huron.js'), 'utf8');
+const cwd = process.cwd();
+const huronScript = fs.readFileSync(path.join(__dirname, '../web/huron.js'), 'utf8');
 
 /**
  * Write code for requiring all generated huron assets
@@ -522,14 +516,14 @@ var huronScript = fs.readFileSync(path.join(__dirname, '../web/huron.js'), 'utf8
  * @function requireTemplates
  * @param {object} store - memory store
  */
-var requireTemplates = exports.requireTemplates = function requireTemplates(store) {
-  var huron = store.get('config');
-  var outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
-  var requireRegex = new RegExp(`\\.html|\\.json|\\${huron.get('templates').extension}$`);
-  var requirePath = `'../${huron.get('output')}'`;
+const requireTemplates = exports.requireTemplates = function requireTemplates(store) {
+  const huron = store.get('config');
+  const outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
+  const requireRegex = new RegExp(`\\.html|\\.json|\\${huron.get('templates').extension}$`);
+  const requirePath = `'../${huron.get('output')}'`;
 
   // Initialize templates, js, css and HMR acceptance logic
-  var prepend = `
+  const prepend = `
 var store = require('./huron-store.js');
 var assets = require.context(${requirePath}, true, ${requireRegex});
 var modules = {};
@@ -572,7 +566,7 @@ if (module.hot) {
   );
 }\n`;
 
-  var append = `
+  const append = `
 function hotReplace(key, module, modules) {
   insert.modules = modules;
   if (key === store.sectionTemplatePath) {
@@ -601,9 +595,9 @@ ${prepend}\n\n${huronScript}\n\n${append}\n
  * @param {object} store - memory store
  * @param {string} changed - filepath of changed KSS section, if applicable
  */
-var writeStore = exports.writeStore = function writeStore(store) {
-  var huron = store.get('config');
-  var outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
+const writeStore = exports.writeStore = function writeStore(store) {
+  const huron = store.get('config');
+  const outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
 
   // Write updated data store
   // @todo lint this file.
@@ -638,21 +632,21 @@ var _server2 = _interopRequireDefault(_server);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Modules
-var path = __webpack_require__(0); // Local imports
+const path = __webpack_require__(0); // Local imports
 
-var Gaze = __webpack_require__(18).Gaze;
-var Immutable = __webpack_require__(20);
-var chalk = __webpack_require__(2); // Colorize terminal output
+const Gaze = __webpack_require__(18).Gaze;
+const Immutable = __webpack_require__(20);
+const chalk = __webpack_require__(2); // Colorize terminal output
 
 // Merge Huron default webpack config with user config
-var config = (0, _generateConfig2.default)();
+const config = (0, _generateConfig2.default)();
 
 /**
  * Huron configuration object
  *
  * @global
  */
-var huron = config.huron;
+const huron = config.huron;
 
 // Make sure the kss option is represented as an array
 huron.kss = Array.isArray(huron.kss) ? huron.kss : [huron.kss];
@@ -662,9 +656,7 @@ huron.kss = Array.isArray(huron.kss) ? huron.kss : [huron.kss];
  *
  * @global
  */
-var extensions = [huron.kssExtension, huron.templates.extension, 'html', 'json'].map(function (extension) {
-  return extension.replace('.', '');
-});
+const extensions = [huron.kssExtension, huron.templates.extension, 'html', 'json'].map(extension => extension.replace('.', ''));
 
 // Create initial data structure
 /* eslint-disable */
@@ -673,7 +665,7 @@ var extensions = [huron.kssExtension, huron.templates.extension, 'html', 'json']
  *
  * @global
  */
-var dataStructure = Immutable.Map({
+const dataStructure = Immutable.Map({
   types: ['template', 'data', 'description', 'section', 'prototype', 'sections-template'],
   config: Immutable.Map(config.huron),
   sections: Immutable.Map({
@@ -689,12 +681,12 @@ var dataStructure = Immutable.Map({
 /* eslint-enable */
 
 // Generate watch list for Gaze, start gaze
-var gazeWatch = [];
+const gazeWatch = [];
 
 // Push KSS source directories and section template to Gaze
 gazeWatch.push(path.resolve(__dirname, huron.sectionTemplate));
-huron.kss.forEach(function (sourceDir) {
-  var gazeDir = sourceDir;
+huron.kss.forEach(sourceDir => {
+  let gazeDir = sourceDir;
 
   /* eslint-disable space-unary-ops */
   if ('/' === sourceDir.slice(-1)) {
@@ -710,75 +702,73 @@ huron.kss.forEach(function (sourceDir) {
  *
  * @global
  */
-var gaze = new Gaze(gazeWatch);
+const gaze = new Gaze(gazeWatch);
 
 /**
  * Initialize data store with files from gaze and original data structure
  *
  * @global
  */
-var store = (0, _actions.initFiles)(gaze.watched(), dataStructure);
+const store = (0, _actions.initFiles)(gaze.watched(), dataStructure);
 
 (0, _requireTemplates.requireTemplates)(store);
 (0, _requireTemplates.writeStore)(store);
 
 if (!_parseArgs2.default.production) {
-  (function () {
-    /** @module cli/gaze */
-    var newStore = store;
+  /** @module cli/gaze */
+  let newStore = store;
 
-    /**
-     * Anonymous handler for Gaze 'changed' event indicating a file has changed
-     *
-     * @callback changed
-     * @listens gaze:changed
-     * @param {string} filepath - absolute path of changed file
-     */
-    gaze.on('changed', function (filepath) {
-      newStore = (0, _actions.updateFile)(filepath, newStore);
-      console.log(chalk.green(`${filepath} updated!`));
-    });
+  /**
+   * Anonymous handler for Gaze 'changed' event indicating a file has changed
+   *
+   * @callback changed
+   * @listens gaze:changed
+   * @param {string} filepath - absolute path of changed file
+   */
+  gaze.on('changed', filepath => {
+    newStore = (0, _actions.updateFile)(filepath, newStore);
+    console.log(chalk.green(`${filepath} updated!`));
+  });
 
-    /**
-     * Anonymous handler for Gaze 'added' event indicating a file has been added to the watched directories
-     *
-     * @callback added
-     * @listens gaze:added
-     * @param {string} filepath - absolute path of changed file
-     */
-    gaze.on('added', function (filepath) {
-      newStore = (0, _actions.updateFile)(filepath, newStore);
-      (0, _requireTemplates.writeStore)(newStore);
-      console.log(chalk.blue(`${filepath} added!`));
-    });
+  /**
+   * Anonymous handler for Gaze 'added' event indicating a file has been added to the watched directories
+   *
+   * @callback added
+   * @listens gaze:added
+   * @param {string} filepath - absolute path of changed file
+   */
+  gaze.on('added', filepath => {
+    newStore = (0, _actions.updateFile)(filepath, newStore);
+    (0, _requireTemplates.writeStore)(newStore);
+    console.log(chalk.blue(`${filepath} added!`));
+  });
 
-    /**
-     * Anonymous handler for Gaze 'renamed' event indicating a file has been renamed
-     *
-     * @callback renamed
-     * @listens gaze:renamed
-     * @param {string} filepath - absolute path of changed file
-     */
-    gaze.on('renamed', function (newPath, oldPath) {
-      newStore = (0, _actions.deleteFile)(oldPath, newStore);
-      newStore = (0, _actions.updateFile)(newPath, newStore);
-      (0, _requireTemplates.writeStore)(newStore);
-      console.log(chalk.blue(`${newPath} added!`));
-    });
+  /**
+   * Anonymous handler for Gaze 'renamed' event indicating a file has been renamed
+   *
+   * @callback renamed
+   * @listens gaze:renamed
+   * @param {string} filepath - absolute path of changed file
+   */
+  gaze.on('renamed', (newPath, oldPath) => {
+    newStore = (0, _actions.deleteFile)(oldPath, newStore);
+    newStore = (0, _actions.updateFile)(newPath, newStore);
+    (0, _requireTemplates.writeStore)(newStore);
+    console.log(chalk.blue(`${newPath} added!`));
+  });
 
-    /**
-     * Anonymous handler for Gaze 'deleted' event indicating a file has been removed
-     *
-     * @callback deleted
-     * @listens gaze:deleted
-     * @param {string} filepath - absolute path of changed file
-     */
-    gaze.on('deleted', function (filepath) {
-      newStore = (0, _actions.deleteFile)(filepath, newStore);
-      (0, _requireTemplates.writeStore)(newStore);
-      console.log(chalk.red(`${filepath} deleted`));
-    });
-  })();
+  /**
+   * Anonymous handler for Gaze 'deleted' event indicating a file has been removed
+   *
+   * @callback deleted
+   * @listens gaze:deleted
+   * @param {string} filepath - absolute path of changed file
+   */
+  gaze.on('deleted', filepath => {
+    newStore = (0, _actions.deleteFile)(filepath, newStore);
+    (0, _requireTemplates.writeStore)(newStore);
+    console.log(chalk.red(`${filepath} deleted`));
+  });
 } else {
   gaze.close();
 }
@@ -816,8 +806,8 @@ var _utils = __webpack_require__(3);
 /** @module cli/actions */
 
 // Imports
-var path = __webpack_require__(0);
-var chalk = __webpack_require__(2); // Colorize terminal output
+const path = __webpack_require__(0);
+const chalk = __webpack_require__(2); // Colorize terminal output
 
 // EXPORTED FUNCTIONS
 
@@ -829,26 +819,20 @@ var chalk = __webpack_require__(2); // Colorize terminal output
  * @param {object} huron - huron configuration options
  * @return {object} newStore - map object of entire data store
  */
-function initFiles(data, store) {
-  var depth = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-
-  var type = Object.prototype.toString.call(data);
-  var newStore = store;
-  var info = void 0;
-  var files = void 0;
+function initFiles(data, store, depth = 0) {
+  const type = Object.prototype.toString.call(data);
+  let newStore = store;
+  let info;
+  let files;
 
   switch (type) {
     case '[object Object]':
       files = Object.keys(data);
-      newStore = files.reduce(function (prevStore, file) {
-        return initFiles(data[file], prevStore, depth);
-      }, newStore);
+      newStore = files.reduce((prevStore, file) => initFiles(data[file], prevStore, depth), newStore);
       break;
 
     case '[object Array]':
-      newStore = data.reduce(function (prevStore, file) {
-        return initFiles(file, prevStore, depth);
-      }, newStore);
+      newStore = data.reduce((prevStore, file) => initFiles(file, prevStore, depth), newStore);
       break;
 
     case '[object String]':
@@ -873,10 +857,10 @@ function initFiles(data, store) {
  * @return {object} store - map object of map object of entire data store
  */
 function updateFile(filepath, store) {
-  var huron = store.get('config');
-  var file = path.parse(filepath);
-  var field = void 0;
-  var section = void 0;
+  const huron = store.get('config');
+  const file = path.parse(filepath);
+  let field;
+  let section;
 
   if (-1 !== filepath.indexOf(huron.get('sectionTemplate'))) {
     return _utils.utils.writeSectionTemplate(filepath, store);
@@ -932,11 +916,11 @@ function updateFile(filepath, store) {
  * @return {object} newStore - map object of map object of entire data store
  */
 function deleteFile(filepath, store) {
-  var huron = store.get('config');
-  var file = path.parse(filepath);
-  var field = '';
-  var section = null;
-  var newStore = store;
+  const huron = store.get('config');
+  const file = path.parse(filepath);
+  let field = '';
+  let section = null;
+  let newStore = store;
 
   switch (file.ext) {
     // Plain HTML template, external
@@ -1001,20 +985,20 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 /** @module cli/generate-config */
 
-var cwd = process.cwd();
-var path = __webpack_require__(0);
-var url = __webpack_require__(22);
-var fs = __webpack_require__(1);
-var webpack = __webpack_require__(5);
-var HTMLWebpackPlugin = __webpack_require__(19);
-var defaultConfig = __webpack_require__(16);
-var defaultHuron = __webpack_require__(15);
+const cwd = process.cwd();
+const path = __webpack_require__(0);
+const url = __webpack_require__(22);
+const fs = __webpack_require__(1);
+const webpack = __webpack_require__(5);
+const HTMLWebpackPlugin = __webpack_require__(19);
+const defaultConfig = __webpack_require__(16);
+const defaultHuron = __webpack_require__(15);
 
 // Require configs passed in by user from CLI
-var localConfigPath = path.join(cwd, _parseArgs2.default.webpackConfig);
-var localHuronPath = path.join(cwd, _parseArgs2.default.huronConfig);
-var localConfig = (0, _requireExternal2.default)(localConfigPath);
-var localHuron = (0, _requireExternal2.default)(localHuronPath);
+const localConfigPath = path.join(cwd, _parseArgs2.default.webpackConfig);
+const localHuronPath = path.join(cwd, _parseArgs2.default.huronConfig);
+const localConfig = (0, _requireExternal2.default)(localConfigPath);
+const localHuron = (0, _requireExternal2.default)(localHuronPath);
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -1024,8 +1008,8 @@ var localHuron = (0, _requireExternal2.default)(localHuronPath);
  * @return {object} newConfig - updated data store
  */
 function generateConfig() {
-  var newConfig = localConfig;
-  var newHuron = Object.assign({}, defaultHuron, localHuron);
+  let newConfig = localConfig;
+  const newHuron = Object.assign({}, defaultHuron, localHuron);
 
   // configure entries
   newConfig = configureEntries(newHuron, newConfig);
@@ -1067,8 +1051,8 @@ function generateConfig() {
  * @return {object} newConfig - updated data store
  */
 function configureEntries(huron, config) {
-  var entry = config.entry[huron.entry];
-  var newConfig = config;
+  const entry = config.entry[huron.entry];
+  const newConfig = config;
 
   newConfig.entry = {};
 
@@ -1089,15 +1073,13 @@ function configureEntries(huron, config) {
  * @return {object} newConfig - updated data store
  */
 function configurePlugins(huron, config) {
-  var newConfig = config;
+  const newConfig = config;
 
   newConfig.plugins = config.plugins || [];
 
   if (!_parseArgs2.default.production) {
     if (newConfig.plugins && newConfig.plugins.length) {
-      newConfig.plugins = newConfig.plugins.filter(function (plugin) {
-        return 'HotModuleReplacementPlugin' !== plugin.constructor.name && 'NamedModulesPlugin' !== plugin.constructor.name;
-      });
+      newConfig.plugins = newConfig.plugins.filter(plugin => 'HotModuleReplacementPlugin' !== plugin.constructor.name && 'NamedModulesPlugin' !== plugin.constructor.name);
     }
     newConfig.plugins = newConfig.plugins.concat([new webpack.HotModuleReplacementPlugin(), new webpack.NamedModulesPlugin()]);
   }
@@ -1114,8 +1096,8 @@ function configurePlugins(huron, config) {
  */
 function configureLoaders(huron, config) {
   // Manage loaders
-  var templatesLoader = huron.templates.rule || {};
-  var newConfig = config;
+  const templatesLoader = huron.templates.rule || {};
+  const newConfig = config;
 
   templatesLoader.include = [path.join(cwd, huron.root)];
   newConfig.module = newConfig.module || {};
@@ -1141,8 +1123,8 @@ function configureLoaders(huron, config) {
  * @return {object} newConfig - updated data store
  */
 function configurePrototypes(huron, config) {
-  var wrapperTemplate = fs.readFileSync(path.join(__dirname, '../../templates/prototype-template.ejs'), 'utf8');
-  var defaultHTMLPluginOptions = {
+  const wrapperTemplate = fs.readFileSync(path.join(__dirname, '../../templates/prototype-template.ejs'), 'utf8');
+  const defaultHTMLPluginOptions = {
     title: '',
     window: huron.window,
     js: [],
@@ -1152,14 +1134,14 @@ function configurePrototypes(huron, config) {
     inject: false,
     chunks: [huron.entry]
   };
-  var newConfig = config;
+  const newConfig = config;
 
   // Write prototype template file for HTML webpack plugin
   fs.outputFileSync(path.join(cwd, huron.root, 'huron-assets/prototype-template.ejs'), wrapperTemplate);
 
-  huron.prototypes.forEach(function (prototype) {
-    var newPrototype = prototype;
-    var opts = {};
+  huron.prototypes.forEach(prototype => {
+    const newPrototype = prototype;
+    let opts = {};
 
     // Merge configured settings with default settings
     if ('string' === typeof prototype) {
@@ -1217,20 +1199,17 @@ function configurePrototypes(huron, config) {
  * @param {object} huron - huron configuration object
  * @return {array} assetResults - paths to js and css assets
  */
-function moveAdditionalAssets(assets) {
-  var subdir = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : '';
-  var huron = arguments[2];
+function moveAdditionalAssets(assets, subdir = '', huron) {
+  const currentAssets = [].concat(assets);
+  const assetResults = [];
 
-  var currentAssets = [].concat(assets);
-  var assetResults = [];
-
-  currentAssets.forEach(function (asset) {
-    var assetInfo = path.parse(asset);
-    var assetURL = url.parse(asset);
-    var sourcePath = path.join(cwd, asset);
-    var outputPath = path.resolve(cwd, huron.root, subdir, assetInfo.base);
-    var loadPath = _parseArgs2.default.production ? path.join(subdir, assetInfo.base) : path.join('/', subdir, assetInfo.base); // Use absolute path in development
-    var contents = false;
+  currentAssets.forEach(asset => {
+    const assetInfo = path.parse(asset);
+    const assetURL = url.parse(asset);
+    const sourcePath = path.join(cwd, asset);
+    const outputPath = path.resolve(cwd, huron.root, subdir, assetInfo.base);
+    const loadPath = _parseArgs2.default.production ? path.join(subdir, assetInfo.base) : path.join('/', subdir, assetInfo.base); // Use absolute path in development
+    let contents = false;
 
     if (!path.isAbsolute(asset) && !assetURL.protocol) {
       try {
@@ -1265,12 +1244,12 @@ exports.htmlHandler = undefined;
 
 var _utils = __webpack_require__(3);
 
-var path = __webpack_require__(0); /** @module cli/html-handler */
+const path = __webpack_require__(0); /** @module cli/html-handler */
 
-var fs = __webpack_require__(1);
+const fs = __webpack_require__(1);
 
 /* eslint-disable */
-var htmlHandler = exports.htmlHandler = {
+const htmlHandler = exports.htmlHandler = {
   /* eslint-enable */
 
   /**
@@ -1283,9 +1262,9 @@ var htmlHandler = exports.htmlHandler = {
    * @return {object} updated data store
    */
   updateTemplate(filepath, section, store) {
-    var file = path.parse(filepath);
-    var content = fs.readFileSync(filepath, 'utf8');
-    var newSection = section;
+    const file = path.parse(filepath);
+    const content = fs.readFileSync(filepath, 'utf8');
+    const newSection = section;
 
     if (content) {
       newSection.templatePath = _utils.utils.writeFile(section.referenceURI, 'template', filepath, content, store);
@@ -1311,7 +1290,7 @@ var htmlHandler = exports.htmlHandler = {
    * @return {object} updated data store
    */
   deleteTemplate(filepath, section, store) {
-    var newSection = section;
+    const newSection = section;
 
     _utils.utils.removeFile(newSection.referenceURI, 'template', filepath, store);
 
@@ -1329,11 +1308,11 @@ var htmlHandler = exports.htmlHandler = {
    * @return {object} updated data store
    */
   updatePrototype(filepath, store) {
-    var file = path.parse(filepath);
-    var content = fs.readFileSync(filepath, 'utf8');
+    const file = path.parse(filepath);
+    const content = fs.readFileSync(filepath, 'utf8');
 
     if (content) {
-      var requirePath = _utils.utils.writeFile(file.name, 'prototype', filepath, content, store);
+      const requirePath = _utils.utils.writeFile(file.name, 'prototype', filepath, content, store);
 
       return store.setIn(['prototypes', file.name], requirePath);
     }
@@ -1351,8 +1330,8 @@ var htmlHandler = exports.htmlHandler = {
    * @return {object} updated data store
    */
   deletePrototype(filepath, store) {
-    var file = path.parse(filepath);
-    var requirePath = _utils.utils.removeFile(file.name, 'prototype', filepath, store);
+    const file = path.parse(filepath);
+    const requirePath = _utils.utils.removeFile(file.name, 'prototype', filepath, store);
 
     return store.setIn(['prototypes', file.name], requirePath);
   }
@@ -1376,14 +1355,14 @@ var _handleTemplates = __webpack_require__(6);
 
 var _requireTemplates = __webpack_require__(7);
 
-var path = __webpack_require__(0); /** @module cli/kss-handler */
+const path = __webpack_require__(0); /** @module cli/kss-handler */
 
-var fs = __webpack_require__(1);
-var parse = __webpack_require__(21).parse;
-var chalk = __webpack_require__(2); // Colorize terminal output
+const fs = __webpack_require__(1);
+const parse = __webpack_require__(21).parse;
+const chalk = __webpack_require__(2); // Colorize terminal output
 
 /* eslint-disable */
-var kssHandler = exports.kssHandler = {
+const kssHandler = exports.kssHandler = {
   /* eslint-enable */
 
   /**
@@ -1395,17 +1374,17 @@ var kssHandler = exports.kssHandler = {
    * @return {object} updated data store
    */
   updateKSS(filepath, store) {
-    var kssSource = fs.readFileSync(filepath, 'utf8');
-    var huron = store.get('config');
-    var oldSection = _utils.utils.getSection(filepath, false, store) || {};
-    var file = path.parse(filepath);
-    var newStore = store;
+    const kssSource = fs.readFileSync(filepath, 'utf8');
+    const huron = store.get('config');
+    const oldSection = _utils.utils.getSection(filepath, false, store) || {};
+    const file = path.parse(filepath);
+    let newStore = store;
 
     if (kssSource) {
-      var styleguide = parse(kssSource, huron.get('kssOptions'));
+      const styleguide = parse(kssSource, huron.get('kssOptions'));
 
       if (styleguide.data.sections.length) {
-        var section = _utils.utils.normalizeSectionData(styleguide.data.sections[0]);
+        const section = _utils.utils.normalizeSectionData(styleguide.data.sections[0]);
 
         if (section.reference && section.referenceURI) {
           // Update or add section data
@@ -1447,7 +1426,7 @@ var kssHandler = exports.kssHandler = {
    * @return {object} updated data store
    */
   deleteKSS(filepath, section, store) {
-    var file = path.parse(filepath);
+    const file = path.parse(filepath);
 
     if (section.reference && section.referenceURI) {
       // Remove section data from memory store
@@ -1467,12 +1446,12 @@ var kssHandler = exports.kssHandler = {
    * @return {object} updated data store
    */
   updateSectionData(kssPath, section, oldSection, store) {
-    var sectionFileInfo = path.parse(kssPath);
-    var dataFilepath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
-    var isInline = null !== section.markup.match(/<\/[^>]*>/);
-    var newSort = kssHandler.sortSection(store.getIn(['sections', 'sorted']), section.reference, store.get('referenceDelimiter'));
-    var newSection = Object.assign({}, oldSection, section);
-    var newStore = store;
+    const sectionFileInfo = path.parse(kssPath);
+    const dataFilepath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
+    const isInline = null !== section.markup.match(/<\/[^>]*>/);
+    const newSort = kssHandler.sortSection(store.getIn(['sections', 'sorted']), section.reference, store.get('referenceDelimiter'));
+    const newSection = Object.assign({}, oldSection, section);
+    let newStore = store;
 
     // Required for reference from templates and data
     newSection.kssPath = kssPath;
@@ -1507,8 +1486,8 @@ var kssHandler = exports.kssHandler = {
    * @return {object} updated data store with new template path info
    */
   updateInlineTemplate(filepath, oldSection, section, store) {
-    var newSection = section;
-    var newStore = store;
+    const newSection = section;
+    const newStore = store;
 
     // If we have inline markup
     if (this.fieldShouldOutput(oldSection, section, 'markup')) {
@@ -1530,8 +1509,8 @@ var kssHandler = exports.kssHandler = {
    * @return {object} updated data store with new descripton path info
    */
   updateDescription(filepath, oldSection, section, store) {
-    var newSection = section;
-    var newStore = store;
+    const newSection = section;
+    const newStore = store;
 
     // If we don't have previous KSS or the KSS has been updated
     if (this.fieldShouldOutput(oldSection, section, 'description')) {
@@ -1555,13 +1534,13 @@ var kssHandler = exports.kssHandler = {
    * @return {object} KSS section data with updated asset paths
    */
   updateTemplateFields(file, oldSection, section, store) {
-    var kssPath = path.format(file);
-    var newSection = section;
-    var filepath = '';
-    var oldFilepath = '';
-    var newStore = store;
+    const kssPath = path.format(file);
+    const newSection = section;
+    let filepath = '';
+    let oldFilepath = '';
+    let newStore = store;
 
-    ['data', 'markup'].forEach(function (field) {
+    ['data', 'markup'].forEach(field => {
       if (newSection[field]) {
         if (oldSection[field]) {
           oldFilepath = path.join(file.dir, oldSection[field]);
@@ -1590,12 +1569,12 @@ var kssHandler = exports.kssHandler = {
    * @return {object} updated data store with new descripton path info
    */
   unsetSection(section, file, store, removed) {
-    var sorted = store.getIn(['sections', 'sorted']);
-    var kssPath = path.format(file);
-    var dataFilepath = path.join(file.dir, `${file.name}.json`);
-    var isInline = section.markup && null !== section.markup.match(/<\/[^>]*>/);
-    var newSort = kssHandler.unsortSection(sorted, section.reference, store.get('referenceDelimiter'));
-    var newStore = store;
+    const sorted = store.getIn(['sections', 'sorted']);
+    const kssPath = path.format(file);
+    const dataFilepath = path.join(file.dir, `${file.name}.json`);
+    const isInline = section.markup && null !== section.markup.match(/<\/[^>]*>/);
+    const newSort = kssHandler.unsortSection(sorted, section.reference, store.get('referenceDelimiter'));
+    let newStore = store;
 
     // Remove old section data
     _utils.utils.removeFile(section.referenceURI, 'section', dataFilepath, newStore);
@@ -1625,14 +1604,12 @@ var kssHandler = exports.kssHandler = {
    * @return {object} updated data store with new descripton path info
    */
   sortSection(sorted, reference, delimiter) {
-    var parts = reference.split(delimiter);
-    var newSort = sorted[parts[0]] || {};
-    var newSorted = sorted;
+    const parts = reference.split(delimiter);
+    const newSort = sorted[parts[0]] || {};
+    const newSorted = sorted;
 
     if (1 < parts.length) {
-      var newParts = parts.filter(function (part, idx) {
-        return 0 !== idx;
-      });
+      const newParts = parts.filter((part, idx) => 0 !== idx);
       newSorted[parts[0]] = kssHandler.sortSection(newSort, newParts.join(delimiter), delimiter);
     } else {
       newSorted[parts[0]] = newSort;
@@ -1650,15 +1627,13 @@ var kssHandler = exports.kssHandler = {
    * @return {object} updated data store with new descripton path info
    */
   unsortSection(sorted, reference, delimiter) {
-    var parts = reference.split(delimiter);
-    var subsections = Object.keys(sorted[parts[0]]);
-    var newSorted = sorted;
+    const parts = reference.split(delimiter);
+    const subsections = Object.keys(sorted[parts[0]]);
+    const newSorted = sorted;
 
     if (subsections.length) {
       if (1 < parts.length) {
-        var newParts = parts.filter(function (part, idx) {
-          return 0 !== idx;
-        });
+        const newParts = parts.filter((part, idx) => 0 !== idx);
         newSorted[parts[0]] = kssHandler.unsortSection(newSorted[parts[0]], newParts.join(delimiter), delimiter);
       }
     } else {
@@ -1718,9 +1693,9 @@ var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var webpack = __webpack_require__(5); /** @module cli/webpack-server */
+const webpack = __webpack_require__(5); /** @module cli/webpack-server */
 
-var WebpackDevServer = __webpack_require__(23);
+const WebpackDevServer = __webpack_require__(23);
 
 /**
  * Spin up webpack-dev-server or, if production flag is set, run webpack a single time
@@ -1730,24 +1705,24 @@ var WebpackDevServer = __webpack_require__(23);
  * @see {@link module:cli/generate-config generateConfig}
  */
 function startWebpack(config) {
-  var huron = config.huron;
-  var webpackConfig = config.webpack;
-  var compiler = webpack(webpackConfig);
+  const huron = config.huron;
+  const webpackConfig = config.webpack;
+  const compiler = webpack(webpackConfig);
 
   if (_parseArgs2.default.progress) {
-    compiler.apply(new webpack.ProgressPlugin(function (percentage, msg) {
+    compiler.apply(new webpack.ProgressPlugin((percentage, msg) => {
       console.log(`${percentage * 100}% `, msg);
     }));
   }
 
   if (_parseArgs2.default.production) {
-    compiler.run(function (err) {
+    compiler.run(err => {
       if (err) {
         console.log(err);
       }
     });
   } else {
-    var server = new WebpackDevServer(compiler, {
+    const server = new WebpackDevServer(compiler, {
       hot: true,
       quiet: false,
       noInfo: false,
@@ -1765,7 +1740,7 @@ function startWebpack(config) {
       contentBase: huron.root,
       publicPath: `http://localhost:${huron.port}/${huron.root}`
     });
-    server.listen(huron.port, 'localhost', function (err) {
+    server.listen(huron.port, 'localhost', err => {
       if (err) {
         return console.log(err);
       }
@@ -1783,7 +1758,7 @@ function startWebpack(config) {
 "use strict";
 
 
-var path = __webpack_require__(0);
+const path = __webpack_require__(0);
 
 module.exports = {
   css: [],
@@ -1818,8 +1793,8 @@ module.exports = {
 "use strict";
 
 
-var webpack = __webpack_require__(5);
-var path = __webpack_require__(0);
+const webpack = __webpack_require__(5);
+const path = __webpack_require__(0);
 
 module.exports = {
   entry: {},

@@ -58,7 +58,7 @@ module.exports = function getConfig(env) {
               presets: [
                 ['env', {
                   targets: {
-                    node: 4,
+                    node: 6.5,
                   },
                 }],
               ],
