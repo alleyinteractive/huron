@@ -17,7 +17,11 @@ In order to allow users to reference the `.bin` version of the Huron cli via NPM
 Huron's browser-facing scripts will run through the user's own (or Huron's default) Webpack configuration and, as such, cannot be pre-compiled by Webpack. Therefore, we simply transpile the source for the web scripts using babel-cli to ensure some measure of browser compatibility. Note: At some point, it may be worth exploring further the possibility of dynamically inserting the babel-loader specifically for the huron web scripts when the user run's the CLI.
 
 ## Submitting your changes
-When working on changes for Huron, please either assign yourself an issue in the existing issue queue or submit a new issue. Generally speaking, every merge of a Pull Request should be associated with a version bump. When you're ready to start, here's the workflow:
+When working on changes for Huron, please follow these guildelines:
+* Either assign yourself an issue in the existing issue queue or submit a new issue.
+* Generally speaking, every merge of a Pull Request should be associated with a version bump.
+* If you're writing changes that constitute MAJOR or MINOR version bump, please open a PR first into the `beta` branch and a member of Alley will review it. We will publish the tip of the beta branch to `huron@beta` on NPM and create a beta release in github. An Alley member will test it via NPM install locally and, when ready, make a PR into master (with a reference to the beta PR). If changes were necessary after testing, it will be reviewed a second time, otherwise we will merge to `master` and publish to `huron@latest` on NPM
+When you're ready to start, here's the workflow:
 
 ### Members of Alley Interactive:
 Create a feature branch from `master` and, when ready, push it to github and open a Pull Request. All code should be reviewed and approved by at least one member of the Alley Interactive organization before being merged into `master`. Before merging, be sure you've bumped the version in package.json. We use Semantic Versioning for Huron.
