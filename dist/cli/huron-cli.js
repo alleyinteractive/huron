@@ -78,13 +78,13 @@ module.exports = require("path");
 /* 1 */
 /***/ (function(module, exports) {
 
-module.exports = require("fs-extra");
+module.exports = require("chalk");
 
 /***/ }),
 /* 2 */
 /***/ (function(module, exports) {
 
-module.exports = require("chalk");
+module.exports = require("fs-extra");
 
 /***/ }),
 /* 3 */
@@ -100,8 +100,8 @@ Object.defineProperty(exports, "__esModule", {
 
 const cwd = process.cwd(); // Current working directory
 const path = __webpack_require__(0);
-const fs = __webpack_require__(1);
-const chalk = __webpack_require__(2); // Colorize terminal output
+const fs = __webpack_require__(2);
+const chalk = __webpack_require__(1); // Colorize terminal output
 
 // Exports
 /* eslint-disable */
@@ -422,8 +422,8 @@ var _utils = __webpack_require__(3);
 
 const path = __webpack_require__(0); /** @module cli/template-handler */
 
-const fs = __webpack_require__(1);
-const chalk = __webpack_require__(2);
+const fs = __webpack_require__(2);
+const chalk = __webpack_require__(1);
 
 /* eslint-disable */
 const templateHandler = exports.templateHandler = {
@@ -504,7 +504,7 @@ Object.defineProperty(exports, "__esModule", {
 /** @module cli/require-templates */
 
 const path = __webpack_require__(0);
-const fs = __webpack_require__(1);
+const fs = __webpack_require__(2);
 
 const cwd = process.cwd();
 const huronScript = fs.readFileSync(path.join(__dirname, '../web/huron.js'), 'utf8');
@@ -638,7 +638,7 @@ const path = __webpack_require__(0); // Local imports
 
 const Gaze = __webpack_require__(18).Gaze;
 const Immutable = __webpack_require__(20);
-const chalk = __webpack_require__(2); // Colorize terminal output
+const chalk = __webpack_require__(1); // Colorize terminal output
 
 // Merge Huron default webpack config with user config
 const config = (0, _generateConfig2.default)();
@@ -809,7 +809,7 @@ var _utils = __webpack_require__(3);
 
 // Imports
 const path = __webpack_require__(0);
-const chalk = __webpack_require__(2); // Colorize terminal output
+const chalk = __webpack_require__(1); // Colorize terminal output
 
 // EXPORTED FUNCTIONS
 
@@ -990,7 +990,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const cwd = process.cwd();
 const path = __webpack_require__(0);
 const url = __webpack_require__(22);
-const fs = __webpack_require__(1);
+const fs = __webpack_require__(2);
 const webpack = __webpack_require__(5);
 const HTMLWebpackPlugin = __webpack_require__(19);
 const defaultConfig = __webpack_require__(16);
@@ -1244,7 +1244,7 @@ var _utils = __webpack_require__(3);
 
 const path = __webpack_require__(0); /** @module cli/html-handler */
 
-const fs = __webpack_require__(1);
+const fs = __webpack_require__(2);
 
 /* eslint-disable */
 const htmlHandler = exports.htmlHandler = {
@@ -1355,9 +1355,9 @@ var _requireTemplates = __webpack_require__(7);
 
 const path = __webpack_require__(0); /** @module cli/kss-handler */
 
-const fs = __webpack_require__(1);
+const fs = __webpack_require__(2);
 const parse = __webpack_require__(21).parse;
-const chalk = __webpack_require__(2); // Colorize terminal output
+const chalk = __webpack_require__(1); // Colorize terminal output
 
 /* eslint-disable */
 const kssHandler = exports.kssHandler = {
@@ -1694,6 +1694,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 const webpack = __webpack_require__(5); /** @module cli/webpack-server */
 
 const WebpackDevServer = __webpack_require__(23);
+const chalk = __webpack_require__(1); // Colorize terminal output
 
 /**
  * Spin up webpack-dev-server or, if production flag is set, run webpack a single time
@@ -1715,12 +1716,18 @@ function startWebpack(config) {
 
   if (_parseArgs2.default.production) {
     compiler.run((err, stats) => {
+      const info = stats.toJson();
+
       if (err) {
         console.log(err);
       }
-      if (stats.hasErrors() || stats.hasWarnings()) {
-        console.log(stats.toJson().errors);
-        console.log(stats.toJson().warnings);
+
+      if (stats.hasErrors()) {
+        console.error(chalk.red('Webpack encountered errors during compile: ', info.errors));
+      }
+
+      if (stats.hasWarnings()) {
+        console.error(chalk.yellow('Webpack encountered warnings during compile: ', info.warnings));
       }
     });
   } else {

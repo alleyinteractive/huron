@@ -4,6 +4,7 @@ import program from './parse-args';
 
 const webpack = require('webpack');
 const WebpackDevServer = require('webpack-dev-server');
+const chalk = require('chalk'); // Colorize terminal output
 
 /**
  * Spin up webpack-dev-server or, if production flag is set, run webpack a single time
@@ -29,12 +30,26 @@ export default function startWebpack(config) {
 
   if (program.production) {
     compiler.run((err, stats) => {
+      const info = stats.toJson();
+
       if (err) {
         console.log(err);
       }
-      if (stats.hasErrors() || stats.hasWarnings()) {
-        console.log(stats.toJson().errors);
-        console.log(stats.toJson().warnings);
+
+      if (stats.hasErrors()) {
+        console.error(
+          chalk.red(
+            'Webpack encountered errors during compile: ',
+            info.errors)
+          );
+      }
+
+      if (stats.hasWarnings()) {
+        console.error(
+          chalk.yellow(
+            'Webpack encountered warnings during compile: ', info.warnings
+          )
+        );
       }
     });
   } else {
