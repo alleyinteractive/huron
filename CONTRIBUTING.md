@@ -17,22 +17,26 @@ In order to allow users to reference the `.bin` version of the Huron cli via NPM
 Huron's browser-facing scripts will run through the user's own (or Huron's default) Webpack configuration and, as such, cannot be pre-compiled by Webpack. Therefore, we simply transpile the source for the web scripts using babel-cli to ensure some measure of browser compatibility. Note: At some point, it may be worth exploring further the possibility of dynamically inserting the babel-loader specifically for the huron web scripts when the user run's the CLI.
 
 ## Submitting your changes
-When working on changes for Huron, please follow these guildelines:
+Note for all new package versions: the github release should _always_ match the corresponding release to NPM. In addition, publishes from the `beta` branch must always include a `-beta.0` after the version number to indicate a beta pre-release. In addition, generally speaking, every merge of a Pull Request should be associated with a version bump. If you are writing changes for documentation only, a version bump is not necessary. When working on changes for Huron, please follow these guildelines:
 * Either assign yourself an issue in the existing issue queue or submit a new issue.
-* Generally speaking, every merge of a Pull Request should be associated with a version bump.
-* If you're writing changes that constitute MAJOR or MINOR version bump, please open a PR first into the `beta` branch and a member of Alley will review it. We will publish the tip of the beta branch to `huron@beta` on NPM and create a beta release in github. An Alley member will test it via NPM install locally and, when ready, make a PR into master (with a reference to the beta PR). If changes were necessary after testing, it will be reviewed a second time, otherwise we will merge to `master` and publish to `huron@latest` on NPM
-When you're ready to start, here's the workflow:
+* Open up a featured branch based on `master` for your feature/fix. I sometimes include the issue number in the branch name.
+* Once you've reached a point in your work where you'd like to test, open a PR to the `beta` branch. Be sure to indicate which issue you are addressing in the pull request description. Someone in the Alley Interactive organization will review your work.
+* Once approved, an Alley member (or yourself if you're a part of Alley) will merge your PR and publish the tip of the beta branch to `huron@beta` via `npm publish --tag beta`, then create a corresponding release in github. Be sure you've bumped the version in the `package.json` before merging and publishing.
+* Install and test your beta version to verify it's working. If your code constitutes a MAJOR or MINOR version change, you must have an Alley member install and test your work as well.
+* Make any changes required and open subsequent PRs to `beta` as necessary.
+* Once tested, you may open a PR to the `master` branch. This PR should not require an in-depth review, as all code should be reviewed when merging into the `beta` branch. Once again, don't forget to switch the version in your `package.json` to one _without_ `-beta` for its release on the `latest` tag in NPM.
 
-### Members of Alley Interactive:
-Create a feature branch from `master` and, when ready, push it to github and open a Pull Request. All code should be reviewed and approved by at least one member of the Alley Interactive organization before being merged into `master`. Before merging, be sure you've bumped the version in package.json. We use Semantic Versioning for Huron.
+### For clarity's sake, here is the release workflow:
+* Before merge to `beta` branch, bump version in `package.json` to `target-version-beta.0`. For example, if you're releasing a MINOR version and we're currently on `2.0.0`, you'll be releasing `2.1.0-beta.0` to the `beta` branch.
+* Once merged, run `npm publish --tag beta` from the `beta` branch.
+* Draft a release in github with the same tag as the version you just released to npm. In this example, draft a release with tag `2.1.0-beta.0` and mark as a prerelease.
+* Install and test the beta version.
+* Before a merge to `master`, bump version in `package.json` to `target-version`, without `-beta`. To continue our example, you'd change the version to `2.1.0` at this point.
+* Once merged, run `npm publish` to publish on the `latest` tag to NPM.
+* Draft another new release using the same version, this time do not mark it as a prerelease.
 
-Once merged, either you or a lead developer at alley should:
-* Be sure you've bumped the package.json version
-* Run `npm publish`
-* Navigate to the `releases` tab in github and draft a new release using the same version you updated in the package.json.
-
-### Non-members
-Create a fork of Huron, create a feature branch from `master` and, when ready, submit a Pull Request from your fork. At least one member of the Alley Interactive organization must review your code and approve it before it can be merged into `master`. Once merged, a member of Alley will take the necessary steps to publish the new version to NPM and draft a new release
+### Note for non-alley developers
+In order to follow the steps for submitting changes, you'll likely need to create a fork of Huron to create a feature branch. When ready, submit a Pull Request from your fork. At least one member of the Alley Interactive organization must review your code and approve it before it can be merged. Once merged, a member of Alley will take the necessary steps to publish the new version to NPM and draft a new release
 
 ## Future developments
 This document will be updated once we incorporate unit tests into Huron.
