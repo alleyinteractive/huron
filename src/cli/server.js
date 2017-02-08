@@ -40,8 +40,9 @@ export default function startWebpack(config) {
         console.error(
           chalk.red(
             'Webpack encountered errors during compile: ',
-            info.errors)
-          );
+            info.errors
+          )
+        );
       }
 
       if (stats.hasWarnings()) {
