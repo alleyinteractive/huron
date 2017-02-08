@@ -14,7 +14,8 @@ const WebpackDevServer = require('webpack-dev-server');
  */
 export default function startWebpack(config) {
   const huron = config.huron;
-  const compiler = webpack(config);
+  const webpackConfig = config.webpack;
+  const compiler = webpack(webpackConfig);
 
   if (program.progress) {
     compiler.apply(

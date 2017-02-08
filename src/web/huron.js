@@ -45,6 +45,7 @@ class InsertNodes {
    *
    * @param {string} modifier - target modifier
    * @param {object} meta - module metadata
+   * @return {string} rendered - the modified HTML module
    */
   static applyModifier(modifier, meta) {
     let rendered = false;
@@ -68,6 +69,7 @@ class InsertNodes {
    * Get markup from any type of module (html, json or template)
    *
    * @param {string} content - String corresponding to markup
+   * @return {object} el.firstElementChild - HTML module
    */
   static convertToElement(content) {
     const el = document.createElement('div');
@@ -84,6 +86,7 @@ class InsertNodes {
    * @param {array} filter.values - Values for property
    * @param {bool} filter.include - Whether the values should be included or excluded (true = include, false = exclude)
    * @param {object} moduleMeta - Filter for modules. Fields explained in the filterModules() function docs
+   * @return {bool} match - determine if modules need to be filtered
    */
   static filterModules(filter, moduleMeta) {
     let match = true;
@@ -113,9 +116,33 @@ class InsertNodes {
    * Generate a hash string from a module key
    *
    * @param {string} key - module key (require path) to convert into a hash
+   * @return {string} key - generated MD5 Hash
    */
   static generateModuleHash(key) {
     return md5(key);
+  }
+
+  /**
+   * Retrieve a data attribute from a tag using one of two methods
+   *
+   * @param {HTMLElement} tag - DOM node on which to check for a data attribute
+   * @param {string} attr - attribute to check for
+   * @returns {string} data - contents of data attribute
+   */
+  static getDataAttribute(tag, attr) {
+    let data = false;
+
+    // Check if element has dataset and, if so, use it
+    if (tag.dataset) {
+      data = tag.dataset[attr];
+    }
+
+    // Fallback to getAttribute for ugly old Safari
+    if (! data && tag.getAttribute) {
+      data = tag.getAttribute(`data-${attr}`);
+    }
+
+    return data;
   }
 
   /**
@@ -123,6 +150,7 @@ class InsertNodes {
    *
    * @param {object} tag - tag to check
    * @param {object} meta - module metadata
+   * @return {bool}
    */
   static isSectionHelper(tag, meta) {
     if ('prototype' === meta.type) {
@@ -148,9 +176,9 @@ class InsertNodes {
       this.regenCache();
 
       // Find all top-level huron placeholders
-      elementList = document.querySelectorAll(
+      elementList = [...document.querySelectorAll(
         '[data-huron-id][data-huron-type]'
-      );
+      )];
     }
 
     moduleList = this.getModuleListFromTags(elementList);
@@ -287,10 +315,13 @@ class InsertNodes {
    * return its associated module key
    *
    * @param {object} tag - tag to check
+   * @return {bool} associated module key
    */
   getModuleKeyFromTag(tag) {
-    const type = tag.dataset.huronType;
-    const id = tag.dataset.huronId;
+    // Safari/webkit has some trouble parsing dataset in certain cases.
+    // This is a fallback method of accessing the same data.
+    const type = InsertNodes.getDataAttribute(tag, 'huron-type');
+    const id = InsertNodes.getDataAttribute(tag, 'huron-id');
     const section = this._sections.sectionsByURI[id];
 
     if (id && type) {
@@ -309,6 +340,7 @@ class InsertNodes {
    *
    * @param {array} tags - array of DOM nodes
    * @param {bool} recurse - should we recurse this function with a new array
+   * @return {object} moduleList - Huron placeholder DOM node
    */
   getModuleListFromTags(elements, recurse = true) {
     const moduleList = {};
@@ -562,14 +594,14 @@ class InsertNodes {
    *                       (usually the tag immediately preceding the current placeholder)
    */
   removeOldTags(hash, tag) {
-    if (tag && tag.dataset) {
-      if (
-        tag.dataset.parentHash === hash &&
-        tag.dataset.selfHash !== hash
-      ) {
+    if (tag) {
+      const parentHash = InsertNodes.getDataAttribute(tag, 'parent-hash');
+      const selfHash = InsertNodes.getDataAttribute(tag, 'self-hash');
+
+      if (parentHash === hash && selfHash !== hash) {
         // This is a child of the current module,
         // so remove it and its children (if applicable)
-        const childrenHash = tag.dataset.selfHash;
+        const childrenHash = selfHash;
         let nextTag = tag.previousSibling;
 
         if (childrenHash) {
@@ -604,11 +636,10 @@ class InsertNodes {
 
     if (type) {
       replace.forEach((tag) => {
-        if (
-          tag.dataset &&
-          tag.dataset.huronId === meta.id &&
-          tag.dataset.huronType === type
-        ) {
+        const tagType = InsertNodes.getDataAttribute(tag, 'huron-type');
+        const tagId = InsertNodes.getDataAttribute(tag, 'huron-id');
+
+        if (tagId === meta.id && tagType === type) {
           tags.push(tag);
         }
       });
@@ -616,7 +647,8 @@ class InsertNodes {
       if (tags && tags.length && meta.render) {
         tags.forEach((currentTag) => {
           const modifiedPlaceholder = currentTag;
-          const modifier = modifiedPlaceholder.dataset.huronModifier;
+          const modifier = InsertNodes
+            .getDataAttribute(modifiedPlaceholder, 'huron-modifier');
           const parent = modifiedPlaceholder.parentNode;
           const rendered = InsertNodes.applyModifier(modifier, meta);
           const renderedTemplate = InsertNodes.convertToElement(rendered)
@@ -676,7 +708,7 @@ class InsertNodes {
    * Verify specified element is using an acceptable huron type
    *
    * @param  {string} type - type of partial (template, data, description, section or prototype )
-   * @return {string} huron type or 'template' if invalid
+   * @return {string} type - huron type or 'template' if invalid
    */
   validateType(type) {
     if ('data' === type) {

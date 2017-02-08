@@ -16,6 +16,7 @@ export const htmlHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - contains KSS section data
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   updateTemplate(filepath, section, store) {
     const file = path.parse(filepath);
@@ -57,6 +58,7 @@ export const htmlHandler = {
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} section - contains KSS section data
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   deleteTemplate(filepath, section, store) {
     const newSection = section;
@@ -70,8 +72,13 @@ export const htmlHandler = {
 
     delete newSection.templatePath;
 
-    return store.deleteIn(
-        ['sections', 'sectionsByPath', newSection.kssPath],
+    return store
+      .setIn(
+        ['sections', 'sectionsByPath', section.kssPath],
+        newSection
+      )
+      .setIn(
+        ['sections', 'sectionsByURI', section.referenceURI],
         newSection
       );
   },
@@ -82,6 +89,7 @@ export const htmlHandler = {
    * @function updatePrototype
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   updatePrototype(filepath, store) {
     const file = path.parse(filepath);
@@ -112,6 +120,7 @@ export const htmlHandler = {
    * @function deletePrototype
    * @param {string} filepath - filepath of changed file (comes from gaze)
    * @param {object} store - memory store
+   * @return {object} updated data store
    */
   deletePrototype(filepath, store) {
     const file = path.parse(filepath);

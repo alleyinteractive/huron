@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 // Local imports
 import { initFiles, updateFile, deleteFile } from './actions';
 import { requireTemplates, writeStore } from './require-templates';
@@ -8,15 +6,13 @@ import generateConfig from './generate-config';
 import startWebpack from './server';
 
 // Modules
-const cwd = process.cwd(); // Current working directory
 const path = require('path');
 const Gaze = require('gaze').Gaze;
 const Immutable = require('immutable');
 const chalk = require('chalk'); // Colorize terminal output
 
-// Set vars
-const localConfig = require(path.join(cwd, program.config)); // eslint-disable-line import/no-dynamic-require
-const config = generateConfig(localConfig);
+// Merge Huron default webpack config with user config
+const config = generateConfig();
 
 /**
  * Huron configuration object
@@ -25,18 +21,22 @@ const config = generateConfig(localConfig);
  */
 const huron = config.huron;
 
+// Make sure the kss option is represented as an array
+huron.kss = Array.isArray(huron.kss) ?
+  huron.kss :
+  [huron.kss];
+
 /**
- * Available file extensions
+ * Available file extensions. Extensions should not include the leading '.'
  *
  * @global
  */
-const extenstions = [
+const extensions = [
   huron.kssExtension,
-  '.html',
-  '.handlebars',
-  '.hbs',
-  '.json',
-];
+  huron.templates.extension,
+  'html',
+  'json',
+].map((extension) => extension.replace('.', ''));
 
 // Create initial data structure
 /* eslint-disable */
@@ -67,18 +67,23 @@ const dataStructure = Immutable.Map({
 });
 /* eslint-enable */
 
-/**
- * Data store, to be initialized with dataStructure
- *
- * @global
- */
-let store = null; // All updates to store will be here
-
 // Generate watch list for Gaze, start gaze
 const gazeWatch = [];
+
+// Push KSS source directories and section template to Gaze
 gazeWatch.push(path.resolve(__dirname, huron.sectionTemplate));
-extenstions.forEach((ext) => {
-  gazeWatch.push(`${huron.kss}/**/*${ext}`);
+huron.kss.forEach((sourceDir) => {
+  let gazeDir = sourceDir;
+
+  /* eslint-disable space-unary-ops */
+  if ('/' === sourceDir.slice(-1)) {
+    gazeDir = sourceDir.slice(0, -1);
+  }
+  /* eslint-enable space-unary-ops */
+
+  gazeWatch.push(
+    `${gazeDir}/**/*.+(${extensions.join('|')})`
+  );
 });
 
 /**
@@ -88,13 +93,19 @@ extenstions.forEach((ext) => {
  */
 const gaze = new Gaze(gazeWatch);
 
-// Initialize all files watched by gaze
-store = initFiles(gaze.watched(), dataStructure);
+/**
+ * Initialize data store with files from gaze and original data structure
+ *
+ * @global
+ */
+const store = initFiles(gaze.watched(), dataStructure);
+
 requireTemplates(store);
 writeStore(store);
 
 if (! program.production) {
   /** @module cli/gaze */
+  let newStore = store;
 
   /**
    * Anonymous handler for Gaze 'changed' event indicating a file has changed
@@ -104,7 +115,7 @@ if (! program.production) {
    * @param {string} filepath - absolute path of changed file
    */
   gaze.on('changed', (filepath) => {
-    store = updateFile(filepath, store);
+    newStore = updateFile(filepath, newStore);
     console.log(chalk.green(`${filepath} updated!`));
   });
 
@@ -116,8 +127,8 @@ if (! program.production) {
    * @param {string} filepath - absolute path of changed file
    */
   gaze.on('added', (filepath) => {
-    store = updateFile(filepath, store);
-    writeStore(store);
+    newStore = updateFile(filepath, newStore);
+    writeStore(newStore);
     console.log(chalk.blue(`${filepath} added!`));
   });
 
@@ -129,9 +140,9 @@ if (! program.production) {
    * @param {string} filepath - absolute path of changed file
    */
   gaze.on('renamed', (newPath, oldPath) => {
-    store = deleteFile(oldPath, store);
-    store = updateFile(newPath, store);
-    writeStore(store);
+    newStore = deleteFile(oldPath, newStore);
+    newStore = updateFile(newPath, newStore);
+    writeStore(newStore);
     console.log(chalk.blue(`${newPath} added!`));
   });
 
@@ -143,8 +154,8 @@ if (! program.production) {
    * @param {string} filepath - absolute path of changed file
    */
   gaze.on('deleted', (filepath) => {
-    store = deleteFile(filepath, store);
-    writeStore(store);
+    newStore = deleteFile(filepath, newStore);
+    writeStore(newStore);
     console.log(chalk.red(`${filepath} deleted`));
   });
 } else {
@@ -153,3 +164,7 @@ if (! program.production) {
 
 // Start webpack or build for production
 startWebpack(config);
+
+if (module.hot) {
+  module.hot.accept();
+}

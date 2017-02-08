@@ -1,55 +1,64 @@
 /** @module cli/generate-config */
 
 import program from './parse-args';
+import requireExternal from './require-external';
 
-const defaultConfig = require('../../config/webpack.config');
-const webpack = require('webpack');
+const cwd = process.cwd();
 const path = require('path');
 const url = require('url');
 const fs = require('fs-extra');
+const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
+const defaultConfig = require('../default-config/webpack.config');
+const defaultHuron = require('../default-config/huron.config');
 
-const cwd = process.cwd();
+// Require configs passed in by user from CLI
+const localConfigPath = path.join(cwd, program.webpackConfig);
+const localHuronPath = path.join(cwd, program.huronConfig);
+const localConfig = requireExternal(localConfigPath);
+const localHuron = requireExternal(localHuronPath);
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
  *
  * @function generateConfig
  * @param {object} config - local webpack config
+ * @return {object} newConfig - updated data store
  */
-export default function generateConfig(config) {
-  let newConfig = config;
-
-  newConfig.huron = Object.assign({}, defaultConfig.huron, config.huron);
-  const huron = newConfig.huron;
+export default function generateConfig() {
+  let newConfig = localConfig;
+  const newHuron = Object.assign({}, defaultHuron, localHuron);
 
   // configure entries
-  newConfig = configureEntries(huron, newConfig);
+  newConfig = configureEntries(newHuron, newConfig);
 
   // configure plugins
-  newConfig = configurePlugins(huron, newConfig);
+  newConfig = configurePlugins(newHuron, newConfig);
 
   // configure loaders
-  newConfig = configureLoaders(huron, newConfig);
+  newConfig = configureLoaders(newHuron, newConfig);
 
   // Add HTMLWebpackPlugin for each configured prototype
-  newConfig = configurePrototypes(huron, newConfig);
+  newConfig = configurePrototypes(newHuron, newConfig);
 
   // Set ouput options
   newConfig.output = Object.assign({}, newConfig.output, defaultConfig.output);
-  newConfig.output.path = path.resolve(cwd, huron.root);
+  newConfig.output.path = path.resolve(cwd, newHuron.root);
 
   // Remove existing devServer settings
   delete newConfig.devServer;
 
   // Set publicPath
   if (! program.production) {
-    newConfig.output.publicPath = `http://localhost:${huron.port}/${huron.root}`;
+    newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
   } else {
     newConfig.output.publicPath = '';
   }
 
-  return newConfig;
+  return {
+    huron: newHuron,
+    webpack: newConfig,
+  };
 }
 
 /**
@@ -57,6 +66,7 @@ export default function generateConfig(config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configureEntries(huron, config) {
   const entry = config.entry[huron.entry];
@@ -71,8 +81,9 @@ function configureEntries(huron, config) {
       path.join(cwd, huron.root, 'huron-assets/huron'),
     ].concat(entry);
   } else {
-    newConfig.entry[huron.entry] = [path.join(cwd, huron.root, 'huron')]
-      .concat(entry);
+    newConfig.entry[huron.entry] = [
+      path.join(cwd, huron.root, 'huron-assets/huron'),
+    ].concat(entry);
   }
 
   return newConfig;
@@ -83,17 +94,25 @@ function configureEntries(huron, config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configurePlugins(huron, config) {
   const newConfig = config;
 
+  newConfig.plugins = config.plugins || [];
+
   if (! program.production) {
     if (newConfig.plugins && newConfig.plugins.length) {
       newConfig.plugins = newConfig.plugins.filter(
-        (plugin) => 'HotModuleReplacementPlugin' !== plugin.constructor.name
+        (plugin) => 'HotModuleReplacementPlugin' !== plugin.constructor.name &&
+          'NamedModulesPlugin' !== plugin.constructor.name
       );
     }
-    newConfig.plugins.push(new webpack.HotModuleReplacementPlugin());
+    newConfig.plugins = newConfig.plugins
+      .concat([
+        new webpack.HotModuleReplacementPlugin(),
+        new webpack.NamedModulesPlugin(),
+      ]);
   }
 
   return newConfig;
@@ -104,24 +123,20 @@ function configurePlugins(huron, config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configureLoaders(huron, config) {
   // Manage loaders
-  const templatesLoader = huron.templates.loader;
+  const templatesLoader = huron.templates.rule || {};
   const newConfig = config;
 
   templatesLoader.include = [path.join(cwd, huron.root)];
   newConfig.module = newConfig.module || {};
-  newConfig.module.loaders = newConfig.module.loaders || [];
-  newConfig.module.loaders.push(
+  newConfig.module.rules = newConfig.module.rules || [];
+  newConfig.module.rules.push(
     {
       test: /\.html$/,
-      loaders: ['html'],
-      include: [path.join(cwd, huron.root)],
-    },
-    {
-      test: /\.json$/,
-      loaders: ['json'],
+      use: 'html-loader',
       include: [path.join(cwd, huron.root)],
     },
     templatesLoader
@@ -135,6 +150,7 @@ function configureLoaders(huron, config) {
  *
  * @param {object} huron - huron configuration object
  * @param {object} config - webpack configuration object
+ * @return {object} newConfig - updated data store
  */
 function configurePrototypes(huron, config) {
   const wrapperTemplate = fs.readFileSync(
@@ -226,6 +242,7 @@ function configurePrototypes(huron, config) {
  * @param {array|string} assets - array of assets or single asset
  * @param {string} subdir - subdirectory in huron root from which to load additional asset
  * @param {object} huron - huron configuration object
+ * @return {array} assetResults - paths to js and css assets
  */
 function moveAdditionalAssets(assets, subdir = '', huron) {
   const currentAssets = [].concat(assets);

@@ -14,18 +14,19 @@ export default program;
  * @example node huron/dist/cli/huron-cli.js --config 'client/config/webpack.config.js' --production
  */
 function parseArgs() {
-  program.version('0.1.0')
+  program.version('1.0.1')
     .option(
-      '--config [config]',
-      '[config] for all huron options',
-      path.resolve(__dirname, '../../config/webpack.config.js')
+      '-c, --huron-config [huronConfig]',
+      '[huronConfig] for all huron options',
+      path.resolve(__dirname, '../default-config/huron.config.js')
     )
-    .option('--production', 'compile assets once for production')
+    .option(
+      '-w, --webpack-config [webpackConfig]',
+      '[webpackConfig] for all webpack options',
+      path.resolve(__dirname, '../default-config/webpack.config.js')
+    )
+    .option('-p, --production', 'compile assets once for production')
     .parse(process.argv);
-
-  if (! program.config) {
-    console.log('No config provided');
-  }
 }
 
 parseArgs();

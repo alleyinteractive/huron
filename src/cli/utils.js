@@ -15,6 +15,7 @@ export const utils = {
    *
    * @function normalizeSectionData
    * @param {object} section - section data
+   * @return {object} section data
    */
   normalizeSectionData(section) {
     const data = section.data || section;
@@ -69,29 +70,36 @@ export const utils = {
    * @function getTemplateDataPair
    * @param {object} file - file object from path.parse()
    * @param {object} section - KSS section data
+   * @return {string} relative path to module JSON file
    */
   getTemplateDataPair(file, section, store) {
     const huron = store.get('config');
-    const componentPath = path.relative(
-      path.resolve(cwd, huron.get('kss')),
-      file.dir
-    );
-    const partnerType = '.json' === file.ext ? 'template' : 'data';
-    const partnerExt = '.json' === file.ext ?
-      huron.get('templates').extension :
-      '.json';
+    const kssDir = utils.matchKssDir(file.dir, huron);
 
-    const pairPath = path.join(
-      componentPath,
-      utils.generateFilename(
-        section.referenceURI,
-        partnerType,
-        partnerExt,
-        store
-      )
-    );
+    if (kssDir) {
+      const componentPath = path.relative(
+        path.resolve(cwd, kssDir),
+        file.dir
+      );
+      const partnerType = '.json' === file.ext ? 'template' : 'data';
+      const partnerExt = '.json' === file.ext ?
+        huron.get('templates').extension :
+        '.json';
 
-    return `./${pairPath}`;
+      const pairPath = path.join(
+        componentPath,
+        utils.generateFilename(
+          section.referenceURI,
+          partnerType,
+          partnerExt,
+          store
+        )
+      );
+
+      return `./${pairPath}`;
+    }
+
+    return false;
   },
 
   /**
@@ -99,6 +107,7 @@ export const utils = {
    *
    * @function normalizeHeader
    * @param {string} header - section header extracted from KSS documentation
+   * @return {string} modified header, lowercase and words separated by dash
    */
   normalizeHeader(header) {
     return header
@@ -112,6 +121,7 @@ export const utils = {
    * @function wrapMarkup
    * @param {string} content - html or template markup
    * @param {string} templateId - id of template (should be section reference)
+   * @return {string} modified HTML
    */
   wrapMarkup(content, templateId) {
     return `<dom-module>
@@ -160,30 +170,36 @@ ${content}
     const huron = store.get('config');
     const file = path.parse(filepath);
     const filename = utils.generateFilename(id, type, file.ext, store);
-    const componentPath = path.relative(
-      path.resolve(cwd, huron.get('kss')),
-      file.dir
-    );
-    const outputRelative = path.join(
-      huron.get('output'),
-      componentPath,
-      `${filename}`
-    );
-    const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
-    let newContent = content;
+    const kssDir = utils.matchKssDir(filepath, huron);
 
-    if ('data' !== type && 'section' !== type) {
-      newContent = utils.wrapMarkup(content, id);
+    if (kssDir) {
+      const componentPath = path.relative(
+        path.resolve(cwd, kssDir),
+        file.dir
+      );
+      const outputRelative = path.join(
+        huron.get('output'),
+        componentPath,
+        `${filename}`
+      );
+      const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+      let newContent = content;
+
+      if ('data' !== type && 'section' !== type) {
+        newContent = utils.wrapMarkup(content, id);
+      }
+
+      try {
+        fs.outputFileSync(outputPath, newContent);
+        console.log(chalk.green(`Writing ${outputRelative}`)); // eslint-disable-line no-console
+      } catch (e) {
+        console.log(chalk.red(`Failed to write ${outputRelative}`)); // eslint-disable-line no-console
+      }
+
+      return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
     }
 
-    try {
-      fs.outputFileSync(outputPath, newContent);
-      console.log(chalk.green(`Writing ${outputRelative}`)); // eslint-disable-line no-console
-    } catch (e) {
-      console.log(chalk.red(`Failed to write ${outputRelative}`)); // eslint-disable-line no-console
-    }
-
-    return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
+    return false;
   },
 
   /**
@@ -198,27 +214,33 @@ ${content}
     const huron = store.get('config');
     const file = path.parse(filepath);
     const filename = utils.generateFilename(id, type, file.ext, store);
-    const componentPath = path.relative(
-      path.resolve(cwd, huron.get('kss')),
-      file.dir
-    );
-    const outputRelative = path.join(
-      huron.get('output'),
-      componentPath,
-      `${filename}`
-    );
-    const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+    const kssDir = utils.matchKssDir(filepath, huron);
 
-    try {
-      fs.removeSync(outputPath);
-      console.log(chalk.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console
-    } catch (e) {
-      console.log( // eslint-disable-line no-console
-        chalk.red(`${outputRelative} does not exist or cannot be deleted`)
+    if (kssDir) {
+      const componentPath = path.relative(
+        path.resolve(cwd, kssDir),
+        file.dir
       );
+      const outputRelative = path.join(
+        huron.get('output'),
+        componentPath,
+        `${filename}`
+      );
+      const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+
+      try {
+        fs.removeSync(outputPath);
+        console.log(chalk.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console
+      } catch (e) {
+        console.log( // eslint-disable-line no-console
+          chalk.red(`${outputRelative} does not exist or cannot be deleted`)
+        );
+      }
+
+      return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
     }
 
-    return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
+    return false;
   },
 
   /**
@@ -253,7 +275,7 @@ ${content}
    * @function writeSectionTemplate
    * @param {string} search - key on which to match section
    * @param {field} string - field in which to look to determine section
-   * @param {obj} sections - sections memory store
+   * @param {obj} store - sections memory store
    */
   getSection(search, field, store) {
     const sectionValues = store
@@ -270,5 +292,31 @@ ${content}
     }
 
     return selectedSection;
+  },
+
+  /**
+   * Match which configured KSS directory the current file
+   *
+   * @function matchKssDir
+   * @param {string} search - key on which to match section
+   * @param {field} string - field in which to look to determine section
+   * @param {obj} sections - sections memory store
+   * @return {string} kssMatch - relative path to KSS directory
+   */
+  matchKssDir(filepath, huron) {
+    const kssSource = huron.get('kss');
+    /* eslint-disable space-unary-ops */
+    const kssMatch = kssSource.filter((dir) => -1 !== filepath.indexOf(dir));
+    /* eslint-enable space-unary-ops */
+
+    if (kssMatch.length) {
+      return kssMatch[0];
+    }
+
+    console.error(
+      chalk.red(`filepath ${filepath} does not exist in any
+      of the configured KSS directories`)
+    );
+    return false;
   },
 };
