@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 // Local imports
 import { initFiles, updateFile, deleteFile } from './actions';
 import { requireTemplates, writeStore } from './require-templates';
@@ -8,15 +6,13 @@ import generateConfig from './generate-config';
 import startWebpack from './server';
 
 // Modules
-const cwd = process.cwd(); // Current working directory
 const path = require('path');
 const Gaze = require('gaze').Gaze;
 const Immutable = require('immutable');
 const chalk = require('chalk'); // Colorize terminal output
 
-// Set vars
-const localConfig = require(path.join(cwd, program.webpackConfig)); // eslint-disable-line import/no-dynamic-require
-const config = generateConfig(localConfig);
+// Merge Huron default webpack config with user config
+const config = generateConfig();
 
 /**
  * Huron configuration object
@@ -168,3 +164,7 @@ if (! program.production) {
 
 // Start webpack or build for production
 startWebpack(config);
+
+if (module.hot) {
+  module.hot.accept();
+}
