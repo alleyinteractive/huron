@@ -26,7 +26,7 @@ Note for all new package versions: the github release should _always_ match the 
 * Make any changes required and open subsequent PRs to `beta` as necessary.
 * Once tested, you may open a PR to the `master` branch. This PR should not require an in-depth review, as all code should be reviewed when merging into the `beta` branch. Once again, don't forget to switch the version in your `package.json` to one _without_ `-beta` for its release on the `latest` tag in NPM.
 
-For clarity's sake, here is the release workflow:
+### For clarity's sake, here is the release workflow:
 * Before merge to `beta` branch, bump version in `package.json` to `target-version-beta.0`. For example, if you're releasing a MINOR version and we're currently on `2.0.0`, you'll be releasing `2.1.0-beta.0` to the `beta` branch.
 * Once merged, run `npm publish --tag beta` from the `beta` branch.
 * Draft a release in github with the same tag as the version you just released to npm. In this example, draft a release with tag `2.1.0-beta.0` and mark as a prerelease.
