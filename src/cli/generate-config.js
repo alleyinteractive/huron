@@ -29,6 +29,15 @@ export default function generateConfig() {
   let newConfig = localConfig;
   const newHuron = Object.assign({}, defaultHuron, localHuron);
 
+  // Set ouput options
+  newConfig.output = Object.assign({}, newConfig.output, defaultConfig.output);
+  newConfig.output.path = path.resolve(cwd, newHuron.root);
+  if (! program.production) {
+    newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
+  } else {
+    newConfig.output.publicPath = '';
+  }
+
   // configure entries
   newConfig = configureEntries(newHuron, newConfig);
 
@@ -41,19 +50,8 @@ export default function generateConfig() {
   // Add HTMLWebpackPlugin for each configured prototype
   newConfig = configurePrototypes(newHuron, newConfig);
 
-  // Set ouput options
-  newConfig.output = Object.assign({}, newConfig.output, defaultConfig.output);
-  newConfig.output.path = path.resolve(cwd, newHuron.root);
-
   // Remove existing devServer settings
   delete newConfig.devServer;
-
-  // Set publicPath
-  if (! program.production) {
-    newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
-  } else {
-    newConfig.output.publicPath = '';
-  }
 
   return {
     huron: newHuron,
@@ -73,18 +71,11 @@ function configureEntries(huron, config) {
   const newConfig = config;
 
   newConfig.entry = {};
-
-  if (! program.production) {
-    newConfig.entry[huron.entry] = [
-      `webpack-dev-server/client?http://localhost:${huron.port}`,
-      'webpack/hot/dev-server',
-      path.join(cwd, huron.root, 'huron-assets/huron'),
-    ].concat(entry);
-  } else {
-    newConfig.entry[huron.entry] = [
-      path.join(cwd, huron.root, 'huron-assets/huron'),
-    ].concat(entry);
-  }
+  newConfig.entry[huron.entry] = [
+    // 'webpack-dev-server/client?http://localhost:8080/',
+    // 'webpack/hot/dev-server',
+    path.join(cwd, huron.root, 'huron-assets/huron'),
+  ].concat(entry);
 
   return newConfig;
 }
@@ -132,7 +123,9 @@ function configureLoaders(huron, config) {
 
   templatesLoader.include = [path.join(cwd, huron.root)];
   newConfig.module = newConfig.module || {};
-  newConfig.module.rules = newConfig.module.rules || [];
+  newConfig.module.rules = newConfig.module.rules ||
+    newConfig.module.loaders ||
+    [];
   newConfig.module.rules.push(
     {
       test: /\.html$/,
@@ -157,13 +150,18 @@ function configurePrototypes(huron, config) {
     path.join(__dirname, '../../templates/prototype-template.ejs'),
     'utf8'
   );
+
   const defaultHTMLPluginOptions = {
     title: '',
     window: huron.window,
     js: [],
     css: [],
     filename: 'index.html',
-    template: path.join(huron.root, 'huron-assets/prototype-template.ejs'),
+    template: path.join(
+      cwd,
+      huron.root,
+      'huron-assets/prototype-template.ejs'
+    ),
     inject: false,
     chunks: [huron.entry],
   };

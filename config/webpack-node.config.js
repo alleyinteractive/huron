@@ -12,17 +12,18 @@ module.exports = function getConfig(env) {
   let plugins = [
     new CleanPlugin(['dist/cli'], {
       root: context,
+      exclude: 'huron-cli.js',
     }),
   ];
 
   // Manage entry
   if ('dev' === env.process) {
-    entry.cli.unshift('webpack/hot/poll');
+    entry.unshift('webpack/hot/poll');
   }
 
   // Manage plugins
   if ('dev' === env.process) {
-    plugins = plugins.push(
+    plugins.push(
       new webpack.HotModuleReplacementPlugin(),
       new webpack.NamedModulesPlugin()
     );
@@ -35,12 +36,14 @@ module.exports = function getConfig(env) {
     target: 'node',
     devtool: 'cheap-module-source-map',
     output: {
-      path: 'dist/cli',
+      path: path.join(context, 'dist/cli'),
       filename: 'huron-cli.js',
       chunkFilename: '[name].chunk.min.js',
       publicPath: '../',
     },
-    externals: ['localConfig', 'localHuron'].concat(nodeExternals()),
+    externals: ['localConfig', 'localHuron'].concat(nodeExternals({
+      whitelist: [/webpack\/hot/],
+    })),
     node: {
       __filename: false,
       __dirname: false,
