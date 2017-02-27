@@ -1,6 +1,6 @@
 # Huron: A Prototype Build System
 
-Huron is a one-stop shop for generating both in-browser style guides and in-browser prototypes. Huron integrates with [Webpack](https://webpack.github.io/) to provide a CLI that processes Knyle Style Sheets [(KSS)](http://warpspire.com/kss/) documentation into style guides and prototypes.  Huron's use of Webpack's Hot Module Reloading [HMR](https://webpack.github.io/docs/hot-module-replacement.html) system provides a quick and seamless development experience.
+Huron is a one-stop shop for generating both in-browser style guides and in-browser prototypes. Huron integrates with [Webpack](https://webpack.github.io/) to provide a CLI that processes Knyle Style Sheets [(KSS)](http://warpspire.com/kss/) documentation into style guides and prototypes. Huron's use of Webpack's Hot Module Reloading [HMR](https://webpack.github.io/docs/hot-module-replacement.html) system provides a quick and seamless development experience.
 
 ## Get started example
 For a bare-bones demo, [see this example repository](https://github.com/alleyinteractive/huron-examples).
@@ -28,7 +28,6 @@ npm run huron-build -w webpack.config.js -c huron.config.js
 The files will be accessible through whatever folder you specified as your huron root in the [configuration](config/README.md) file.
 
 ## Writing KSS, templates and data
-
 KSS is a documentation syntax and styleguide generator. All documentation should be located in your stylesheets, and should largely follow the regular [KSS syntax](http://warpspire.com/kss/syntax/). However, Huron uses [kss-node](https://github.com/kss-node/kss-node) which includes some changes, and there are a few differences specific to Huron as well. All your KSS should include the following:
 * **Title** - This is the first line of your KSS comment block
 * **Description** - This starts on the second line of your KSS comment block (may be multiple lines), and will be exported to a separate file by Huron after running through a markdown compiler. As is probably obvious, this means you may use markdown your KSS descriptions
@@ -66,7 +65,6 @@ KSS is a documentation syntax and styleguide generator. All documentation should
  * _NOTE: As of now, Huron only supports one KSS documentation block per file, meaning it's heavily geared toward CSS preprocessors like SASS or LESS. This is an issue on our radar, however, and will be implemented at some point._
 
 ## Writing prototypes
-
 In Huron, everything is a "prototype" (even a style guide). Unlike previous versions, you now only have to write the prototype _content_ instead of wrangling all the surrounding HTML document boilerplate as well. This is accomplished via the [HTML webpack plugin](https://github.com/ampedandwired/html-webpack-plugin). Configuration of each prototype is discussed in the [config directory](config/README.md) readme. All you need to know for now is your prototype files should be located in a `prototypes` directory within your SASS/CSS source directory, and should be named in the format `prototype-[prototype name].html`.
  * You may include any valid HTML markup in your prototype.
  * Huron uses its own custom syntax for inserting templates from your KSS. This is accomplished via three data attributes:
