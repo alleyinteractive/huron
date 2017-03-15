@@ -2,7 +2,7 @@
   "name": "huron",
   "description": "An in-browser prototyping tool built on top of webpack and kss-node",
   "author": "Alley Interactive",
-  "version": "2.1.2-beta.0",
+  "version": "2.1.5-beta.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/alleyinteractive/huron"
@@ -48,6 +48,7 @@
     "babel-core": "^6.9.1",
     "babel-loader": "^6.2.10",
     "babel-preset-env": "^1.1.8",
+    "clean-webpack-plugin": "^0.1.15",
     "eslint": "^3.11.1",
     "eslint-config-airbnb": "^13.0.0",
     "eslint-loader": "^1.6.1",

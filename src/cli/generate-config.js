@@ -29,6 +29,11 @@ export default function generateConfig() {
   let newConfig = localConfig;
   const newHuron = Object.assign({}, defaultHuron, localHuron);
 
+  // Execute config function, if provided
+  if ('function' === typeof newConfig) {
+    newConfig = newConfig({});
+  }
+
   // Set ouput options
   newConfig.output = Object.assign({}, newConfig.output, defaultConfig.output);
   newConfig.output.path = path.resolve(cwd, newHuron.root);
