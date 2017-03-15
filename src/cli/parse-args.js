@@ -1,4 +1,5 @@
 /** @module cli/parse-arguments */
+/* eslint-disable space-unary-ops */
 
 // Requires
 /** @global */
@@ -14,6 +15,21 @@ export default program;
  * @example node huron/dist/cli/huron-cli.js --config 'client/config/webpack.config.js' --production
  */
 function parseArgs() {
+  const envArg = {};
+
+  process.argv = process.argv.filter((arg) => {
+    if (-1 !== arg.indexOf('--env')) {
+      const envParts = arg
+        .split('.')[1]
+        .split('=');
+
+      envArg[envParts[0]] = envParts[1] || true;
+      return false;
+    }
+
+    return true;
+  });
+
   program.version('1.0.1')
     .option(
       '-c, --huron-config [huronConfig]',
@@ -27,6 +43,9 @@ function parseArgs() {
     )
     .option('-p, --production', 'compile assets once for production')
     .parse(process.argv);
+
+  program.env = envArg;
 }
 
 parseArgs();
+/* eslint-enable */

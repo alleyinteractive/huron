@@ -31,7 +31,7 @@ export default function generateConfig() {
 
   // Execute config function, if provided
   if ('function' === typeof newConfig) {
-    newConfig = newConfig({});
+    newConfig = newConfig(program.env);
   }
 
   // Set ouput options
