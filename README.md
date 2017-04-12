@@ -18,7 +18,7 @@ Then, start the CLI with the respective paths to your configs:
 npm run huron -w webpack.config.js -c huron.config.js
 ```
 
-Once the CLI has started, you can access your prototype(s) at `localhost:[huron.port]/[huron.root]/[prototype-name].html`. You can find the defaults for the `port` and `root` options and how to change them in the [configuration](src/default-config/README.md) documentation.
+Once the CLI has started, you can access your prototype(s) at `localhost:8080/dist/[prototype-name].html`, in which port 8080 and `dist` are the default settings for `port` and `root` respectively. You can find the defaults for all huron options and how to change them in the [configuration](src/default-config/README.md) documentation.
 
 To build your prototype files for production, run
 ```
