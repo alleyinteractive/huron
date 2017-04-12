@@ -11,21 +11,21 @@ Huron can be installed via [NPM](https://www.npmjs.com/package/huron).
 npm install huron --save
 ```
 
-Once installed, you'll need to write a configuration. The default settings and how to modify them is documented in the [configuration](config/README.md) documentation.
+Once installed, you'll need to write a configuration. The default settings and how to modify them is documented in the [configuration](src/default-config/README.md) documentation.
 
 Then, start the CLI with the respective paths to your configs:
 ```
 npm run huron -w webpack.config.js -c huron.config.js
 ```
 
-Once the CLI has started, you can access your prototype(s) at `localhost:[huron.port]/[huron.root]/[prototype-name].html`. You can find the defaults for the `port` and `root` options and how to change them in the [configuration](config/README.md) documentation.
+Once the CLI has started, you can access your prototype(s) at `localhost:8080/dist/[prototype-name].html`, in which port 8080 and `dist` are the default settings for `port` and `root` respectively. You can find the defaults for all huron options and how to change them in the [configuration](src/default-config/README.md) documentation.
 
 To build your prototype files for production, run
 ```
 npm run huron-build -w webpack.config.js -c huron.config.js
 ```
 
-The files will be accessible through whatever folder you specified as your huron root in the [configuration](config/README.md) file.
+The files will be accessible through whatever folder you specified as your huron root in the [configuration](src/default-config/README.md) file.
 
 ## Writing KSS, templates and data
 KSS is a documentation syntax and styleguide generator. All documentation should be located in your stylesheets, and should largely follow the regular [KSS syntax](http://warpspire.com/kss/syntax/). However, Huron uses [kss-node](https://github.com/kss-node/kss-node) which includes some changes, and there are a few differences specific to Huron as well. All your KSS should include the following:
@@ -65,7 +65,7 @@ KSS is a documentation syntax and styleguide generator. All documentation should
  * _NOTE: As of now, Huron only supports one KSS documentation block per file, meaning it's heavily geared toward CSS preprocessors like SASS or LESS. This is an issue on our radar, however, and will be implemented at some point._
 
 ## Writing prototypes
-In Huron, everything is a "prototype" (even a style guide). Unlike previous versions, you now only have to write the prototype _content_ instead of wrangling all the surrounding HTML document boilerplate as well. This is accomplished via the [HTML webpack plugin](https://github.com/ampedandwired/html-webpack-plugin). Configuration of each prototype is discussed in the [config directory](config/README.md) readme. All you need to know for now is your prototype files should be located in a `prototypes` directory within your SASS/CSS source directory, and should be named in the format `prototype-[prototype name].html`.
+In Huron, everything is a "prototype" (even a style guide). Unlike previous versions, you now only have to write the prototype _content_ instead of wrangling all the surrounding HTML document boilerplate as well. This is accomplished via the [HTML webpack plugin](https://github.com/ampedandwired/html-webpack-plugin). Configuration of each prototype is discussed in the [config readme](src/default-config/README.md). All you need to know for now is your prototype files should be located in a `prototypes` directory within your SASS/CSS source directory, and should be named in the format `prototype-[prototype name].html`.
  * You may include any valid HTML markup in your prototype.
  * Huron uses its own custom syntax for inserting templates from your KSS. This is accomplished via three data attributes:
  	* `[data-huron-id]` - The KSS styleguide section reference URI containing the template you want. As described above, to get the reference URI you simply convert any `.` to `-` in the section reference you wrote in the KSS. For example, the section `header.navigation` would be inserted using a `huron-id` of `header-navigation`.
@@ -81,7 +81,7 @@ In Huron, everything is a "prototype" (even a style guide). Unlike previous vers
 ## For more specific information
 This file contains basic information on Huron installation and writing prototypes. However, there are several other subsections of this documentation:
 
-* [Configuration](config/README.md) - Configuration for Huron and for your local webpack setup
+* [Configuration](src/default-config/README.md) - Configuration for Huron and for your local webpack setup
 * [Templates](templates/README.md) - Peripheral template documentation
 * [CLI](src/cli/README.md) - General information on the Huron CLI. Source code is further documented via jsdoc
 * [Web](src/web/README.md) - General information on browser script for inserting/replacing markup. Source code is further documented via jsdoc
