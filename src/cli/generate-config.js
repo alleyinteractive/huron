@@ -40,7 +40,7 @@ export default function generateConfig() {
   }
 
   // Set ouput options
-  newConfig.output = Object.assign({}, newConfig.output, defaultConfig.output);
+  newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);
   newConfig.output.path = path.resolve(cwd, newHuron.root);
   if (! program.production) {
     newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
