@@ -1028,15 +1028,22 @@ const localHuron = (0, _requireExternal2.default)(localHuronPath);
  */
 function generateConfig() {
   let newConfig = localConfig;
-  const newHuron = Object.assign({}, defaultHuron, localHuron);
+  let newHuron = localHuron;
 
   // Execute config function, if provided
   if ('function' === typeof newConfig) {
     newConfig = newConfig(_parseArgs2.default.env);
   }
 
+  // Execute huron config function, if provided
+  if ('function' === typeof newHuron) {
+    newHuron = newHuron(_parseArgs2.default.env);
+  }
+
+  newHuron = Object.assign({}, defaultHuron, newHuron);
+
   // Set ouput options
-  newConfig.output = Object.assign({}, newConfig.output, defaultConfig.output);
+  newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);
   newConfig.output.path = path.resolve(cwd, newHuron.root);
   if (!_parseArgs2.default.production) {
     newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;

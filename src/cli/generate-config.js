@@ -36,8 +36,10 @@ export default function generateConfig() {
 
   // Execute huron config function, if provided
   if ('function' === typeof newHuron) {
-    newHuron = newConfig(program.env);
+    newHuron = newHuron(program.env);
   }
+
+  newHuron = Object.assign({}, defaultHuron, newHuron);
 
   // Set ouput options
   newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);
