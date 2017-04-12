@@ -27,11 +27,16 @@ const localHuron = requireExternal(localHuronPath);
  */
 export default function generateConfig() {
   let newConfig = localConfig;
-  const newHuron = Object.assign({}, defaultHuron, localHuron);
+  let newHuron = localHuron;
 
   // Execute config function, if provided
   if ('function' === typeof newConfig) {
     newConfig = newConfig(program.env);
+  }
+
+  // Execute huron config function, if provided
+  if ('function' === typeof newHuron) {
+    newHuron = newConfig(program.env);
   }
 
   // Set ouput options
