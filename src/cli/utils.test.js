@@ -9,7 +9,7 @@ const parse = require('kss').parse;
 // Set huron config to our testing config
 // Disable for now, as we aren't using it yet
 /* eslint-disable */
-const mockData = dataStructure.set('huron', huronConfig);
+let mockData = dataStructure.set('huron', huronConfig);
 /* eslint-enable */
 
 /**
@@ -38,7 +38,7 @@ test('Ensures predictable data structure for KSS section data', () => {
  */
 test('Find which configured KSS directory a filepath exists in', () => {
   const testMatchOne = utils.matchKssDir(
-    path.join(__dirname, '../../test/scss-one/testKss.css'),
+    path.join(__dirname, '../../test/scss-one/testKss.scss'),
     huronConfig
   );
   const testMatchTwo = utils.matchKssDir(
@@ -54,4 +54,32 @@ test('Find which configured KSS directory a filepath exists in', () => {
   expect(testMatchOne).toBe('test/scss-one');
   expect(testMatchTwo).toBe('test/scss-two');
   expect(failMatch).toBe(false);
+});
+
+/**
+ * Test for utils.getSection()
+ */
+test('Request for section data based on section reference', () => {
+  const testKssPath = path.join(__dirname, '../../test/scss-one/testKss.scss');
+  const testKSS = fs.readFileSync(testKssPath, 'utf8');
+  const styleguide = parse(testKSS, huronConfig.get('kssOptions'));
+  const normalizedSection = utils
+    .normalizeSectionData(styleguide.data.sections[0]);
+
+  mockData = mockData.setIn(
+    ['sections', 'sectionsByPath', testKssPath],
+    normalizedSection
+  );
+
+  const markup = utils.getSection('sample-kss.hbs', 'markup', mockData);
+  const data = utils.getSection('sample-kss.json', 'data', mockData);
+  const sectionPath = utils.getSection(testKssPath, false, mockData);
+  const failedSearch = utils.getSection('This value should not match the `data` field', 'data', mockData);
+  const failedField = utils.getSection('The `fail` field should not exist', 'fail', mockData);
+
+  expect(markup).toBe(normalizedSection);
+  expect(data).toBe(normalizedSection);
+  expect(sectionPath).toBe(normalizedSection);
+  expect(failedSearch).toBeUndefined();
+  expect(failedField).toBeUndefined();
 });
