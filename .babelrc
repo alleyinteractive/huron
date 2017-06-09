@@ -2,8 +2,8 @@
   "presets": [
     ["env", {
       "targets": {
-        "browsers": "last 3 versions",
+        "node": "6.5",
       },
-    }],
+    }]
   ],
 }

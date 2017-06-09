@@ -10,7 +10,7 @@
   "scripts": {
     "doc": "./node_modules/.bin/jsdoc src -r -c ./config/jsdoc.json",
     "help": "./node_modules/.bin/babel-node src/cli/huron.js -h",
-    "dev-cli": "webpack --config \"config/webpack-node.config.js\" -d --watch --progress --env.process=dev",
+    "dev-cli": "concurrently \"webpack --config config/webpack-node.config.js -d --watch --progress --env.process=dev\" \"jest --watch\"",
     "dev-web": "babel src/web -d dist/web -w --source-maps",
     "prebuild": "./node_modules/eslint/bin/eslint.js -c config/.eslintrc src/**",
     "build": "webpack --config \"config/webpack-node.config.js\" --env.process=build && babel src/web -d dist/web --source-maps",
@@ -51,6 +51,7 @@
     "babel-loader": "^6.2.10",
     "babel-preset-env": "^1.1.8",
     "clean-webpack-plugin": "^0.1.15",
+    "concurrently": "^3.4.0",
     "eslint": "^3.11.1",
     "eslint-config-airbnb": "^13.0.0",
     "eslint-loader": "^1.6.1",

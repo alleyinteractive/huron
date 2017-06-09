@@ -305,7 +305,8 @@ ${content}
   matchKssDir(filepath, huron) {
     const kssSource = huron.get('kss');
     /* eslint-disable space-unary-ops */
-    const kssMatch = kssSource.filter((dir) => -1 !== filepath.indexOf(dir));
+    // Include forward slash in our test to make sure we're matchin a directory, not a file extension
+    const kssMatch = kssSource.filter((dir) => filepath.includes(`${dir}/`));
     /* eslint-enable space-unary-ops */
 
     if (kssMatch.length) {
