@@ -12,8 +12,8 @@
     "help": "./node_modules/.bin/babel-node src/cli/huron.js -h",
     "dev-cli": "concurrently \"webpack --config config/webpack-node.config.js -d --watch --progress --env.process=dev\" \"jest --watch\"",
     "dev-web": "babel src/web -d dist/web -w --source-maps",
-    "prebuild": "./node_modules/eslint/bin/eslint.js -c config/.eslintrc src/**",
-    "build": "webpack --config \"config/webpack-node.config.js\" --env.process=build && babel src/web -d dist/web --source-maps",
+    "prebuild": "eslint -c config/.eslintrc src/**",
+    "build": "webpack --config \"config/webpack-node.config.js\" --env.process=build && babel src/web -d dist/web --source-maps && npm run test",
     "postbuild": "bin/postbuild.js",
     "test": "jest"
   },
@@ -56,6 +56,7 @@
     "eslint-config-airbnb": "^13.0.0",
     "eslint-loader": "^1.6.1",
     "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jest": "^20.0.3",
     "eslint-plugin-jsx-a11y": "^2.2.3",
     "eslint-plugin-react": "^6.8.0",
     "jest": "^20.0.4",
