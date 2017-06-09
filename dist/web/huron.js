@@ -100,7 +100,7 @@ class InsertNodes {
     }
 
     console.log(` // eslint-disable-line no-console
-      filter ${ filter } is not in a valid format.
+      filter ${filter} is not in a valid format.
       module filters must include 'property', 'values', and 'include' properties
     `);
 
@@ -134,7 +134,7 @@ class InsertNodes {
 
     // Fallback to getAttribute for ugly old Safari
     if (!data && tag.getAttribute) {
-      data = tag.getAttribute(`data-${ attr }`);
+      data = tag.getAttribute(`data-${attr}`);
     }
 
     return data;
@@ -258,7 +258,7 @@ class InsertNodes {
     } else {
       let testTypes = [];
       const testSections = Object.keys(sections).filter(section => {
-        const tempTypes = templateTypes.filter(currentType => sections[section][`${ currentType }Path`] === key);
+        const tempTypes = templateTypes.filter(currentType => sections[section][`${currentType}Path`] === key);
 
         if (tempTypes.length) {
           testTypes = tempTypes;
@@ -285,7 +285,7 @@ class InsertNodes {
     }
 
     console.warn( // eslint-disable-line no-console
-    `Module '${ key }' does not exist on the page
+    `Module '${key}' does not exist on the page
       or is no longer in use`);
     return false;
   }
@@ -306,7 +306,7 @@ class InsertNodes {
 
     if (id && type) {
       if (section) {
-        return section[`${ type }Path`];
+        return section[`${type}Path`];
       } else if ('prototype' === type) {
         return this._prototypes[id];
       }
@@ -433,7 +433,7 @@ class InsertNodes {
       let nextMenu;
 
       if (parent) {
-        templateId = `${ parent }-${ section }`;
+        templateId = `${parent}-${section}`;
       } else {
         templateId = section;
       }
@@ -442,7 +442,7 @@ class InsertNodes {
         const title = this._sections.sectionsByURI[templateId] ? this._sections.sectionsByURI[templateId].header : templateId;
         const sectionMenu = document.createElement('ul');
         const menuItem = document.createElement('li');
-        const link = `<a href="#styleguide-section-${ templateId }">${ title }</a>`;
+        const link = `<a href="#styleguide-section-${templateId}">${title}</a>`;
 
         sectionMenu.classList.add('section-menu');
         menuItem.classList.add('section-menu__item');
@@ -489,7 +489,7 @@ class InsertNodes {
 
       // Generate section ID and check if it is top-level
       if (parent) {
-        templateId = `${ parent }-${ section }`;
+        templateId = `${parent}-${section}`;
       } else {
         templateId = section;
         istopLevel = true;
@@ -641,8 +641,8 @@ class InsertNodes {
     } else {
       console.warn( // eslint-disable-line no-console
       `Could not render module
-        section: ${ meta.id }
-        type: ${ meta.type }`);
+        section: ${meta.id}
+        type: ${meta.type}`);
     }
   }
 

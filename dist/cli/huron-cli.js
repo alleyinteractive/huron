@@ -139,7 +139,7 @@ const utils = exports.utils = {
 
     if (!outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
       sectionFileInfo = path.parse(section.kssPath);
-      outputPath = path.join(sectionFileInfo.dir, `${ sectionFileInfo.name }.json`);
+      outputPath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
     }
 
     // Output section data
@@ -148,7 +148,7 @@ const utils = exports.utils = {
     }
 
     console.warn( // eslint-disable-line no-console
-    chalk.red(`Failed to write section data for ${ section.referenceURI }`));
+    chalk.red(`Failed to write section data for ${section.referenceURI}`));
     return false;
   },
 
@@ -171,7 +171,7 @@ const utils = exports.utils = {
 
       const pairPath = path.join(componentPath, utils.generateFilename(section.referenceURI, partnerType, partnerExt, store));
 
-      return `./${ pairPath }`;
+      return `./${pairPath}`;
     }
 
     return false;
@@ -198,8 +198,8 @@ const utils = exports.utils = {
    */
   wrapMarkup(content, templateId) {
     return `<dom-module>
-<template id="${ templateId }">
-${ content }
+<template id="${templateId}">
+${content}
 </template>
 </dom-module>\n`;
   },
@@ -221,12 +221,12 @@ ${ content }
 
     /* eslint-disable */
     if (-1 === types.indexOf(type)) {
-      console.log(`Huron data ${ type } does not exist`);
+      console.log(`Huron data ${type} does not exist`);
       return false;
     }
     /* eslint-enable */
 
-    return `${ id }-${ type }${ outputExt }`;
+    return `${id}-${type}${outputExt}`;
   },
 
   /**
@@ -247,7 +247,7 @@ ${ content }
 
     if (kssDir) {
       const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
-      const outputRelative = path.join(huron.get('output'), componentPath, `${ filename }`);
+      const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
       const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
       let newContent = content;
 
@@ -257,12 +257,12 @@ ${ content }
 
       try {
         fs.outputFileSync(outputPath, newContent);
-        console.log(chalk.green(`Writing ${ outputRelative }`)); // eslint-disable-line no-console
+        console.log(chalk.green(`Writing ${outputRelative}`)); // eslint-disable-line no-console
       } catch (e) {
-        console.log(chalk.red(`Failed to write ${ outputRelative }`)); // eslint-disable-line no-console
+        console.log(chalk.red(`Failed to write ${outputRelative}`)); // eslint-disable-line no-console
       }
 
-      return `./${ outputRelative.replace(`${ huron.get('output') }/`, '') }`;
+      return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
     }
 
     return false;
@@ -284,18 +284,18 @@ ${ content }
 
     if (kssDir) {
       const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
-      const outputRelative = path.join(huron.get('output'), componentPath, `${ filename }`);
+      const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
       const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
 
       try {
         fs.removeSync(outputPath);
-        console.log(chalk.green(`Removing ${ outputRelative }`)); // eslint-disable-line no-console
+        console.log(chalk.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console
       } catch (e) {
         console.log( // eslint-disable-line no-console
-        chalk.red(`${ outputRelative } does not exist or cannot be deleted`));
+        chalk.red(`${outputRelative} does not exist or cannot be deleted`));
       }
 
-      return `./${ outputRelative.replace(`${ huron.get('output') }/`, '') }`;
+      return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
     }
 
     return false;
@@ -317,7 +317,7 @@ ${ content }
 
     // Move huron script and section template into huron root
     fs.outputFileSync(output, sectionTemplate);
-    console.log(chalk.green(`writing section template to ${ output }`)); // eslint-disable-line no-console
+    console.log(chalk.green(`writing section template to ${output}`)); // eslint-disable-line no-console
 
     return store.set('sectionTemplatePath', componentPath);
   },
@@ -355,14 +355,14 @@ ${ content }
     const kssSource = huron.get('kss');
     /* eslint-disable space-unary-ops */
     // Include forward slash in our test to make sure we're matchin a directory, not a file extension
-    const kssMatch = kssSource.filter(dir => filepath.includes(`/${ dir }`));
+    const kssMatch = kssSource.filter(dir => filepath.includes(`/${dir}`));
     /* eslint-enable space-unary-ops */
 
     if (kssMatch.length) {
       return kssMatch[0];
     }
 
-    console.error(chalk.red(`filepath ${ filepath } does not exist in any
+    console.error(chalk.red(`filepath ${filepath} does not exist in any
       of the configured KSS directories`));
     return false;
   }
@@ -409,9 +409,14 @@ function parseArgs() {
     return true;
   });
 
-  program.version('1.0.1').option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options', path.resolve(__dirname, '../default-config/huron.config.js')).option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options', path.resolve(__dirname, '../default-config/webpack.config.js')).option('-p, --production', 'compile assets once for production').parse(process.argv);
+  program.version('1.0.1').option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options', path.resolve(__dirname, '../default-config/huron.config.js')).option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options', path.resolve(__dirname, '../default-config/webpack.config.js')).option('-p, --production', 'compile assets once for production');
 
   program.env = envArg;
+
+  // Only parse if we're not running tests
+  if (!process.env.npm_lifecycle_event || 'test' !== process.env.npm_lifecycle_event) {
+    program.parse(process.argv);
+  }
 }
 
 parseArgs();
@@ -465,12 +470,12 @@ const templateHandler = exports.templateHandler = {
     try {
       content = fs.readFileSync(filepath, 'utf8');
     } catch (e) {
-      console.log(chalk.red(`${ filepath } does not exist`));
+      console.log(chalk.red(`${filepath} does not exist`));
     }
 
     if (content) {
       const requirePath = _utils.utils.writeFile(newSection.referenceURI, type, filepath, content, newStore);
-      newSection[`${ type }Path`] = requirePath;
+      newSection[`${type}Path`] = requirePath;
 
       if ('template' === type) {
         newSection.templateContent = content;
@@ -502,7 +507,7 @@ const templateHandler = exports.templateHandler = {
 
     // Remove partner
     const requirePath = _utils.utils.removeFile(newSection.referenceURI, type, filepath, newStore);
-    delete newSection[`${ type }Path`];
+    delete newSection[`${type}Path`];
 
     return newStore.deleteIn(['templates', requirePath]).setIn(['sections', 'sectionsByPath', newSection.kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);
   }
@@ -538,13 +543,13 @@ const huronScript = fs.readFileSync(path.join(__dirname, '../web/huron.js'), 'ut
 const requireTemplates = exports.requireTemplates = function requireTemplates(store) {
   const huron = store.get('config');
   const outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
-  const requireRegex = new RegExp(`\\.html|\\.json|\\${ huron.get('templates').extension }$`);
-  const requirePath = `'../${ huron.get('output') }'`;
+  const requireRegex = new RegExp(`\\.html|\\.json|\\${huron.get('templates').extension}$`);
+  const requirePath = `'../${huron.get('output')}'`;
 
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
 var store = require('./huron-store.js');
-var assets = require.context(${ requirePath }, true, ${ requireRegex });
+var assets = require.context(${requirePath}, true, ${requireRegex});
 var modules = {};
 
 assets.keys().forEach(function(key) {
@@ -556,9 +561,9 @@ if (module.hot) {
     assets.id,
     () => {
       var newAssets = require.context(
-        ${ requirePath },
+        ${requirePath},
         true,
-        ${ requireRegex }
+        ${requireRegex}
       );
       var newModules = newAssets.keys()
         .map((key) => {
@@ -603,7 +608,7 @@ function updateStore(newStore) {
   // Write the contents of this script.
   // @todo lint this file.
   fs.outputFileSync(path.join(outputPath, 'huron.js'), `/*eslint-disable*/\n
-${ prepend }\n\n${ huronScript }\n\n${ append }\n
+${prepend}\n\n${huronScript}\n\n${append}\n
 /*eslint-enable*/\n`);
 };
 
@@ -621,7 +626,7 @@ const writeStore = exports.writeStore = function writeStore(store) {
   // Write updated data store
   // @todo lint this file.
   fs.outputFileSync(path.join(outputPath, 'huron-store.js'), `/*eslint-disable*/
-    module.exports = ${ JSON.stringify(store.toJSON()) }
+    module.exports = ${JSON.stringify(store.toJSON())}
     /*eslint-disable*/\n`);
 };
 
@@ -682,7 +687,7 @@ huron.get('kss').forEach(sourceDir => {
   }
   /* eslint-enable space-unary-ops */
 
-  gazeWatch.push(`${ gazeDir }/**/*.+(${ extensions.join('|') })`);
+  gazeWatch.push(`${gazeDir}/**/*.+(${extensions.join('|')})`);
 });
 
 /**
@@ -715,7 +720,7 @@ if (!_parseArgs2.default.production) {
    */
   gaze.on('changed', filepath => {
     newStore = (0, _actions.updateFile)(filepath, newStore);
-    console.log(chalk.green(`${ filepath } updated!`));
+    console.log(chalk.green(`${filepath} updated!`));
   });
 
   /**
@@ -728,7 +733,7 @@ if (!_parseArgs2.default.production) {
   gaze.on('added', filepath => {
     newStore = (0, _actions.updateFile)(filepath, newStore);
     (0, _requireTemplates.writeStore)(newStore);
-    console.log(chalk.blue(`${ filepath } added!`));
+    console.log(chalk.blue(`${filepath} added!`));
   });
 
   /**
@@ -742,7 +747,7 @@ if (!_parseArgs2.default.production) {
     newStore = (0, _actions.deleteFile)(oldPath, newStore);
     newStore = (0, _actions.updateFile)(newPath, newStore);
     (0, _requireTemplates.writeStore)(newStore);
-    console.log(chalk.blue(`${ newPath } added!`));
+    console.log(chalk.blue(`${newPath} added!`));
   });
 
   /**
@@ -755,7 +760,7 @@ if (!_parseArgs2.default.production) {
   gaze.on('deleted', filepath => {
     newStore = (0, _actions.deleteFile)(filepath, newStore);
     (0, _requireTemplates.writeStore)(newStore);
-    console.log(chalk.red(`${ filepath } deleted`));
+    console.log(chalk.red(`${filepath} deleted`));
   });
 } else {
   gaze.close();
@@ -865,7 +870,7 @@ function updateFile(filepath, store) {
         return _handleHtml.htmlHandler.updatePrototype(filepath, store);
       }
 
-      console.log(chalk.red(`Failed to write file: ${ file.name }`));
+      console.log(chalk.red(`Failed to write file: ${file.name}`));
       break;
 
     // Handlebars template, external
@@ -879,7 +884,7 @@ function updateFile(filepath, store) {
       }
 
       console.log( // eslint-disable-line no-console
-      chalk.red(`Could not find associated KSS section for ${ filepath }`));
+      chalk.red(`Could not find associated KSS section for ${filepath}`));
       break;
 
     // KSS documentation (default extension is `.css`)
@@ -942,7 +947,7 @@ function deleteFile(filepath, store) {
 
     default:
       console.warn( // eslint-disable-line no-console
-      chalk.red(`Could not delete: ${ file.name }`));
+      chalk.red(`Could not delete: ${file.name}`));
       break;
   }
 
@@ -1015,7 +1020,7 @@ function generateConfig() {
   newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);
   newConfig.output.path = path.resolve(cwd, newHuron.root);
   if (!_parseArgs2.default.production) {
-    newConfig.output.publicPath = `http://localhost:${ newHuron.port }/${ newHuron.root }`;
+    newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
   } else {
     newConfig.output.publicPath = '';
   }
@@ -1054,7 +1059,7 @@ function configureEntries(huron, config) {
 
   newConfig.entry = {};
   if (!_parseArgs2.default.production) {
-    newConfig.entry[huron.entry] = [`webpack-dev-server/client?http://localhost:${ huron.port }`, 'webpack/hot/dev-server', path.join(cwd, huron.root, 'huron-assets/huron')].concat(entry);
+    newConfig.entry[huron.entry] = [`webpack-dev-server/client?http://localhost:${huron.port}`, 'webpack/hot/dev-server', path.join(cwd, huron.root, 'huron-assets/huron')].concat(entry);
   } else {
     newConfig.entry[huron.entry] = [path.join(cwd, huron.root, 'huron-assets/huron')].concat(entry);
   }
@@ -1141,12 +1146,12 @@ function configurePrototypes(huron, config) {
     if ('string' === typeof prototype) {
       opts = Object.assign({}, defaultHTMLPluginOptions, {
         title: prototype,
-        filename: `${ prototype }.html`
+        filename: `${prototype}.html`
       });
     } else if ('object' === typeof prototype && {}.hasOwnProperty.call(prototype, 'title')) {
       // Create filename based on configured title if not provided
       if (!prototype.filename) {
-        newPrototype.filename = `${ prototype.title }.html`;
+        newPrototype.filename = `${prototype.title}.html`;
       }
 
       // Move css assets for this prototype,
@@ -1209,7 +1214,7 @@ function moveAdditionalAssets(assets, subdir = '', huron) {
       try {
         contents = fs.readFileSync(sourcePath);
       } catch (e) {
-        console.warn(`could not read ${ sourcePath }`);
+        console.warn(`could not read ${sourcePath}`);
       }
 
       if (contents) {
@@ -1270,7 +1275,7 @@ const htmlHandler = exports.htmlHandler = {
       return store.setIn(['sections', 'sectionsByPath', section.kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
     }
 
-    console.log(`File ${ file.base } could not be read`);
+    console.log(`File ${file.base} could not be read`);
     return store;
   },
 
@@ -1311,7 +1316,7 @@ const htmlHandler = exports.htmlHandler = {
       return store.setIn(['prototypes', file.name], requirePath);
     }
 
-    console.log(`File ${ file.base } could not be read`);
+    console.log(`File ${file.base} could not be read`);
     return store;
   },
 
@@ -1390,15 +1395,15 @@ const kssHandler = exports.kssHandler = {
           }
 
           (0, _requireTemplates.writeStore)(newStore);
-          console.log(chalk.green(`KSS source in ${ filepath } changed or added`));
+          console.log(chalk.green(`KSS source in ${filepath} changed or added`));
           return newStore;
         }
 
-        console.log(chalk.magenta(`KSS section in ${ filepath } is missing a section reference`));
+        console.log(chalk.magenta(`KSS section in ${filepath} is missing a section reference`));
         return newStore;
       }
 
-      console.log(chalk.magenta(`No KSS found in ${ filepath }`));
+      console.log(chalk.magenta(`No KSS found in ${filepath}`));
       return newStore;
     }
 
@@ -1406,7 +1411,7 @@ const kssHandler = exports.kssHandler = {
       newStore = kssHandler.deleteKSS(filepath, oldSection, newStore);
     }
 
-    console.log(chalk.red(`${ filepath } not found or empty`)); // eslint-disable-line no-console
+    console.log(chalk.red(`${filepath} not found or empty`)); // eslint-disable-line no-console
     return newStore;
   },
 
@@ -1441,7 +1446,7 @@ const kssHandler = exports.kssHandler = {
    */
   updateSectionData(kssPath, section, oldSection, store) {
     const sectionFileInfo = path.parse(kssPath);
-    const dataFilepath = path.join(sectionFileInfo.dir, `${ sectionFileInfo.name }.json`);
+    const dataFilepath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
     const isInline = null !== section.markup.match(/<\/[^>]*>/);
     const newSort = kssHandler.sortSection(store.getIn(['sections', 'sorted']), section.reference, store.get('referenceDelimiter'));
     const newSection = Object.assign({}, oldSection, section);
@@ -1565,7 +1570,7 @@ const kssHandler = exports.kssHandler = {
   unsetSection(section, file, store, removed) {
     const sorted = store.getIn(['sections', 'sorted']);
     const kssPath = path.format(file);
-    const dataFilepath = path.join(file.dir, `${ file.name }.json`);
+    const dataFilepath = path.join(file.dir, `${file.name}.json`);
     const isInline = section.markup && null !== section.markup.match(/<\/[^>]*>/);
     const newSort = kssHandler.unsortSection(sorted, section.reference, store.get('referenceDelimiter'));
     let newStore = store;
@@ -1758,7 +1763,7 @@ function startWebpack(config) {
 
   if (_parseArgs2.default.progress) {
     compiler.apply(new webpack.ProgressPlugin((percentage, msg) => {
-      console.log(`${ percentage * 100 }% `, msg);
+      console.log(`${percentage * 100}% `, msg);
     }));
   }
 
@@ -1795,14 +1800,14 @@ function startWebpack(config) {
         source: false
       },
       contentBase: huron.root,
-      publicPath: `http://localhost:${ huron.port }/${ huron.root }`
+      publicPath: `http://localhost:${huron.port}/${huron.root}`
     });
     server.listen(huron.port, 'localhost', err => {
       if (err) {
         return console.log(err);
       }
 
-      console.log(`Listening at http://localhost:${ huron.port }/`);
+      console.log(`Listening at http://localhost:${huron.port}/`);
       return true;
     });
   }
@@ -1876,6 +1881,7 @@ module.exports = {
           tag: 'dom-module'
         }
       }, 'html-loader']
+      // include: ['path/to/templates']
     }]
   }
 };

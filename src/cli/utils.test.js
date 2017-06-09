@@ -15,7 +15,7 @@ let mockData = dataStructure.set('huron', huronConfig);
 /**
  * Test for utils.normalizeSectionData()
  */
-test('Ensures predictable data structure for KSS section data', () => {
+it('Ensures predictable data structure for KSS section data', () => {
   const testKSS = fs.readFileSync(
     path.join(__dirname, '../../test/scss-one/testKss.scss'),
     'utf8'
@@ -36,7 +36,7 @@ test('Ensures predictable data structure for KSS section data', () => {
 /**
  * Test for utils.matchKssDir()
  */
-test('Find which configured KSS directory a filepath exists in', () => {
+it('Find which configured KSS directory a filepath exists in', () => {
   const testMatchOne = utils.matchKssDir(
     path.join(__dirname, '../../test/scss-one/testKss.scss'),
     huronConfig
@@ -59,7 +59,7 @@ test('Find which configured KSS directory a filepath exists in', () => {
 /**
  * Test for utils.getSection()
  */
-test('Request for section data based on section reference', () => {
+it('Request for section data based on section reference', () => {
   const testKssPath = path.join(__dirname, '../../test/scss-one/testKss.scss');
   const testKSS = fs.readFileSync(testKssPath, 'utf8');
   const styleguide = parse(testKSS, huronConfig.get('kssOptions'));
@@ -74,8 +74,13 @@ test('Request for section data based on section reference', () => {
   const markup = utils.getSection('sample-kss.hbs', 'markup', mockData);
   const data = utils.getSection('sample-kss.json', 'data', mockData);
   const sectionPath = utils.getSection(testKssPath, false, mockData);
-  const failedSearch = utils.getSection('This value should not match the `data` field', 'data', mockData);
-  const failedField = utils.getSection('The `fail` field should not exist', 'fail', mockData);
+  const failedSearch = utils.getSection(
+    'This value should not match the `data` field',
+    'data',
+    mockData
+  );
+  const failedField = utils
+    .getSection('The `fail` field should not exist', 'fail', mockData);
 
   expect(markup).toBe(normalizedSection);
   expect(data).toBe(normalizedSection);
