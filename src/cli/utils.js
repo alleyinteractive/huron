@@ -295,18 +295,18 @@ ${content}
   },
 
   /**
-   * Match which configured KSS directory the current file
+   * Find which configured KSS directory a filepath exists in
    *
    * @function matchKssDir
-   * @param {string} search - key on which to match section
-   * @param {field} string - field in which to look to determine section
-   * @param {obj} sections - sections memory store
+   * @param {string} filepath - filepath to search for
+   * @param {object} huron - huron configuration
    * @return {string} kssMatch - relative path to KSS directory
    */
   matchKssDir(filepath, huron) {
     const kssSource = huron.get('kss');
     /* eslint-disable space-unary-ops */
-    const kssMatch = kssSource.filter((dir) => -1 !== filepath.indexOf(dir));
+    // Include forward slash in our test to make sure we're matchin a directory, not a file extension
+    const kssMatch = kssSource.filter((dir) => filepath.includes(`/${dir}`));
     /* eslint-enable space-unary-ops */
 
     if (kssMatch.length) {

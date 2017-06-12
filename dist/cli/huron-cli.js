@@ -3,41 +3,41 @@
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
-
+/******/
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
-
+/******/
 /******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId])
+/******/ 		if(installedModules[moduleId]) {
 /******/ 			return installedModules[moduleId].exports;
-
+/******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
 /******/ 			l: false,
 /******/ 			exports: {}
 /******/ 		};
-
+/******/
 /******/ 		// Execute the module function
 /******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
+/******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.l = true;
-
+/******/
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-
-
+/******/
+/******/
 /******/ 	// expose the modules object (__webpack_modules__)
 /******/ 	__webpack_require__.m = modules;
-
+/******/
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
-
+/******/
 /******/ 	// identity function for calling harmony imports with the correct context
 /******/ 	__webpack_require__.i = function(value) { return value; };
-
+/******/
 /******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
 /******/ 		if(!__webpack_require__.o(exports, name)) {
@@ -48,7 +48,7 @@
 /******/ 			});
 /******/ 		}
 /******/ 	};
-
+/******/
 /******/ 	// getDefaultExport function for compatibility with non-harmony modules
 /******/ 	__webpack_require__.n = function(module) {
 /******/ 		var getter = module && module.__esModule ?
@@ -57,15 +57,15 @@
 /******/ 		__webpack_require__.d(getter, 'a', getter);
 /******/ 		return getter;
 /******/ 	};
-
+/******/
 /******/ 	// Object.prototype.hasOwnProperty.call
 /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-
+/******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "../";
-
+/******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 24);
+/******/ 	return __webpack_require__(__webpack_require__.s = 25);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -344,18 +344,18 @@ ${content}
   },
 
   /**
-   * Match which configured KSS directory the current file
+   * Find which configured KSS directory a filepath exists in
    *
    * @function matchKssDir
-   * @param {string} search - key on which to match section
-   * @param {field} string - field in which to look to determine section
-   * @param {obj} sections - sections memory store
+   * @param {string} filepath - filepath to search for
+   * @param {object} huron - huron configuration
    * @return {string} kssMatch - relative path to KSS directory
    */
   matchKssDir(filepath, huron) {
     const kssSource = huron.get('kss');
     /* eslint-disable space-unary-ops */
-    const kssMatch = kssSource.filter(dir => -1 !== filepath.indexOf(dir));
+    // Include forward slash in our test to make sure we're matchin a directory, not a file extension
+    const kssMatch = kssSource.filter(dir => filepath.includes(`/${dir}`));
     /* eslint-enable space-unary-ops */
 
     if (kssMatch.length) {
@@ -383,7 +383,7 @@ Object.defineProperty(exports, "__esModule", {
 
 // Requires
 /** @global */
-const program = __webpack_require__(17); // Easy program flags
+const program = __webpack_require__(18); // Easy program flags
 const path = __webpack_require__(0);
 
 exports.default = program;
@@ -409,9 +409,14 @@ function parseArgs() {
     return true;
   });
 
-  program.version('1.0.1').option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options', path.resolve(__dirname, '../default-config/huron.config.js')).option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options', path.resolve(__dirname, '../default-config/webpack.config.js')).option('-p, --production', 'compile assets once for production').parse(process.argv);
+  program.version('1.0.1').option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options', path.resolve(__dirname, '../default-config/huron.config.js')).option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options', path.resolve(__dirname, '../default-config/webpack.config.js')).option('-p, --production', 'compile assets once for production');
 
   program.env = envArg;
+
+  // Only parse if we're not running tests
+  if (!process.env.npm_lifecycle_event || 'test' !== process.env.npm_lifecycle_event) {
+    program.parse(process.argv);
+  }
 }
 
 parseArgs();
@@ -640,71 +645,40 @@ var _parseArgs = __webpack_require__(4);
 
 var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
-var _generateConfig = __webpack_require__(10);
-
-var _generateConfig2 = _interopRequireDefault(_generateConfig);
-
-var _server = __webpack_require__(14);
+var _server = __webpack_require__(15);
 
 var _server2 = _interopRequireDefault(_server);
+
+var _huronStore = __webpack_require__(13);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 // Modules
 const path = __webpack_require__(0); // Local imports
 
-const Gaze = __webpack_require__(18).Gaze;
-const Immutable = __webpack_require__(20);
+const Gaze = __webpack_require__(19).Gaze;
 const chalk = __webpack_require__(1); // Colorize terminal output
-
-// Merge Huron default webpack config with user config
-const config = (0, _generateConfig2.default)();
 
 /**
  * Huron configuration object
  *
  * @global
  */
-const huron = config.huron;
-
-// Make sure the kss option is represented as an array
-huron.kss = Array.isArray(huron.kss) ? huron.kss : [huron.kss];
+const huron = _huronStore.dataStructure.get('config');
 
 /**
  * Available file extensions. Extensions should not include the leading '.'
  *
  * @global
  */
-const extensions = [huron.kssExtension, huron.templates.extension, 'html', 'json'].map(extension => extension.replace('.', ''));
-
-// Create initial data structure
-/* eslint-disable */
-/**
- * Initial structure for immutable data store
- *
- * @global
- */
-const dataStructure = Immutable.Map({
-  types: ['template', 'data', 'description', 'section', 'prototype', 'sections-template'],
-  config: Immutable.Map(config.huron),
-  sections: Immutable.Map({
-    sectionsByPath: Immutable.Map({}),
-    sectionsByURI: Immutable.Map({}),
-    sorted: {}
-  }),
-  templates: Immutable.Map({}),
-  prototypes: Immutable.Map({}),
-  sectionTemplatePath: '',
-  referenceDelimiter: '.'
-});
-/* eslint-enable */
+const extensions = [huron.get('kssExtension'), huron.get('templates').extension, 'html', 'json'].map(extension => extension.replace('.', ''));
 
 // Generate watch list for Gaze, start gaze
 const gazeWatch = [];
 
 // Push KSS source directories and section template to Gaze
-gazeWatch.push(path.resolve(__dirname, huron.sectionTemplate));
-huron.kss.forEach(sourceDir => {
+gazeWatch.push(path.resolve(__dirname, huron.get('sectionTemplate')));
+huron.get('kss').forEach(sourceDir => {
   let gazeDir = sourceDir;
 
   /* eslint-disable space-unary-ops */
@@ -728,7 +702,7 @@ const gaze = new Gaze(gazeWatch);
  *
  * @global
  */
-const store = (0, _actions.initFiles)(gaze.watched(), dataStructure);
+const store = (0, _actions.initFiles)(gaze.watched(), _huronStore.dataStructure);
 
 (0, _requireTemplates.requireTemplates)(store);
 (0, _requireTemplates.writeStore)(store);
@@ -793,7 +767,7 @@ if (!_parseArgs2.default.production) {
 }
 
 // Start webpack or build for production
-(0, _server2.default)(config);
+(0, _server2.default)(_huronStore.config);
 
 if (false) {
   module.hot.accept();
@@ -996,7 +970,7 @@ var _parseArgs = __webpack_require__(4);
 
 var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
-var _requireExternal = __webpack_require__(13);
+var _requireExternal = __webpack_require__(14);
 
 var _requireExternal2 = _interopRequireDefault(_requireExternal);
 
@@ -1006,16 +980,16 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const cwd = process.cwd();
 const path = __webpack_require__(0);
-const url = __webpack_require__(22);
+const url = __webpack_require__(23);
 const fs = __webpack_require__(2);
 const webpack = __webpack_require__(5);
-const HTMLWebpackPlugin = __webpack_require__(19);
-const defaultConfig = __webpack_require__(16);
-const defaultHuron = __webpack_require__(15);
+const HTMLWebpackPlugin = __webpack_require__(20);
+const defaultConfig = __webpack_require__(17);
+const defaultHuron = __webpack_require__(16);
 
 // Require configs passed in by user from CLI
-const localConfigPath = path.join(cwd, _parseArgs2.default.webpackConfig);
-const localHuronPath = path.join(cwd, _parseArgs2.default.huronConfig);
+const localConfigPath = !path.isAbsolute(_parseArgs2.default.webpackConfig) ? path.join(cwd, _parseArgs2.default.webpackConfig) : _parseArgs2.default.webpackConfig;
+const localHuronPath = !path.isAbsolute(_parseArgs2.default.huronConfig) ? path.join(cwd, _parseArgs2.default.huronConfig) : _parseArgs2.default.huronConfig;
 const localConfig = (0, _requireExternal2.default)(localConfigPath);
 const localHuron = (0, _requireExternal2.default)(localHuronPath);
 
@@ -1383,7 +1357,7 @@ var _requireTemplates = __webpack_require__(7);
 const path = __webpack_require__(0); /** @module cli/kss-handler */
 
 const fs = __webpack_require__(2);
-const parse = __webpack_require__(21).parse;
+const parse = __webpack_require__(22).parse;
 const chalk = __webpack_require__(1); // Colorize terminal output
 
 /* eslint-disable */
@@ -1685,6 +1659,58 @@ const kssHandler = exports.kssHandler = {
 
 /***/ }),
 /* 13 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.config = exports.dataStructure = undefined;
+
+var _immutable = __webpack_require__(21);
+
+var _generateConfig = __webpack_require__(10);
+
+var _generateConfig2 = _interopRequireDefault(_generateConfig);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+// Create initial data structure
+
+// Merge Huron default webpack config with user config
+const config = (0, _generateConfig2.default)();
+
+// Make sure the kss option is represented as an array
+config.huron.kss = Array.isArray(config.huron.kss) ? config.huron.kss : [config.huron.kss];
+
+/* eslint-disable */
+/**
+ * Initial structure for immutable data store
+ *
+ * @global
+ */
+const dataStructure = (0, _immutable.Map)({
+  types: ['template', 'data', 'description', 'section', 'prototype', 'sections-template'],
+  config: (0, _immutable.Map)(config.huron),
+  sections: (0, _immutable.Map)({
+    sectionsByPath: (0, _immutable.Map)({}),
+    sectionsByURI: (0, _immutable.Map)({}),
+    sorted: {}
+  }),
+  templates: (0, _immutable.Map)({}),
+  prototypes: (0, _immutable.Map)({}),
+  sectionTemplatePath: '',
+  referenceDelimiter: '.'
+});
+/* eslint-enable */
+
+exports.dataStructure = dataStructure;
+exports.config = config;
+
+/***/ }),
+/* 14 */
 /***/ (function(module, exports) {
 
 "use strict";
@@ -1701,7 +1727,7 @@ function requireExternal(requirePath) {
 /* eslint-enable */
 
 /***/ }),
-/* 14 */
+/* 15 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1720,7 +1746,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const webpack = __webpack_require__(5); /** @module cli/webpack-server */
 
-const WebpackDevServer = __webpack_require__(23);
+const WebpackDevServer = __webpack_require__(24);
 const chalk = __webpack_require__(1); // Colorize terminal output
 
 /**
@@ -1788,7 +1814,7 @@ function startWebpack(config) {
 }
 
 /***/ }),
-/* 15 */
+/* 16 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1823,7 +1849,7 @@ module.exports = {
 };
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -1855,54 +1881,55 @@ module.exports = {
           tag: 'dom-module'
         }
       }, 'html-loader']
+      // include: ['path/to/templates']
     }]
   }
 };
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports) {
 
 module.exports = require("commander");
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports) {
 
 module.exports = require("gaze");
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports) {
 
 module.exports = require("html-webpack-plugin");
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports) {
 
 module.exports = require("immutable");
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports) {
 
 module.exports = require("kss");
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports) {
 
 module.exports = require("url");
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports) {
 
 module.exports = require("webpack-dev-server");
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 module.exports = __webpack_require__(8);

@@ -2,7 +2,7 @@
   "name": "huron",
   "description": "An in-browser prototyping tool built on top of webpack and kss-node",
   "author": "Alley Interactive",
-  "version": "2.1.6-beta.0",
+  "version": "2.2.0-beta.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/alleyinteractive/huron"
@@ -10,11 +10,12 @@
   "scripts": {
     "doc": "./node_modules/.bin/jsdoc src -r -c ./config/jsdoc.json",
     "help": "./node_modules/.bin/babel-node src/cli/huron.js -h",
-    "dev-cli": "webpack --config \"config/webpack-node.config.js\" -d --watch --progress --env.process=dev",
+    "dev-cli": "webpack --config config/webpack-node.config.js -d --watch --progress --env.process=dev",
     "dev-web": "babel src/web -d dist/web -w --source-maps",
-    "prebuild": "./node_modules/eslint/bin/eslint.js -c config/.eslintrc src/**",
-    "build": "webpack --config \"config/webpack-node.config.js\" --env.process=build && babel src/web -d dist/web --source-maps",
-    "postbuild": "bin/postbuild.js"
+    "prebuild": "eslint -c config/.eslintrc src/**",
+    "build": "webpack --config \"config/webpack-node.config.js\" --env.process=build && babel src/web -d dist/web --source-maps && jest",
+    "postbuild": "bin/postbuild.js",
+    "test": "jest --watch"
   },
   "bin": {
     "huron": "./dist/cli/huron-cli.js"
@@ -46,6 +47,7 @@
   "devDependencies": {
     "babel-cli": "^6.10.1",
     "babel-core": "^6.9.1",
+    "babel-jest": "^20.0.3",
     "babel-loader": "^6.2.10",
     "babel-preset-env": "^1.1.8",
     "clean-webpack-plugin": "^0.1.15",
@@ -53,10 +55,12 @@
     "eslint-config-airbnb": "^13.0.0",
     "eslint-loader": "^1.6.1",
     "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jest": "^20.0.3",
     "eslint-plugin-jsx-a11y": "^2.2.3",
     "eslint-plugin-react": "^6.8.0",
-    "jasmine-node": "^1.14.5",
+    "jest": "^20.0.4",
     "jsdoc": "^3.4.3",
+    "regenerator-runtime": "^0.10.5",
     "webpack": "^2.2.1",
     "webpack-node-externals": "^1.5.4"
   }
