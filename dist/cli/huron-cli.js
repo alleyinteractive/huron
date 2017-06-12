@@ -3,41 +3,41 @@
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
-
+/******/
 /******/ 	// The require function
 /******/ 	function __webpack_require__(moduleId) {
-
+/******/
 /******/ 		// Check if module is in cache
-/******/ 		if(installedModules[moduleId])
+/******/ 		if(installedModules[moduleId]) {
 /******/ 			return installedModules[moduleId].exports;
-
+/******/ 		}
 /******/ 		// Create a new module (and put it into the cache)
 /******/ 		var module = installedModules[moduleId] = {
 /******/ 			i: moduleId,
 /******/ 			l: false,
 /******/ 			exports: {}
 /******/ 		};
-
+/******/
 /******/ 		// Execute the module function
 /******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
-
+/******/
 /******/ 		// Flag the module as loaded
 /******/ 		module.l = true;
-
+/******/
 /******/ 		// Return the exports of the module
 /******/ 		return module.exports;
 /******/ 	}
-
-
+/******/
+/******/
 /******/ 	// expose the modules object (__webpack_modules__)
 /******/ 	__webpack_require__.m = modules;
-
+/******/
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
-
+/******/
 /******/ 	// identity function for calling harmony imports with the correct context
 /******/ 	__webpack_require__.i = function(value) { return value; };
-
+/******/
 /******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
 /******/ 		if(!__webpack_require__.o(exports, name)) {
@@ -48,7 +48,7 @@
 /******/ 			});
 /******/ 		}
 /******/ 	};
-
+/******/
 /******/ 	// getDefaultExport function for compatibility with non-harmony modules
 /******/ 	__webpack_require__.n = function(module) {
 /******/ 		var getter = module && module.__esModule ?
@@ -57,13 +57,13 @@
 /******/ 		__webpack_require__.d(getter, 'a', getter);
 /******/ 		return getter;
 /******/ 	};
-
+/******/
 /******/ 	// Object.prototype.hasOwnProperty.call
 /******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
-
+/******/
 /******/ 	// __webpack_public_path__
 /******/ 	__webpack_require__.p = "../";
-
+/******/
 /******/ 	// Load entry module and return exports
 /******/ 	return __webpack_require__(__webpack_require__.s = 24);
 /******/ })
@@ -1147,22 +1147,22 @@ function configureLoaders(huron, config) {
  * @return {object} newConfig - updated data store
  */
 function configurePrototypes(huron, config) {
-  const wrapperTemplate = fs.readFileSync(path.join(__dirname, '../../templates/prototype-template.ejs'), 'utf8');
+  const wrapperTemplate = fs.readFileSync(path.join(__dirname, '../../templates/prototype-template.hbs'), 'utf8');
 
   const defaultHTMLPluginOptions = {
-    title: '',
+    title: 'Huron',
     window: huron.window,
     js: [],
     css: [],
     filename: 'index.html',
-    template: path.join(cwd, huron.root, 'huron-assets/prototype-template.ejs'),
+    template: `!!handlebars-template-loader!${path.join(cwd, huron.root, 'huron-assets/prototype-template.hbs')}`,
     inject: false,
     chunks: [huron.entry]
   };
   const newConfig = config;
 
   // Write prototype template file for HTML webpack plugin
-  fs.outputFileSync(path.join(cwd, huron.root, 'huron-assets/prototype-template.ejs'), wrapperTemplate);
+  fs.outputFileSync(path.join(cwd, huron.root, 'huron-assets/prototype-template.hbs'), wrapperTemplate);
 
   huron.prototypes.forEach(prototype => {
     const newPrototype = prototype;
@@ -1855,6 +1855,7 @@ module.exports = {
           tag: 'dom-module'
         }
       }, 'html-loader']
+      // include: ['path/to/templates']
     }]
   }
 };
