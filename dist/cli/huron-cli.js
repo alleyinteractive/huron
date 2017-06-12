@@ -361,8 +361,8 @@ ${content}
   writeSectionTemplate(filepath, store) {
     const huron = store.get('config');
     const sectionTemplate = utils.wrapMarkup(fs.readFileSync(filepath, 'utf8'));
-    const componentPath = './section.hbs';
-    const output = path.join(cwd, huron.get('root'), huron.get('output'), componentPath);
+    const componentPath = './huron-assets/section.hbs';
+    const output = path.join(cwd, huron.get('root'), componentPath);
 
     // Move huron script and section template into huron root
     fs.outputFileSync(output, sectionTemplate);
@@ -544,14 +544,18 @@ const requireTemplates = exports.requireTemplates = function requireTemplates(st
   // Initialize templates, js, css and HMR acceptance logic
   const prepend = `
 var store = require('./huron-store.js');
+var sectionTemplate = require('./section.hbs');
 var assets = require.context(${requirePath}, true, ${requireRegex});
 var modules = {};
+
+modules['${store.get('sectionTemplatePath')}'] = sectionTemplate;
 
 assets.keys().forEach(function(key) {
   modules[key] = assets(key);
 });
 
 if (module.hot) {
+  // HMR for huron components (json, hbs, html)
   module.hot.accept(
     assets.id,
     () => {
@@ -577,6 +581,21 @@ if (module.hot) {
     }
   );
 
+  // HMR for sections template
+  module.hot.accept(
+    './section.hbs',
+    () => {
+      var newSectionTemplate = require('./section.hbs');
+      modules['${store.get('sectionTemplatePath')}'] = newSectionTemplate;
+      hotReplace(
+        './huron-assets/section.hbs',
+        newSectionTemplate,
+        modules
+      );
+    }
+  );
+
+  // HMR for data store
   module.hot.accept(
     './huron-store.js',
     () => {
@@ -587,6 +606,7 @@ if (module.hot) {
 
   const append = `
 function hotReplace(key, module, modules) {
+  console.log('hot replaced');
   insert.modules = modules;
   if (key === store.sectionTemplatePath) {
     insert.cycleSections();
@@ -597,6 +617,7 @@ function hotReplace(key, module, modules) {
 };
 
 function updateStore(newStore) {
+  console.log('store updated');
   insert.store = newStore;
 }\n`;
 

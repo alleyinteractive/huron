@@ -254,11 +254,10 @@ ${content}
   writeSectionTemplate(filepath, store) {
     const huron = store.get('config');
     const sectionTemplate = utils.wrapMarkup(fs.readFileSync(filepath, 'utf8'));
-    const componentPath = './section.hbs';
+    const componentPath = './huron-assets/section.hbs';
     const output = path.join(
       cwd,
       huron.get('root'),
-      huron.get('output'),
       componentPath
     );
 
