@@ -1003,7 +1003,6 @@ var _requireExternal2 = _interopRequireDefault(_requireExternal);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /** @module cli/generate-config */
-
 const cwd = process.cwd();
 const path = __webpack_require__(0);
 const url = __webpack_require__(22);
@@ -1127,9 +1126,29 @@ function configureLoaders(huron, config) {
   const templatesLoader = huron.templates.rule || {};
   const newConfig = config;
 
+  // Make sure we're only using templates loader for files in huron root
   templatesLoader.include = [path.join(cwd, huron.root)];
+
+  // Add access to handlebars helpers if user has configured handlebars for the template loader
+  if ('handlebars-loader' === templatesLoader.use || 'handlebars-loader' === templatesLoader.use.loader) {
+    // Set loader and options values
+    templatesLoader.use = 'object' === typeof templatesLoader.use ? templatesLoader.use : {};
+    templatesLoader.use.loader = 'handlebars-loader';
+    templatesLoader.use.options = templatesLoader.use.options && Object.keys(templatesLoader.use.options).length ? templatesLoader.use.options : {};
+
+    // Set handlebars helper directories
+    const helperDirs = templatesLoader.use.options.helperDirs;
+    const huronHelpers = path.join(__dirname, '../../', 'templates/handlebars-helpers');
+    templatesLoader.use.options.helperDirs = helperDirs && helperDirs.length ? [].concat(helperDirs, huronHelpers) : huronHelpers;
+
+    console.log(templatesLoader.use);
+  }
+
+  // Normalize module and module.rules
   newConfig.module = newConfig.module || {};
   newConfig.module.rules = newConfig.module.rules || newConfig.module.loaders || [];
+
+  // Add default loaders
   newConfig.module.rules.push({
     test: /\.html$/,
     use: 'html-loader',
@@ -1155,7 +1174,7 @@ function configurePrototypes(huron, config) {
     js: [],
     css: [],
     filename: 'index.html',
-    template: `!!handlebars-template-loader!${path.join(cwd, huron.root, 'huron-assets/prototype-template.hbs')}`,
+    template: path.join(cwd, huron.root, 'huron-assets/prototype-template.hbs'),
     inject: false,
     chunks: [huron.entry]
   };
