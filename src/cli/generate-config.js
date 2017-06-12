@@ -8,10 +8,11 @@ const url = require('url');
 const fs = require('fs-extra');
 const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
-const defaultConfig = require('../default-config/webpack.config');
+const defaultWebpack = require('../default-config/webpack.config');
 const defaultHuron = require('../default-config/huron.config');
 
 // Require configs passed in by user from CLI
+let defaultConfig = false;
 const localConfigPath = path.join(cwd, program.webpackConfig);
 const localHuronPath = path.join(cwd, program.huronConfig);
 const localConfig = requireExternal(localConfigPath);
@@ -38,16 +39,15 @@ export default function generateConfig() {
     newHuron = newHuron(program.env);
   }
 
+  // Merge huron defaults with user settings
   newHuron = Object.assign({}, defaultHuron, newHuron);
+  // Use user huron config to modify webpack defaults
+  defaultConfig = defaultWebpack(newHuron);
 
   // Set ouput options
   newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);
-  newConfig.output.path = path.resolve(cwd, newHuron.root);
-  if (! program.production) {
-    newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
-  } else {
-    newConfig.output.publicPath = '';
-  }
+  newConfig.output.path = defaultConfig.output.path;
+  newConfig.output.publicPath = defaultConfig.output.publicPath;
 
   // configure entries
   newConfig = configureEntries(newHuron, newConfig);
@@ -139,35 +139,7 @@ function configureLoaders(huron, config) {
   const newConfig = config;
 
   // Make sure we're only using templates loader for files in huron root
-  templatesLoader.include = [path.join(cwd, huron.root)];
-
-  // Add access to handlebars helpers if user has configured handlebars for the template loader
-  if (
-    'handlebars-loader' === templatesLoader.use ||
-    'handlebars-loader' === templatesLoader.use.loader
-  ) {
-    // Set loader and options values
-    templatesLoader.use = 'object' === typeof templatesLoader.use ?
-      templatesLoader.use : {};
-    templatesLoader.use.loader = 'handlebars-loader';
-    templatesLoader.use.options = templatesLoader.use.options &&
-      Object.keys(templatesLoader.use.options).length ?
-      templatesLoader.use.options : {};
-
-    // Set handlebars helper directories
-    const helperDirs = templatesLoader.use.options.helperDirs;
-    const huronHelpers = path.join(
-      __dirname,
-      '../../',
-      'templates/handlebars-helpers'
-    );
-    templatesLoader.use.options.helperDirs =
-      helperDirs && helperDirs.length ?
-      [].concat(helperDirs, huronHelpers) :
-      huronHelpers;
-
-    console.log(templatesLoader.use);
-  }
+  templatesLoader.include = [path.join(cwd, huron.root, huron.output)];
 
   // Normalize module and module.rules
   newConfig.module = newConfig.module || {};
@@ -176,14 +148,11 @@ function configureLoaders(huron, config) {
     [];
 
   // Add default loaders
-  newConfig.module.rules.push(
-    {
-      test: /\.html$/,
-      use: 'html-loader',
-      include: [path.join(cwd, huron.root)],
-    },
-    templatesLoader
-  );
+  newConfig.module.rules = defaultConfig.module.rules
+    .concat(
+      newConfig.module.rules,
+      templatesLoader
+    );
 
   return newConfig;
 }

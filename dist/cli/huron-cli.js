@@ -96,6 +96,55 @@ module.exports = require("fs-extra");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+/** @module cli/parse-arguments */
+/* eslint-disable space-unary-ops */
+
+// Requires
+/** @global */
+const program = __webpack_require__(17); // Easy program flags
+const path = __webpack_require__(0);
+
+exports.default = program;
+
+/**
+ * Process huron CLI arguments
+ *
+ * @function parseArgs
+ * @example node huron/dist/cli/huron-cli.js --config 'client/config/webpack.config.js' --production
+ */
+
+function parseArgs() {
+  const envArg = {};
+
+  process.argv = process.argv.filter(arg => {
+    if (-1 !== arg.indexOf('--env')) {
+      const envParts = arg.split('.')[1].split('=');
+
+      envArg[envParts[0]] = envParts[1] || true;
+      return false;
+    }
+
+    return true;
+  });
+
+  program.version('1.0.1').option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options', path.resolve(__dirname, '../default-config/huron.config.js')).option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options', path.resolve(__dirname, '../default-config/webpack.config.js')).option('-p, --production', 'compile assets once for production').parse(process.argv);
+
+  program.env = envArg;
+}
+
+parseArgs();
+/* eslint-enable */
+
+/***/ }),
+/* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
 /** @module cli/utilities */
 
 const cwd = process.cwd(); // Current working directory
@@ -312,7 +361,7 @@ ${content}
   writeSectionTemplate(filepath, store) {
     const huron = store.get('config');
     const sectionTemplate = utils.wrapMarkup(fs.readFileSync(filepath, 'utf8'));
-    const componentPath = './huron-sections/sections.hbs';
+    const componentPath = './section.hbs';
     const output = path.join(cwd, huron.get('root'), huron.get('output'), componentPath);
 
     // Move huron script and section template into huron root
@@ -369,55 +418,6 @@ ${content}
 };
 
 /***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-/** @module cli/parse-arguments */
-/* eslint-disable space-unary-ops */
-
-// Requires
-/** @global */
-const program = __webpack_require__(17); // Easy program flags
-const path = __webpack_require__(0);
-
-exports.default = program;
-
-/**
- * Process huron CLI arguments
- *
- * @function parseArgs
- * @example node huron/dist/cli/huron-cli.js --config 'client/config/webpack.config.js' --production
- */
-
-function parseArgs() {
-  const envArg = {};
-
-  process.argv = process.argv.filter(arg => {
-    if (-1 !== arg.indexOf('--env')) {
-      const envParts = arg.split('.')[1].split('=');
-
-      envArg[envParts[0]] = envParts[1] || true;
-      return false;
-    }
-
-    return true;
-  });
-
-  program.version('1.0.1').option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options', path.resolve(__dirname, '../default-config/huron.config.js')).option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options', path.resolve(__dirname, '../default-config/webpack.config.js')).option('-p, --production', 'compile assets once for production').parse(process.argv);
-
-  program.env = envArg;
-}
-
-parseArgs();
-/* eslint-enable */
-
-/***/ }),
 /* 5 */
 /***/ (function(module, exports) {
 
@@ -435,7 +435,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.templateHandler = undefined;
 
-var _utils = __webpack_require__(3);
+var _utils = __webpack_require__(4);
 
 const path = __webpack_require__(0); /** @module cli/template-handler */
 
@@ -636,7 +636,7 @@ var _actions = __webpack_require__(9);
 
 var _requireTemplates = __webpack_require__(7);
 
-var _parseArgs = __webpack_require__(4);
+var _parseArgs = __webpack_require__(3);
 
 var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
@@ -819,7 +819,7 @@ var _handleTemplates = __webpack_require__(6);
 
 var _handleKss = __webpack_require__(12);
 
-var _utils = __webpack_require__(3);
+var _utils = __webpack_require__(4);
 
 // Requires
 /** @module cli/actions */
@@ -881,7 +881,7 @@ function updateFile(filepath, store) {
   let field;
   let section;
 
-  if (-1 !== filepath.indexOf(huron.get('sectionTemplate'))) {
+  if (filepath.includes(huron.get('sectionTemplate'))) {
     return _utils.utils.writeSectionTemplate(filepath, store);
   }
 
@@ -992,7 +992,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = generateConfig;
 
-var _parseArgs = __webpack_require__(4);
+var _parseArgs = __webpack_require__(3);
 
 var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
@@ -1009,10 +1009,11 @@ const url = __webpack_require__(22);
 const fs = __webpack_require__(2);
 const webpack = __webpack_require__(5);
 const HTMLWebpackPlugin = __webpack_require__(19);
-const defaultConfig = __webpack_require__(16);
+const defaultWebpack = __webpack_require__(16);
 const defaultHuron = __webpack_require__(15);
 
 // Require configs passed in by user from CLI
+let defaultConfig = false;
 const localConfigPath = path.join(cwd, _parseArgs2.default.webpackConfig);
 const localHuronPath = path.join(cwd, _parseArgs2.default.huronConfig);
 const localConfig = (0, _requireExternal2.default)(localConfigPath);
@@ -1039,16 +1040,15 @@ function generateConfig() {
     newHuron = newHuron(_parseArgs2.default.env);
   }
 
+  // Merge huron defaults with user settings
   newHuron = Object.assign({}, defaultHuron, newHuron);
+  // Use user huron config to modify webpack defaults
+  defaultConfig = defaultWebpack(newHuron);
 
   // Set ouput options
   newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);
-  newConfig.output.path = path.resolve(cwd, newHuron.root);
-  if (!_parseArgs2.default.production) {
-    newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
-  } else {
-    newConfig.output.publicPath = '';
-  }
+  newConfig.output.path = defaultConfig.output.path;
+  newConfig.output.publicPath = defaultConfig.output.publicPath;
 
   // configure entries
   newConfig = configureEntries(newHuron, newConfig);
@@ -1127,33 +1127,14 @@ function configureLoaders(huron, config) {
   const newConfig = config;
 
   // Make sure we're only using templates loader for files in huron root
-  templatesLoader.include = [path.join(cwd, huron.root)];
-
-  // Add access to handlebars helpers if user has configured handlebars for the template loader
-  if ('handlebars-loader' === templatesLoader.use || 'handlebars-loader' === templatesLoader.use.loader) {
-    // Set loader and options values
-    templatesLoader.use = 'object' === typeof templatesLoader.use ? templatesLoader.use : {};
-    templatesLoader.use.loader = 'handlebars-loader';
-    templatesLoader.use.options = templatesLoader.use.options && Object.keys(templatesLoader.use.options).length ? templatesLoader.use.options : {};
-
-    // Set handlebars helper directories
-    const helperDirs = templatesLoader.use.options.helperDirs;
-    const huronHelpers = path.join(__dirname, '../../', 'templates/handlebars-helpers');
-    templatesLoader.use.options.helperDirs = helperDirs && helperDirs.length ? [].concat(helperDirs, huronHelpers) : huronHelpers;
-
-    console.log(templatesLoader.use);
-  }
+  templatesLoader.include = [path.join(cwd, huron.root, huron.output)];
 
   // Normalize module and module.rules
   newConfig.module = newConfig.module || {};
   newConfig.module.rules = newConfig.module.rules || newConfig.module.loaders || [];
 
   // Add default loaders
-  newConfig.module.rules.push({
-    test: /\.html$/,
-    use: 'html-loader',
-    include: [path.join(cwd, huron.root)]
-  }, templatesLoader);
+  newConfig.module.rules = defaultConfig.module.rules.concat(newConfig.module.rules, templatesLoader);
 
   return newConfig;
 }
@@ -1286,7 +1267,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.htmlHandler = undefined;
 
-var _utils = __webpack_require__(3);
+var _utils = __webpack_require__(4);
 
 const path = __webpack_require__(0); /** @module cli/html-handler */
 
@@ -1393,7 +1374,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.kssHandler = undefined;
 
-var _utils = __webpack_require__(3);
+var _utils = __webpack_require__(4);
 
 var _handleTemplates = __webpack_require__(6);
 
@@ -1731,7 +1712,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = startWebpack;
 
-var _parseArgs = __webpack_require__(4);
+var _parseArgs = __webpack_require__(3);
 
 var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
@@ -1830,7 +1811,7 @@ module.exports = {
   port: 8080,
   prototypes: ['index'],
   root: 'dist/',
-  sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
+  sectionTemplate: path.join(__dirname, '../../templates/section.hbs'),
   templates: {
     rule: {
       test: /\.(hbs|handlebars)$/,
@@ -1848,35 +1829,50 @@ module.exports = {
 "use strict";
 
 
+var _parseArgs = __webpack_require__(3);
+
+var _parseArgs2 = _interopRequireDefault(_parseArgs);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 const webpack = __webpack_require__(5);
 const path = __webpack_require__(0);
 
-module.exports = {
-  entry: {},
-  output: {
-    // path: [huron root directory],
-    filename: '[name].js',
-    chunkFilename: '[name].chunk.min.js'
-  },
-  plugins: [new webpack.HotModuleReplacementPlugin(), new webpack.NamedModulesPlugin()],
-  resolve: {
-    modulesDirectories: [path.resolve(__dirname, '../src/js')]
-  },
-  resolveLoader: {
-    modulesDirectories: ['web_loaders', 'web_modules', 'node_loaders', 'node_modules', path.resolve(__dirname, '../node_modules')]
-  },
-  module: {
-    rules: [{
-      test: /\.html?$/,
-      use: [{
-        loader: 'dom-loader',
-        options: {
-          tag: 'dom-module'
+module.exports = huron => {
+  const cwd = process.cwd();
+
+  return {
+    entry: {},
+    output: {
+      path: path.join(cwd, huron.root),
+      publicPath: _parseArgs2.default.production ? '' : `http://localhost:${huron.port}/${huron.root}`,
+      filename: '[name].js',
+      chunkFilename: '[name].chunk.min.js'
+    },
+    plugins: [new webpack.HotModuleReplacementPlugin(), new webpack.NamedModulesPlugin()],
+    resolve: {
+      modulesDirectories: [path.resolve(__dirname, '../src/js')]
+    },
+    resolveLoader: {
+      modulesDirectories: ['web_loaders', 'web_modules', 'node_loaders', 'node_modules', path.resolve(__dirname, '../node_modules')]
+    },
+    module: {
+      rules: [{
+        test: /\.html$/,
+        include: [path.join(cwd, huron.root, huron.output)],
+        use: 'html-loader'
+      }, {
+        test: /\.(hbs|handlebars)$/,
+        include: [path.join(cwd, huron.root, 'huron-assets')],
+        use: {
+          loader: 'handlebars-loader',
+          options: {
+            helperDirs: path.join(__dirname, '../../', 'templates/handlebars-helpers')
+          }
         }
-      }, 'html-loader']
-      // include: ['path/to/templates']
-    }]
-  }
+      }]
+    }
+  };
 };
 
 /***/ }),
