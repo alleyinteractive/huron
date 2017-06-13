@@ -1,9 +1,14 @@
 /** @module cli/actions */
 
 // Imports
-import { htmlHandler } from './handle-html';
-import { templateHandler } from './handle-templates';
-import { kssHandler } from './handle-kss';
+import {
+  updateHTML,
+  deleteHTML,
+  updatePrototype,
+  deletePrototype,
+} from './handle-html';
+import { updateTemplate, deleteTemplate } from './handle-templates';
+import { updateKSS, deleteKSS } from './handle-kss';
 import * as utils from './utils';
 
 // Requires
@@ -79,12 +84,12 @@ export function updateFile(filepath, store) {
       section = utils.getSection(file.base, 'markup', store);
 
       if (section) {
-        return htmlHandler.updateTemplate(filepath, section, store);
+        return updateHTML(filepath, section, store);
       } else if (
         - 1 !== file.dir.indexOf('prototypes') &&
         - 1 !== file.name.indexOf('prototype-')
       ) {
-        return htmlHandler.updatePrototype(filepath, store);
+        return updatePrototype(filepath, store);
       }
 
       console.log(chalk.red(`Failed to write file: ${file.name}`));
@@ -97,7 +102,7 @@ export function updateFile(filepath, store) {
       section = utils.getSection(file.base, field, store);
 
       if (section) {
-        return templateHandler.updateTemplate(filepath, section, store);
+        return updateTemplate(filepath, section, store);
       }
 
       console.log( // eslint-disable-line no-console
@@ -109,7 +114,7 @@ export function updateFile(filepath, store) {
     // Will also output a template if markup is inline
     // Note: inline markup does _not_ support handlebars currently
     case huron.get('kssExtension'):
-      return kssHandler.updateKSS(filepath, store);
+      return updateKSS(filepath, store);
 
     // This should never happen if Gaze is working properly
     default:
@@ -139,12 +144,12 @@ export function deleteFile(filepath, store) {
       section = utils.getSection(file.base, 'markup', store);
 
       if (section) {
-        newStore = htmlHandler.deleteTemplate(filepath, section, store);
+        newStore = deleteHTML(filepath, section, store);
       } else if (
         - 1 !== file.dir.indexOf('prototypes') &&
         - 1 !== file.name.indexOf('prototype-')
       ) {
-        newStore = htmlHandler.deletePrototype(filepath, store);
+        newStore = deletePrototype(filepath, store);
       }
       break;
 
@@ -154,7 +159,7 @@ export function deleteFile(filepath, store) {
       section = utils.getSection(file.base, field, store);
 
       if (section) {
-        newStore = templateHandler.deleteTemplate(filepath, section, store);
+        newStore = deleteTemplate(filepath, section, store);
       }
       break;
 
@@ -162,7 +167,7 @@ export function deleteFile(filepath, store) {
       section = utils.getSection(filepath, false, store);
 
       if (section) {
-        newStore = kssHandler.deleteKSS(filepath, section, store);
+        newStore = deleteKSS(filepath, section, store);
       }
       break;
 
