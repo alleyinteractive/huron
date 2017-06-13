@@ -1,5 +1,5 @@
 /** @module cli/template-handler */
-import { utils } from './utils';
+import * as utils from './utils';
 
 const path = require('path');
 const fs = require('fs-extra');

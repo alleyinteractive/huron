@@ -4,7 +4,7 @@
 import { htmlHandler } from './handle-html';
 import { templateHandler } from './handle-templates';
 import { kssHandler } from './handle-kss';
-import { utils } from './utils';
+import * as utils from './utils';
 
 // Requires
 const path = require('path');

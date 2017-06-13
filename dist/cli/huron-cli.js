@@ -96,6 +96,17 @@ module.exports = require("fs-extra");
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+exports.normalizeSectionData = normalizeSectionData;
+exports.writeSectionData = writeSectionData;
+exports.getTemplateDataPair = getTemplateDataPair;
+exports.normalizeHeader = normalizeHeader;
+exports.wrapMarkup = wrapMarkup;
+exports.generateFilename = generateFilename;
+exports.writeFile = writeFile;
+exports.removeFile = removeFile;
+exports.writeSectionTemplate = writeSectionTemplate;
+exports.getSection = getSection;
+exports.matchKssDir = matchKssDir;
 /** @module cli/utilities */
 
 const cwd = process.cwd(); // Current working directory
@@ -103,270 +114,265 @@ const path = __webpack_require__(0);
 const fs = __webpack_require__(2);
 const chalk = __webpack_require__(1); // Colorize terminal output
 
-// Exports
-/* eslint-disable */
-const utils = exports.utils = {
-  /* eslint-enable */
+/**
+ * Ensure predictable data structure for KSS section data
+ *
+ * @function normalizeSectionData
+ * @param {object} section - section data
+ * @return {object} section data
+ */
+function normalizeSectionData(section) {
+  const data = section.data || section;
 
-  /**
-   * Ensure predictable data structure for KSS section data
-   *
-   * @function normalizeSectionData
-   * @param {object} section - section data
-   * @return {object} section data
-   */
-  normalizeSectionData(section) {
-    const data = section.data || section;
+  if (!data.referenceURI || '' === data.referenceURI) {
+    data.referenceURI = section.referenceURI();
+  }
 
-    if (!data.referenceURI || '' === data.referenceURI) {
-      data.referenceURI = section.referenceURI();
-    }
+  return data;
+}
 
-    return data;
-  },
+/**
+ * Ensure predictable data structure for KSS section data
+ *
+ * @function writeSectionData
+ * @param {object} store - data store
+ * @param {object} section - section data
+ * @param {string} sectionPath - output destination for section data file
+ */
+function writeSectionData(store, section, sectionPath = false) {
+  let outputPath = sectionPath;
+  let sectionFileInfo;
 
-  /**
-   * Ensure predictable data structure for KSS section data
-   *
-   * @function writeSectionData
-   * @param {object} store - data store
-   * @param {object} section - section data
-   * @param {string} sectionPath - output destination for section data file
-   */
-  writeSectionData(store, section, sectionPath = false) {
-    let outputPath = sectionPath;
-    let sectionFileInfo;
+  if (!outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
+    sectionFileInfo = path.parse(section.kssPath);
+    outputPath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
+  }
 
-    if (!outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
-      sectionFileInfo = path.parse(section.kssPath);
-      outputPath = path.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
-    }
+  // Output section data
+  if (outputPath) {
+    return writeFile(section.referenceURI, 'section', outputPath, JSON.stringify(section), store);
+  }
 
-    // Output section data
-    if (outputPath) {
-      return utils.writeFile(section.referenceURI, 'section', outputPath, JSON.stringify(section), store);
-    }
+  console.warn( // eslint-disable-line no-console
+  chalk.red(`Failed to write section data for ${section.referenceURI}`));
+  return false;
+}
 
-    console.warn( // eslint-disable-line no-console
-    chalk.red(`Failed to write section data for ${section.referenceURI}`));
-    return false;
-  },
+/**
+ * Find .json from a template file or vice versa
+ *
+ * @function getTemplateDataPair
+ * @param {object} file - file object from path.parse()
+ * @param {object} section - KSS section data
+ * @return {string} relative path to module JSON file
+ */
+function getTemplateDataPair(file, section, store) {
+  const huron = store.get('config');
+  const kssDir = matchKssDir(file.dir, huron);
 
-  /**
-   * Find .json from a template file or vice versa
-   *
-   * @function getTemplateDataPair
-   * @param {object} file - file object from path.parse()
-   * @param {object} section - KSS section data
-   * @return {string} relative path to module JSON file
-   */
-  getTemplateDataPair(file, section, store) {
-    const huron = store.get('config');
-    const kssDir = utils.matchKssDir(file.dir, huron);
+  if (kssDir) {
+    const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
+    const partnerType = '.json' === file.ext ? 'template' : 'data';
+    const partnerExt = '.json' === file.ext ? huron.get('templates').extension : '.json';
 
-    if (kssDir) {
-      const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
-      const partnerType = '.json' === file.ext ? 'template' : 'data';
-      const partnerExt = '.json' === file.ext ? huron.get('templates').extension : '.json';
+    const pairPath = path.join(componentPath, generateFilename(section.referenceURI, partnerType, partnerExt, store));
 
-      const pairPath = path.join(componentPath, utils.generateFilename(section.referenceURI, partnerType, partnerExt, store));
+    return `./${pairPath}`;
+  }
 
-      return `./${pairPath}`;
-    }
+  return false;
+}
 
-    return false;
-  },
+/**
+ * Normalize a section title for use as a filename
+ *
+ * @function normalizeHeader
+ * @param {string} header - section header extracted from KSS documentation
+ * @return {string} modified header, lowercase and words separated by dash
+ */
+function normalizeHeader(header) {
+  return header.toLowerCase().replace(/\s?\W\s?/g, '-');
+}
 
-  /**
-   * Normalize a section title for use as a filename
-   *
-   * @function normalizeHeader
-   * @param {string} header - section header extracted from KSS documentation
-   * @return {string} modified header, lowercase and words separated by dash
-   */
-  normalizeHeader(header) {
-    return header.toLowerCase().replace(/\s?\W\s?/g, '-');
-  },
-
-  /**
-   * Wrap html in required template tags
-   *
-   * @function wrapMarkup
-   * @param {string} content - html or template markup
-   * @param {string} templateId - id of template (should be section reference)
-   * @return {string} modified HTML
-   */
-  wrapMarkup(content, templateId) {
-    return `<dom-module>
+/**
+ * Wrap html in required template tags
+ *
+ * @function wrapMarkup
+ * @param {string} content - html or template markup
+ * @param {string} templateId - id of template (should be section reference)
+ * @return {string} modified HTML
+ */
+function wrapMarkup(content, templateId) {
+  return `<dom-module>
 <template id="${templateId}">
 ${content}
 </template>
 </dom-module>\n`;
-  },
+}
 
-  /**
-   * Generate a filename based on referenceURI, type and file object
-   *
-   * @function generateFilename
-   * @param  {string} id - The name of the file (with extension).
-   * @param  {string} type - the type of file output
-   * @param  {object} ext - file extension
-   * @param  {store} store - data store
-   * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
-   */
-  generateFilename(id, type, ext, store) {
-    // Type of file and its corresponding extension(s)
-    const types = store.get('types');
-    const outputExt = '.scss' !== ext ? ext : '.html';
+/**
+ * Generate a filename based on referenceURI, type and file object
+ *
+ * @function generateFilename
+ * @param  {string} id - The name of the file (with extension).
+ * @param  {string} type - the type of file output
+ * @param  {object} ext - file extension
+ * @param  {store} store - data store
+ * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
+ */
+function generateFilename(id, type, ext, store) {
+  // Type of file and its corresponding extension(s)
+  const types = store.get('types');
+  const outputExt = '.scss' !== ext ? ext : '.html';
 
-    /* eslint-disable */
-    if (-1 === types.indexOf(type)) {
-      console.log(`Huron data ${type} does not exist`);
-      return false;
-    }
-    /* eslint-enable */
-
-    return `${id}-${type}${outputExt}`;
-  },
-
-  /**
-   * Copy an HTML file into the huron output directory.
-   *
-   * @function writeFile
-   * @param  {string} id - The name of the file (with extension).
-   * @param  {string} content - The content of the file to write.
-   * @param  {string} type - the type of file output
-   * @param  {object} store - The data store
-   * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
-   */
-  writeFile(id, type, filepath, content, store) {
-    const huron = store.get('config');
-    const file = path.parse(filepath);
-    const filename = utils.generateFilename(id, type, file.ext, store);
-    const kssDir = utils.matchKssDir(filepath, huron);
-
-    if (kssDir) {
-      const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
-      const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
-      const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
-      let newContent = content;
-
-      if ('data' !== type && 'section' !== type) {
-        newContent = utils.wrapMarkup(content, id);
-      }
-
-      try {
-        fs.outputFileSync(outputPath, newContent);
-        console.log(chalk.green(`Writing ${outputRelative}`)); // eslint-disable-line no-console
-      } catch (e) {
-        console.log(chalk.red(`Failed to write ${outputRelative}`)); // eslint-disable-line no-console
-      }
-
-      return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
-    }
-
-    return false;
-  },
-
-  /**
-   * Delete a file in the huron output directory
-   *
-   * @function removeFile
-   * @param  {string} filename - The name of the file (with extension).
-   * @param  {object} store - The data store
-   * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
-   */
-  removeFile(id, type, filepath, store) {
-    const huron = store.get('config');
-    const file = path.parse(filepath);
-    const filename = utils.generateFilename(id, type, file.ext, store);
-    const kssDir = utils.matchKssDir(filepath, huron);
-
-    if (kssDir) {
-      const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
-      const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
-      const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
-
-      try {
-        fs.removeSync(outputPath);
-        console.log(chalk.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console
-      } catch (e) {
-        console.log( // eslint-disable-line no-console
-        chalk.red(`${outputRelative} does not exist or cannot be deleted`));
-      }
-
-      return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
-    }
-
-    return false;
-  },
-
-  /**
-   * Write a template for sections
-   *
-   * @function writeSectionTemplate
-   * @param  {string} filepath - the original template file
-   * @param  {object} store - data store
-   * @return {object} updated store
-   */
-  writeSectionTemplate(filepath, store) {
-    const huron = store.get('config');
-    const sectionTemplate = utils.wrapMarkup(fs.readFileSync(filepath, 'utf8'));
-    const componentPath = './huron-sections/sections.hbs';
-    const output = path.join(cwd, huron.get('root'), huron.get('output'), componentPath);
-
-    // Move huron script and section template into huron root
-    fs.outputFileSync(output, sectionTemplate);
-    console.log(chalk.green(`writing section template to ${output}`)); // eslint-disable-line no-console
-
-    return store.set('sectionTemplatePath', componentPath);
-  },
-
-  /**
-   * Request for section data based on section reference
-   *
-   * @function writeSectionTemplate
-   * @param {string} search - key on which to match section
-   * @param {field} string - field in which to look to determine section
-   * @param {obj} store - sections memory store
-   */
-  getSection(search, field, store) {
-    const sectionValues = store.getIn(['sections', 'sectionsByPath']).valueSeq();
-    let selectedSection = false;
-
-    if (field) {
-      selectedSection = sectionValues.filter(value => value[field] === search).get(0);
-    } else {
-      selectedSection = store.getIn(['sections', 'sectionsByPath', search]);
-    }
-
-    return selectedSection;
-  },
-
-  /**
-   * Find which configured KSS directory a filepath exists in
-   *
-   * @function matchKssDir
-   * @param {string} filepath - filepath to search for
-   * @param {object} huron - huron configuration
-   * @return {string} kssMatch - relative path to KSS directory
-   */
-  matchKssDir(filepath, huron) {
-    const kssSource = huron.get('kss');
-    /* eslint-disable space-unary-ops */
-    // Include forward slash in our test to make sure we're matchin a directory, not a file extension
-    const kssMatch = kssSource.filter(dir => filepath.includes(`/${dir}`));
-    /* eslint-enable space-unary-ops */
-
-    if (kssMatch.length) {
-      return kssMatch[0];
-    }
-
-    console.error(chalk.red(`filepath ${filepath} does not exist in any
-      of the configured KSS directories`));
+  /* eslint-disable */
+  if (-1 === types.indexOf(type)) {
+    console.log(`Huron data ${type} does not exist`);
     return false;
   }
-};
+  /* eslint-enable */
+
+  return `${id}-${type}${outputExt}`;
+}
+
+/**
+ * Copy an HTML file into the huron output directory.
+ *
+ * @function writeFile
+ * @param  {string} id - The name of the file (with extension).
+ * @param  {string} content - The content of the file to write.
+ * @param  {string} type - the type of file output
+ * @param  {object} store - The data store
+ * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
+ */
+function writeFile(id, type, filepath, content, store) {
+  const huron = store.get('config');
+  const file = path.parse(filepath);
+  const filename = generateFilename(id, type, file.ext, store);
+  const kssDir = matchKssDir(filepath, huron);
+
+  if (kssDir) {
+    const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
+    const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
+    const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+    let newContent = content;
+
+    if ('data' !== type && 'section' !== type) {
+      newContent = wrapMarkup(content, id);
+    }
+
+    try {
+      fs.outputFileSync(outputPath, newContent);
+      console.log(chalk.green(`Writing ${outputRelative}`)); // eslint-disable-line no-console
+    } catch (e) {
+      console.log(chalk.red(`Failed to write ${outputRelative}`)); // eslint-disable-line no-console
+    }
+
+    return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
+  }
+
+  return false;
+}
+
+/**
+ * Delete a file in the huron output directory
+ *
+ * @function removeFile
+ * @param  {string} filename - The name of the file (with extension).
+ * @param  {object} store - The data store
+ * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
+ */
+function removeFile(id, type, filepath, store) {
+  const huron = store.get('config');
+  const file = path.parse(filepath);
+  const filename = generateFilename(id, type, file.ext, store);
+  const kssDir = matchKssDir(filepath, huron);
+
+  if (kssDir) {
+    const componentPath = path.relative(path.resolve(cwd, kssDir), file.dir);
+    const outputRelative = path.join(huron.get('output'), componentPath, `${filename}`);
+    const outputPath = path.resolve(cwd, huron.get('root'), outputRelative);
+
+    try {
+      fs.removeSync(outputPath);
+      console.log(chalk.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console
+    } catch (e) {
+      console.log( // eslint-disable-line no-console
+      chalk.red(`${outputRelative} does not exist or cannot be deleted`));
+    }
+
+    return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
+  }
+
+  return false;
+}
+
+/**
+ * Write a template for sections
+ *
+ * @function writeSectionTemplate
+ * @param  {string} filepath - the original template file
+ * @param  {object} store - data store
+ * @return {object} updated store
+ */
+function writeSectionTemplate(filepath, store) {
+  const huron = store.get('config');
+  const sectionTemplate = wrapMarkup(fs.readFileSync(filepath, 'utf8'));
+  const componentPath = './huron-sections/sections.hbs';
+  const output = path.join(cwd, huron.get('root'), huron.get('output'), componentPath);
+
+  // Move huron script and section template into huron root
+  fs.outputFileSync(output, sectionTemplate);
+  console.log(chalk.green(`writing section template to ${output}`)); // eslint-disable-line no-console
+
+  return store.set('sectionTemplatePath', componentPath);
+}
+
+/**
+ * Request for section data based on section reference
+ *
+ * @function writeSectionTemplate
+ * @param {string} search - key on which to match section
+ * @param {field} string - field in which to look to determine section
+ * @param {obj} store - sections memory store
+ */
+function getSection(search, field, store) {
+  const sectionValues = store.getIn(['sections', 'sectionsByPath']).valueSeq();
+  let selectedSection = false;
+
+  if (field) {
+    selectedSection = sectionValues.filter(value => value[field] === search).get(0);
+  } else {
+    selectedSection = store.getIn(['sections', 'sectionsByPath', search]);
+  }
+
+  return selectedSection;
+}
+
+/**
+ * Find which configured KSS directory a filepath exists in
+ *
+ * @function matchKssDir
+ * @param {string} filepath - filepath to search for
+ * @param {object} huron - huron configuration
+ * @return {string} kssMatch - relative path to KSS directory
+ */
+function matchKssDir(filepath, huron) {
+  const kssSource = huron.get('kss');
+  /* eslint-disable space-unary-ops */
+  // Include forward slash in our test to make sure we're matchin a directory, not a file extension
+  const kssMatch = kssSource.filter(dir => filepath.includes(`/${dir}`));
+  /* eslint-enable space-unary-ops */
+
+  if (kssMatch.length) {
+    return kssMatch[0];
+  }
+
+  console.error(chalk.red(`filepath ${filepath} does not exist in any
+    of the configured KSS directories`));
+
+  return false;
+}
 
 /***/ }),
 /* 4 */
@@ -442,6 +448,10 @@ exports.templateHandler = undefined;
 
 var _utils = __webpack_require__(3);
 
+var utils = _interopRequireWildcard(_utils);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 const path = __webpack_require__(0); /** @module cli/template-handler */
 
 const fs = __webpack_require__(2);
@@ -461,7 +471,7 @@ const templateHandler = exports.templateHandler = {
    */
   updateTemplate(filepath, section, store) {
     const file = path.parse(filepath);
-    const pairPath = _utils.utils.getTemplateDataPair(file, section, store);
+    const pairPath = utils.getTemplateDataPair(file, section, store);
     const type = '.json' === file.ext ? 'data' : 'template';
     const newSection = section;
     const newStore = store;
@@ -474,14 +484,14 @@ const templateHandler = exports.templateHandler = {
     }
 
     if (content) {
-      const requirePath = _utils.utils.writeFile(newSection.referenceURI, type, filepath, content, newStore);
+      const requirePath = utils.writeFile(newSection.referenceURI, type, filepath, content, newStore);
       newSection[`${type}Path`] = requirePath;
 
       if ('template' === type) {
         newSection.templateContent = content;
 
         // Rewrite section data with template content
-        newSection.sectionPath = _utils.utils.writeSectionData(newStore, newSection);
+        newSection.sectionPath = utils.writeSectionData(newStore, newSection);
       }
 
       return newStore.setIn(['templates', requirePath], pairPath).setIn(['sections', 'sectionsByPath', newSection.kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);
@@ -506,7 +516,7 @@ const templateHandler = exports.templateHandler = {
     const newStore = store;
 
     // Remove partner
-    const requirePath = _utils.utils.removeFile(newSection.referenceURI, type, filepath, newStore);
+    const requirePath = utils.removeFile(newSection.referenceURI, type, filepath, newStore);
     delete newSection[`${type}Path`];
 
     return newStore.deleteIn(['templates', requirePath]).setIn(['sections', 'sectionsByPath', newSection.kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);
@@ -795,6 +805,10 @@ var _handleKss = __webpack_require__(12);
 
 var _utils = __webpack_require__(3);
 
+var utils = _interopRequireWildcard(_utils);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 // Requires
 /** @module cli/actions */
 
@@ -856,13 +870,13 @@ function updateFile(filepath, store) {
   let section;
 
   if (-1 !== filepath.indexOf(huron.get('sectionTemplate'))) {
-    return _utils.utils.writeSectionTemplate(filepath, store);
+    return utils.writeSectionTemplate(filepath, store);
   }
 
   switch (file.ext) {
     // Plain HTML template, external
     case '.html':
-      section = _utils.utils.getSection(file.base, 'markup', store);
+      section = utils.getSection(file.base, 'markup', store);
 
       if (section) {
         return _handleHtml.htmlHandler.updateTemplate(filepath, section, store);
@@ -877,7 +891,7 @@ function updateFile(filepath, store) {
     case huron.get('templates').extension:
     case '.json':
       field = '.json' === file.ext ? 'data' : 'markup';
-      section = _utils.utils.getSection(file.base, field, store);
+      section = utils.getSection(file.base, field, store);
 
       if (section) {
         return _handleTemplates.templateHandler.updateTemplate(filepath, section, store);
@@ -918,7 +932,7 @@ function deleteFile(filepath, store) {
   switch (file.ext) {
     // Plain HTML template, external
     case '.html':
-      section = _utils.utils.getSection(file.base, 'markup', store);
+      section = utils.getSection(file.base, 'markup', store);
 
       if (section) {
         newStore = _handleHtml.htmlHandler.deleteTemplate(filepath, section, store);
@@ -930,7 +944,7 @@ function deleteFile(filepath, store) {
     case huron.get('templates').extension:
     case '.json':
       field = '.json' === file.ext ? 'data' : 'markup';
-      section = _utils.utils.getSection(file.base, field, store);
+      section = utils.getSection(file.base, field, store);
 
       if (section) {
         newStore = _handleTemplates.templateHandler.deleteTemplate(filepath, section, store);
@@ -938,7 +952,7 @@ function deleteFile(filepath, store) {
       break;
 
     case huron.get('kssExtension'):
-      section = _utils.utils.getSection(filepath, false, store);
+      section = utils.getSection(filepath, false, store);
 
       if (section) {
         newStore = _handleKss.kssHandler.deleteKSS(filepath, section, store);
@@ -1243,6 +1257,10 @@ exports.htmlHandler = undefined;
 
 var _utils = __webpack_require__(3);
 
+var utils = _interopRequireWildcard(_utils);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
 const path = __webpack_require__(0); /** @module cli/html-handler */
 
 const fs = __webpack_require__(2);
@@ -1266,11 +1284,11 @@ const htmlHandler = exports.htmlHandler = {
     const newSection = section;
 
     if (content) {
-      newSection.templatePath = _utils.utils.writeFile(section.referenceURI, 'template', filepath, content, store);
+      newSection.templatePath = utils.writeFile(section.referenceURI, 'template', filepath, content, store);
       newSection.templateContent = content;
 
       // Rewrite section data with template content
-      newSection.sectionPath = _utils.utils.writeSectionData(store, newSection);
+      newSection.sectionPath = utils.writeSectionData(store, newSection);
 
       return store.setIn(['sections', 'sectionsByPath', section.kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
     }
@@ -1291,7 +1309,7 @@ const htmlHandler = exports.htmlHandler = {
   deleteTemplate(filepath, section, store) {
     const newSection = section;
 
-    _utils.utils.removeFile(newSection.referenceURI, 'template', filepath, store);
+    utils.removeFile(newSection.referenceURI, 'template', filepath, store);
 
     delete newSection.templatePath;
 
@@ -1311,7 +1329,7 @@ const htmlHandler = exports.htmlHandler = {
     const content = fs.readFileSync(filepath, 'utf8');
 
     if (content) {
-      const requirePath = _utils.utils.writeFile(file.name, 'prototype', filepath, content, store);
+      const requirePath = utils.writeFile(file.name, 'prototype', filepath, content, store);
 
       return store.setIn(['prototypes', file.name], requirePath);
     }
@@ -1330,7 +1348,7 @@ const htmlHandler = exports.htmlHandler = {
    */
   deletePrototype(filepath, store) {
     const file = path.parse(filepath);
-    const requirePath = _utils.utils.removeFile(file.name, 'prototype', filepath, store);
+    const requirePath = utils.removeFile(file.name, 'prototype', filepath, store);
 
     return store.setIn(['prototypes', file.name], requirePath);
   }
@@ -1350,9 +1368,13 @@ exports.kssHandler = undefined;
 
 var _utils = __webpack_require__(3);
 
+var utils = _interopRequireWildcard(_utils);
+
 var _handleTemplates = __webpack_require__(6);
 
 var _requireTemplates = __webpack_require__(7);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 const path = __webpack_require__(0); /** @module cli/kss-handler */
 
@@ -1375,7 +1397,7 @@ const kssHandler = exports.kssHandler = {
   updateKSS(filepath, store) {
     const kssSource = fs.readFileSync(filepath, 'utf8');
     const huron = store.get('config');
-    const oldSection = _utils.utils.getSection(filepath, false, store) || {};
+    const oldSection = utils.getSection(filepath, false, store) || {};
     const file = path.parse(filepath);
     let newStore = store;
 
@@ -1383,7 +1405,7 @@ const kssHandler = exports.kssHandler = {
       const styleguide = parse(kssSource, huron.get('kssOptions'));
 
       if (styleguide.data.sections.length) {
-        const section = _utils.utils.normalizeSectionData(styleguide.data.sections[0]);
+        const section = utils.normalizeSectionData(styleguide.data.sections[0]);
 
         if (section.reference && section.referenceURI) {
           // Update or add section data
@@ -1460,7 +1482,7 @@ const kssHandler = exports.kssHandler = {
       newStore = kssHandler.updateInlineTemplate(kssPath, oldSection, newSection, newStore);
     } else {
       // Remove inline template, if it exists
-      _utils.utils.removeFile(newSection.referenceURI, 'template', kssPath, store);
+      utils.removeFile(newSection.referenceURI, 'template', kssPath, store);
       // Update markup and data fields
       newStore = kssHandler.updateTemplateFields(sectionFileInfo, oldSection, newSection, newStore);
     }
@@ -1469,7 +1491,7 @@ const kssHandler = exports.kssHandler = {
     newStore = kssHandler.updateDescription(kssPath, oldSection, newSection, newStore);
 
     // Output section data to a JSON file
-    newSection.sectionPath = _utils.utils.writeSectionData(newStore, newSection, dataFilepath);
+    newSection.sectionPath = utils.writeSectionData(newStore, newSection, dataFilepath);
 
     // Update section sorting
     return newStore.setIn(['sections', 'sorted'], newSort).setIn(['sections', 'sectionsByPath', kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
@@ -1490,7 +1512,7 @@ const kssHandler = exports.kssHandler = {
 
     // If we have inline markup
     if (this.fieldShouldOutput(oldSection, section, 'markup')) {
-      newSection.templatePath = _utils.utils.writeFile(section.referenceURI, 'template', filepath, section.markup, store);
+      newSection.templatePath = utils.writeFile(section.referenceURI, 'template', filepath, section.markup, store);
       newSection.templateContent = section.markup;
 
       return newStore.setIn(['sections', 'sectionsByPath', filepath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
@@ -1514,7 +1536,7 @@ const kssHandler = exports.kssHandler = {
     // If we don't have previous KSS or the KSS has been updated
     if (this.fieldShouldOutput(oldSection, section, 'description')) {
       // Write new description
-      newSection.descriptionPath = _utils.utils.writeFile(section.referenceURI, 'description', filepath, section.description, store);
+      newSection.descriptionPath = utils.writeFile(section.referenceURI, 'description', filepath, section.description, store);
 
       return newStore.setIn(['sections', 'sectionsByPath', filepath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
     }
@@ -1576,15 +1598,15 @@ const kssHandler = exports.kssHandler = {
     let newStore = store;
 
     // Remove old section data
-    _utils.utils.removeFile(section.referenceURI, 'section', dataFilepath, newStore);
+    utils.removeFile(section.referenceURI, 'section', dataFilepath, newStore);
 
     // Remove associated inline template
     if (isInline) {
-      _utils.utils.removeFile(section.referenceURI, 'template', kssPath, newStore);
+      utils.removeFile(section.referenceURI, 'template', kssPath, newStore);
     }
 
     // Remove description template
-    _utils.utils.removeFile(section.referenceURI, 'description', kssPath, newStore);
+    utils.removeFile(section.referenceURI, 'description', kssPath, newStore);
 
     // Remove data from sectionsByPath if file has been removed
     if (removed) {

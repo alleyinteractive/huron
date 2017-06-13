@@ -60,6 +60,7 @@
     "eslint-plugin-react": "^6.8.0",
     "jest": "^20.0.4",
     "jsdoc": "^3.4.3",
+    "mock-fs": "^4.4.1",
     "regenerator-runtime": "^0.10.5",
     "webpack": "^2.2.1",
     "webpack-node-externals": "^1.5.4"
