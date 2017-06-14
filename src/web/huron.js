@@ -1,4 +1,4 @@
-const md5 = require('js-md5');
+const crypto = require('crypto');
 
 /* eslint-disable no-underscore-dangle */
 // Accept the huron.js module for Huron development
@@ -119,7 +119,7 @@ class InsertNodes {
    * @return {string} key - generated MD5 Hash
    */
   static generateModuleHash(key) {
-    return md5(key);
+    return crypto.createHash('md5').update(key).digest("hex");
   }
 
   /**
