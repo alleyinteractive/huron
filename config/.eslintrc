@@ -18,14 +18,18 @@
     // Optional Enables
     "webextensions": false, // Enable if using Web Extensions
     // Optional Testing Frameworks
-    "jasmine": false, // Enable if using Jasmine testing framework
+    "jasmine": true, // Enable if using Jasmine testing framework
     "protractor": false, // Enable if using Protractor testing framework
-    "mocha": false // Enable if using Mocha testing framework
+    "mocha": false, // Enable if using Mocha testing framework
+    "jest/globals": true
   },
   "globals": {
     "jQuery": true,
     "angular": false, // Enable if using Angular
   },
+  "plugins": [
+    "jest"
+  ],
   // Do NOT change these rules
   "rules": {
     "indent": [2, 2, {"SwitchCase": 1}],

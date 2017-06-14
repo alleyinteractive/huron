@@ -41,10 +41,17 @@ function parseArgs() {
       '[webpackConfig] for all webpack options',
       path.resolve(__dirname, '../default-config/webpack.config.js')
     )
-    .option('-p, --production', 'compile assets once for production')
-    .parse(process.argv);
+    .option('-p, --production', 'compile assets once for production');
 
   program.env = envArg;
+
+  // Only parse if we're not running tests
+  if (
+    ! process.env.npm_lifecycle_event ||
+    'test' !== process.env.npm_lifecycle_event
+  ) {
+    program.parse(process.argv);
+  }
 }
 
 parseArgs();

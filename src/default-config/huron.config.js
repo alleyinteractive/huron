@@ -15,7 +15,7 @@ module.exports = {
   port: 8080,
   prototypes: ['index'],
   root: 'dist/',
-  sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
+  sectionTemplate: path.join(__dirname, '../../templates/section.hbs'),
   templates: {
     rule: {
       test: /\.(hbs|handlebars)$/,
