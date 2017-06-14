@@ -553,7 +553,7 @@ const requireTemplates = exports.requireTemplates = function requireTemplates(st
   const requireRegex = new RegExp(`\\.html|\\.json|\\${huron.get('templates').extension}$`);
   const requirePath = `'../${huron.get('output')}'`;
 
-  // Initialize templates, js, css and HMR acceptance logic
+  // Initialize templates, js, css and Hot Module Replacement acceptance logic
   const prepend = `
 var store = require('./huron-store.js');
 var sectionTemplate = require('./section.hbs');
@@ -567,7 +567,7 @@ assets.keys().forEach(function(key) {
 });
 
 if (module.hot) {
-  // HMR for huron components (json, hbs, html)
+  // Hot Module Replacement for huron components (json, hbs, html)
   module.hot.accept(
     assets.id,
     () => {
@@ -593,7 +593,7 @@ if (module.hot) {
     }
   );
 
-  // HMR for sections template
+  // Hot Module Replacement for sections template
   module.hot.accept(
     './section.hbs',
     () => {
@@ -607,7 +607,7 @@ if (module.hot) {
     }
   );
 
-  // HMR for data store
+  // Hot Module Replacement for data store
   module.hot.accept(
     './huron-store.js',
     () => {
