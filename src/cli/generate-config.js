@@ -13,8 +13,12 @@ const defaultHuron = require('../default-config/huron.config');
 
 // Require configs passed in by user from CLI
 let defaultConfig = false;
-const localConfigPath = path.join(cwd, program.webpackConfig);
-const localHuronPath = path.join(cwd, program.huronConfig);
+const localConfigPath = ! path.isAbsolute(program.webpackConfig) ?
+  path.join(cwd, program.webpackConfig) :
+  program.webpackConfig;
+const localHuronPath = ! path.isAbsolute(program.huronConfig) ?
+  path.join(cwd, program.huronConfig) :
+  program.huronConfig;
 const localConfig = requireExternal(localConfigPath);
 const localHuron = requireExternal(localHuronPath);
 

@@ -54,19 +54,7 @@ module.exports = function getConfig(env) {
         {
           test: /\.js$/,
           exclude: /node_modules/,
-          use: {
-            loader: 'babel-loader',
-            options: {
-              babelrc: false,
-              presets: [
-                ['env', {
-                  targets: {
-                    node: "6.5",
-                  },
-                }],
-              ],
-            },
-          },
+          use: 'babel-loader',
         },
       ],
     },

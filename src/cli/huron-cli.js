@@ -2,29 +2,20 @@
 import { initFiles, updateFile, deleteFile } from './actions';
 import { requireTemplates, writeStore } from './require-templates';
 import program from './parse-args';
-import generateConfig from './generate-config';
 import startWebpack from './server';
+import { dataStructure, config } from './huron-store';
 
 // Modules
 const path = require('path');
 const Gaze = require('gaze').Gaze;
-const Immutable = require('immutable');
 const chalk = require('chalk'); // Colorize terminal output
-
-// Merge Huron default webpack config with user config
-const config = generateConfig();
 
 /**
  * Huron configuration object
  *
  * @global
  */
-const huron = config.huron;
-
-// Make sure the kss option is represented as an array
-huron.kss = Array.isArray(huron.kss) ?
-  huron.kss :
-  [huron.kss];
+const huron = dataStructure.get('config');
 
 /**
  * Available file extensions. Extensions should not include the leading '.'
@@ -32,47 +23,18 @@ huron.kss = Array.isArray(huron.kss) ?
  * @global
  */
 const extensions = [
-  huron.kssExtension,
-  huron.templates.extension,
+  huron.get('kssExtension'),
+  huron.get('templates').extension,
   'html',
   'json',
 ].map((extension) => extension.replace('.', ''));
-
-// Create initial data structure
-/* eslint-disable */
-/**
- * Initial structure for immutable data store
- *
- * @global
- */
-const dataStructure = Immutable.Map({
-  types: [
-    'template',
-    'data',
-    'description',
-    'section',
-    'prototype',
-    'sections-template',
-  ],
-  config: Immutable.Map(config.huron),
-  sections: Immutable.Map({
-    sectionsByPath: Immutable.Map({}),
-    sectionsByURI: Immutable.Map({}),
-    sorted: {},
-  }),
-  templates: Immutable.Map({}),
-  prototypes: Immutable.Map({}),
-  sectionTemplatePath: '',
-  referenceDelimiter: '.',
-});
-/* eslint-enable */
 
 // Generate watch list for Gaze, start gaze
 const gazeWatch = [];
 
 // Push KSS source directories and section template to Gaze
-gazeWatch.push(path.resolve(__dirname, huron.sectionTemplate));
-huron.kss.forEach((sourceDir) => {
+gazeWatch.push(path.resolve(__dirname, huron.get('sectionTemplate')));
+huron.get('kss').forEach((sourceDir) => {
   let gazeDir = sourceDir;
 
   /* eslint-disable space-unary-ops */

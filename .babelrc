@@ -1,0 +1,31 @@
+{
+  "env": {
+    "cli": {
+      "presets": [
+        ["env", {
+          "targets": {
+            "node": "6.5",
+          }
+        }]
+      ]
+    },
+    "test": {
+      "presets": [
+        ["env", {
+          "targets": {
+            "node": "6.5",
+          }
+        }]
+      ]
+    },
+    "browser": {
+      "presets": [
+        ["env", {
+          "targets": {
+            "browsers": "last 3 versions",
+          }
+        }]
+      ]
+    }
+  }
+}
