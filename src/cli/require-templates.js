@@ -26,17 +26,21 @@ export const requireTemplates = function requireTemplates(store) {
   }$`);
   const requirePath = `'../${huron.get('output')}'`;
 
-  // Initialize templates, js, css and HMR acceptance logic
+  // Initialize templates, js, css and Hot Module Replacement acceptance logic
   const prepend = `
 var store = require('./huron-store.js');
+var sectionTemplate = require('./section.hbs');
 var assets = require.context(${requirePath}, true, ${requireRegex});
 var modules = {};
+
+modules['${store.get('sectionTemplatePath')}'] = sectionTemplate;
 
 assets.keys().forEach(function(key) {
   modules[key] = assets(key);
 });
 
 if (module.hot) {
+  // Hot Module Replacement for huron components (json, hbs, html)
   module.hot.accept(
     assets.id,
     () => {
@@ -62,6 +66,21 @@ if (module.hot) {
     }
   );
 
+  // Hot Module Replacement for sections template
+  module.hot.accept(
+    './section.hbs',
+    () => {
+      var newSectionTemplate = require('./section.hbs');
+      modules['${store.get('sectionTemplatePath')}'] = newSectionTemplate;
+      hotReplace(
+        './huron-assets/section.hbs',
+        newSectionTemplate,
+        modules
+      );
+    }
+  );
+
+  // Hot Module Replacement for data store
   module.hot.accept(
     './huron-store.js',
     () => {

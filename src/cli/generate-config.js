@@ -1,5 +1,4 @@
 /** @module cli/generate-config */
-
 import program from './parse-args';
 import requireExternal from './require-external';
 
@@ -9,10 +8,11 @@ const url = require('url');
 const fs = require('fs-extra');
 const webpack = require('webpack');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
-const defaultConfig = require('../default-config/webpack.config');
+const defaultWebpack = require('../default-config/webpack.config');
 const defaultHuron = require('../default-config/huron.config');
 
 // Require configs passed in by user from CLI
+let defaultConfig = false;
 const localConfigPath = ! path.isAbsolute(program.webpackConfig) ?
   path.join(cwd, program.webpackConfig) :
   program.webpackConfig;
@@ -43,16 +43,15 @@ export default function generateConfig() {
     newHuron = newHuron(program.env);
   }
 
+  // Merge huron defaults with user settings
   newHuron = Object.assign({}, defaultHuron, newHuron);
+  // Use user huron config to modify webpack defaults
+  defaultConfig = defaultWebpack(newHuron);
 
   // Set ouput options
   newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);
-  newConfig.output.path = path.resolve(cwd, newHuron.root);
-  if (! program.production) {
-    newConfig.output.publicPath = `http://localhost:${newHuron.port}/${newHuron.root}`;
-  } else {
-    newConfig.output.publicPath = '';
-  }
+  newConfig.output.path = defaultConfig.output.path;
+  newConfig.output.publicPath = defaultConfig.output.publicPath;
 
   // configure entries
   newConfig = configureEntries(newHuron, newConfig);
@@ -143,19 +142,21 @@ function configureLoaders(huron, config) {
   const templatesLoader = huron.templates.rule || {};
   const newConfig = config;
 
-  templatesLoader.include = [path.join(cwd, huron.root)];
+  // Make sure we're only using templates loader for files in huron root
+  templatesLoader.include = [path.join(cwd, huron.root, huron.output)];
+
+  // Normalize module and module.rules
   newConfig.module = newConfig.module || {};
   newConfig.module.rules = newConfig.module.rules ||
     newConfig.module.loaders ||
     [];
-  newConfig.module.rules.push(
-    {
-      test: /\.html$/,
-      use: 'html-loader',
-      include: [path.join(cwd, huron.root)],
-    },
-    templatesLoader
-  );
+
+  // Add default loaders
+  newConfig.module.rules = defaultConfig.module.rules
+    .concat(
+      newConfig.module.rules,
+      templatesLoader
+    );
 
   return newConfig;
 }
@@ -169,12 +170,12 @@ function configureLoaders(huron, config) {
  */
 function configurePrototypes(huron, config) {
   const wrapperTemplate = fs.readFileSync(
-    path.join(__dirname, '../../templates/prototype-template.ejs'),
+    path.join(__dirname, '../../templates/prototype-template.hbs'),
     'utf8'
   );
 
   const defaultHTMLPluginOptions = {
-    title: '',
+    title: 'Huron',
     window: huron.window,
     js: [],
     css: [],
@@ -182,7 +183,7 @@ function configurePrototypes(huron, config) {
     template: path.join(
       cwd,
       huron.root,
-      'huron-assets/prototype-template.ejs'
+      'huron-assets/prototype-template.hbs'
     ),
     inject: false,
     chunks: [huron.entry],
@@ -191,7 +192,7 @@ function configurePrototypes(huron, config) {
 
   // Write prototype template file for HTML webpack plugin
   fs.outputFileSync(
-    path.join(cwd, huron.root, 'huron-assets/prototype-template.ejs'),
+    path.join(cwd, huron.root, 'huron-assets/prototype-template.hbs'),
     wrapperTemplate
   );
 

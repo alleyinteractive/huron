@@ -74,7 +74,7 @@ export function updateFile(filepath, store) {
   let field;
   let section;
 
-  if (- 1 !== filepath.indexOf(huron.get('sectionTemplate'))) {
+  if (filepath.includes(huron.get('sectionTemplate'))) {
     return utils.writeSectionTemplate(filepath, store);
   }
 

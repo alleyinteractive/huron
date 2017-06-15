@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" class="" {{#if htmlWebpackPlugin.files.manifest}}manifest="{{htmlWebpackPlugin.files.manifest}}"{{/if}}> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>{{htmlWebpackPlugin.options.title}} prototype</title>
+  {{#if htmlWebpackPlugin.files.favicon}}
+    <link rel="shortcut icon" href="{{htmlWebpackPlugin.files.favicon}}">
+  {{/if}}
+  {{#each htmlWebpackPlugin.options.css as |stylesheet|}}
+    <link rel="stylesheet" href="{{stylesheet}}" type="text/css" />
+  {{/each}}
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {{#each htmlWebpackPlugin.files.css as |css|}}
+    <link href="{{css}}" rel="stylesheet" type="text/css">
+  {{/each}}
+  {{#if htmlWebpackPlugin.options.window}}
+    <script>
+      {{#each htmlWebpackPlugin.options.window as |varValue varName|}}
+        window['{{varName}}'] = {{toJSON varValue}};
+      {{/each}}
+    </script>
+  {{/if}}
+</head>
+<body class="prototype prototype-{{htmlWebpackPlugin.options.title}} {{htmlWebpackPlugin.options.bodyClasses}}">
+<div data-huron-id="prototype-{{htmlWebpackPlugin.options.title}}" data-huron-type="prototype"></div>
+{{#each htmlWebpackPlugin.options.js as |script|}}
+  <script type="text/javascript" src="{{script}}"></script>
+{{/each}}
+{{#each htmlWebpackPlugin.files.chunks as |chunk|}}
+  <script type="text/javascript" src="{{chunk.entry}}"></script>
+{{/each}}
+</body>
+</html>
