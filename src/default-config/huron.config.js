@@ -19,7 +19,7 @@ module.exports = {
   templates: {
     rule: {
       test: /\.(hbs|handlebars)$/,
-      use: 'handlebars-template-loader',
+      use: 'handlebars-loader',
     },
     extension: '.hbs',
   },

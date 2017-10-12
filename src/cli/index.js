@@ -1,71 +1,24 @@
 // Local imports
+import chalk from 'chalk';
+
 import { initFiles, updateFile, deleteFile } from './actions';
-import { requireTemplates, writeStore } from './require-templates';
-import program from './parse-args';
+import { requireTemplates, writeStore } from './requireTemplates';
+import program from './parseArgs';
 import startWebpack from './server';
-import { dataStructure, config } from './huron-store';
-
-// Modules
-const path = require('path');
-const Gaze = require('gaze').Gaze;
-const chalk = require('chalk'); // Colorize terminal output
-
-/**
- * Huron configuration object
- *
- * @global
- */
-const huron = dataStructure.get('config');
-
-/**
- * Available file extensions. Extensions should not include the leading '.'
- *
- * @global
- */
-const extensions = [
-  huron.get('kssExtension'),
-  huron.get('templates').extension,
-  'html',
-  'json',
-].map((extension) => extension.replace('.', ''));
-
-// Generate watch list for Gaze, start gaze
-const gazeWatch = [];
-
-// Push KSS source directories and section template to Gaze
-gazeWatch.push(path.resolve(__dirname, huron.get('sectionTemplate')));
-huron.get('kss').forEach((sourceDir) => {
-  let gazeDir = sourceDir;
-
-  /* eslint-disable space-unary-ops */
-  if ('/' === sourceDir.slice(-1)) {
-    gazeDir = sourceDir.slice(0, -1);
-  }
-  /* eslint-enable space-unary-ops */
-
-  gazeWatch.push(
-    `${gazeDir}/**/*.+(${extensions.join('|')})`
-  );
-});
-
-/**
- * Gaze instance for watching all files, including KSS, html, hbs/template, and JSON
- *
- * @global
- */
-const gaze = new Gaze(gazeWatch);
+import { defaultStore, config } from './defaultStore';
+import gaze from './fileWatcher';
 
 /**
  * Initialize data store with files from gaze and original data structure
  *
  * @global
  */
-const store = initFiles(gaze.watched(), dataStructure);
+const store = initFiles(gaze.watched(), defaultStore);
 
 requireTemplates(store);
 writeStore(store);
 
-if (! program.production) {
+if (!program.production) {
   /** @module cli/gaze */
   let newStore = store;
 

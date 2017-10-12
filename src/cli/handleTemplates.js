@@ -1,9 +1,9 @@
 /** @module cli/template-handler */
-import * as utils from './utils';
+import path from 'path';
+import fs from 'fs-extra';
+import chalk from 'chalk';
 
-const path = require('path');
-const fs = require('fs-extra');
-const chalk = require('chalk');
+import * as utils from './utils';
 
 /**
  * Handle update of a template or data (json) file

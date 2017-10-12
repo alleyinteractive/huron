@@ -516,8 +516,6 @@ var InsertNodes = function () {
         preparedData = Object.assign({}, data, { styles: this._store.classnames });
       }
 
-      console.log(preparedData);
-
       return preparedData;
     }
 
@@ -604,7 +602,7 @@ var InsertNodes = function () {
             var modifiedPlaceholder = currentTag;
             var modifier = InsertNodes.getDataAttribute(modifiedPlaceholder, 'huron-modifier');
             var parent = modifiedPlaceholder.parentNode;
-            var rendered = InsertNodes.applyModifier(modifier, meta);
+            var rendered = _this7.prepareData(modifier, meta);
             var renderedTemplate = InsertNodes.convertToElement(rendered).querySelector('template');
             var renderedContents = null;
 

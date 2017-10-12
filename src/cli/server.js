@@ -1,10 +1,9 @@
 /** @module cli/webpack-server */
+import webpack from 'webpack';
+import WebpackDevServer from 'webpack-dev-server';
+import chalk from 'chalk';
 
-import program from './parse-args';
-
-const webpack = require('webpack');
-const WebpackDevServer = require('webpack-dev-server');
-const chalk = require('chalk'); // Colorize terminal output
+import program from './parseArgs';
 
 /**
  * Spin up webpack-dev-server or, if production flag is set, run webpack a single time

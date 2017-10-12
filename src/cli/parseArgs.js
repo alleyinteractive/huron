@@ -1,12 +1,11 @@
 /** @module cli/parse-arguments */
 /* eslint-disable space-unary-ops */
 
+import program from 'commander';
+import path from 'path';
+
 // Requires
 /** @global */
-const program = require('commander'); // Easy program flags
-const path = require('path');
-
-export default program;
 
 /**
  * Process huron CLI arguments
@@ -56,3 +55,5 @@ function parseArgs() {
 
 parseArgs();
 /* eslint-enable */
+
+export default program;

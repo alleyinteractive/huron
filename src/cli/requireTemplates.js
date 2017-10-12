@@ -1,7 +1,7 @@
 /** @module cli/require-templates */
 
-const path = require('path');
-const fs = require('fs-extra');
+import path from 'path';
+import fs from 'fs-extra';
 
 const cwd = process.cwd();
 const huronScript = fs.readFileSync(

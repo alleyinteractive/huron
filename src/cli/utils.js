@@ -1,9 +1,9 @@
 /** @module cli/utilities */
+import path from 'path';
+import fs from 'fs-extra';
+import chalk from 'chalk';
 
 const cwd = process.cwd(); // Current working directory
-const path = require('path');
-const fs = require('fs-extra');
-const chalk = require('chalk'); // Colorize terminal output
 
 /**
  * Ensure predictable data structure for KSS section data
@@ -15,7 +15,7 @@ const chalk = require('chalk'); // Colorize terminal output
 export function normalizeSectionData(section) {
   const data = section.data || section;
 
-  if (! data.referenceURI || '' === data.referenceURI) {
+  if (!data.referenceURI || '' === data.referenceURI) {
     data.referenceURI = section.referenceURI();
   }
 
@@ -34,7 +34,7 @@ export function writeSectionData(store, section, sectionPath = false) {
   let outputPath = sectionPath;
   let sectionFileInfo;
 
-  if (! outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
+  if (!outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
     sectionFileInfo = path.parse(section.kssPath);
     outputPath = path.join(
       sectionFileInfo.dir,
@@ -338,4 +338,12 @@ export function mergeClassnameJSON(directory) {
   }, {});
 
   return classnamesMerged;
+}
+
+export function removeTrailingSlash(directory) {
+  if ('/' === directory.slice(-1)) {
+    return directory.slice(0, -1);
+  }
+
+  return directory;
 }

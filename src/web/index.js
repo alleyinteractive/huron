@@ -113,7 +113,7 @@ class InsertNodes {
     }
 
     // Fallback to getAttribute for ugly old Safari
-    if (! data && tag.getAttribute) {
+    if (!data && tag.getAttribute) {
       data = tag.getAttribute(`data-${attr}`);
     }
 
@@ -147,7 +147,7 @@ class InsertNodes {
     let elementList = context;
 
     // We're replacing top-level elements
-    if (! elementList) {
+    if (!elementList) {
       this.regenCache();
 
       // Find all top-level huron placeholders
@@ -326,7 +326,7 @@ class InsertNodes {
         const moduleKey = this.getModuleKeyFromTag(element);
 
         if (moduleKey) {
-          if (! moduleList[moduleKey]) {
+          if (!moduleList[moduleKey]) {
             moduleList[moduleKey] = [];
           }
           moduleList[moduleKey].push(element);
@@ -574,8 +574,6 @@ class InsertNodes {
       );
     }
 
-    console.log(preparedData);
-
     return preparedData;
   }
 
@@ -632,7 +630,7 @@ class InsertNodes {
     let replace = replaceElements;
     let hasStyleguideHelpers = false;
 
-    if (! replace) {
+    if (!replace) {
       replace = document.querySelectorAll(
         '[data-huron-id][data-huron-type]'
       );
@@ -654,7 +652,7 @@ class InsertNodes {
           const modifier = InsertNodes
             .getDataAttribute(modifiedPlaceholder, 'huron-modifier');
           const parent = modifiedPlaceholder.parentNode;
-          const rendered = InsertNodes.applyModifier(modifier, meta);
+          const rendered = this.prepareData(modifier, meta);
           const renderedTemplate = InsertNodes.convertToElement(rendered)
               .querySelector('template');
           let renderedContents = null;
@@ -673,7 +671,7 @@ class InsertNodes {
 
             if (1 === newEl.nodeType) {
               newEl.dataset.parentHash = meta.hash;
-              hasStyleguideHelpers = ! hasStyleguideHelpers ?
+              hasStyleguideHelpers = !hasStyleguideHelpers ?
                 InsertNodes.isSectionHelper(newEl, meta) :
                 hasStyleguideHelpers;
 
@@ -719,7 +717,7 @@ class InsertNodes {
       return 'template';
     }
 
-    if (! this._types.includes(type)) {
+    if (!this._types.includes(type)) {
       return false;
     }
 

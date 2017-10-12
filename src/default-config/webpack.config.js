@@ -1,4 +1,4 @@
-import program from '../cli/parse-args';
+import program from '../cli/parseArgs';
 
 const webpack = require('webpack');
 const path = require('path');

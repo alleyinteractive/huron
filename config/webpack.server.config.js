@@ -11,18 +11,20 @@ module.exports = function getConfig(env) {
 
   return {
     context,
-    entry: ['./src/cli/index'],
+    entry: {
+      cli: ['./src/cli/index'],
+    },
     plugins: [
       new CleanPlugin(['dist/cli'], {
         root: context,
-        exclude: 'huron-cli.js',
+        exclude: 'index.js',
       }),
     ],
     target: 'node',
     devtool: 'cheap-module-source-map',
     output: {
       path: path.join(context, 'dist/cli'),
-      filename: 'huron-cli.js',
+      filename: 'index.js',
       chunkFilename: '[name].chunk.min.js',
       publicPath: '../',
     },
@@ -34,7 +36,7 @@ module.exports = function getConfig(env) {
       __dirname: false,
     },
     module: {
-      noParse: /require-external/,
+      noParse: /requireExternal/,
       rules: [
         {
           test: /\.js$/,

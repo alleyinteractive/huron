@@ -1,19 +1,18 @@
 /** @module cli/actions */
 
 // Imports
+import path from 'path';
+import chalk from 'chalk';
+
 import {
   updateHTML,
   deleteHTML,
   updatePrototype,
   deletePrototype,
-} from './handle-html';
-import { updateTemplate, deleteTemplate } from './handle-templates';
-import { updateKSS, deleteKSS } from './handle-kss';
+} from './handleHTML';
+import { updateTemplate, deleteTemplate } from './handleTemplates';
+import { updateKSS, deleteKSS } from './handleKSS';
 import * as utils from './utils';
-
-// Requires
-const path = require('path');
-const chalk = require('chalk'); // Colorize terminal output
 
 // EXPORTED FUNCTIONS
 
@@ -86,8 +85,8 @@ export function updateFile(filepath, store) {
       if (section) {
         return updateHTML(filepath, section, store);
       } else if (
-        - 1 !== file.dir.indexOf('prototypes') &&
-        - 1 !== file.name.indexOf('prototype-')
+        file.dir.includes('prototypes') &&
+        file.name.includes('prototype-')
       ) {
         return updatePrototype(filepath, store);
       }
@@ -146,8 +145,8 @@ export function deleteFile(filepath, store) {
       if (section) {
         newStore = deleteHTML(filepath, section, store);
       } else if (
-        - 1 !== file.dir.indexOf('prototypes') &&
-        - 1 !== file.name.indexOf('prototype-')
+        file.dir.includes('prototypes') &&
+        file.name.includes('prototype-')
       ) {
         newStore = deletePrototype(filepath, store);
       }

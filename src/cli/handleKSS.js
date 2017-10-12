@@ -1,13 +1,13 @@
 /** @module cli/kss-handler */
 
-import * as utils from './utils';
-import { updateTemplate, deleteTemplate } from './handle-templates';
-import { writeStore } from './require-templates';
+import path from 'path';
+import fs from 'fs-extra';
+import { parse } from 'kss';
+import chalk from 'chalk';
 
-const path = require('path');
-const fs = require('fs-extra');
-const parse = require('kss').parse;
-const chalk = require('chalk'); // Colorize terminal output
+import * as utils from './utils';
+import { updateTemplate, deleteTemplate } from './handleTemplates';
+import { writeStore } from './requireTemplates';
 
 /**
  * Handle update of a KSS section
@@ -427,5 +427,5 @@ function fieldShouldOutput(oldSection, newSection, field) {
       (oldSection[field] !== newSection[field] ||
       oldSection.referenceURI !== newSection.referenceURI)
     ) ||
-    ! oldSection;
+    !oldSection;
 }
