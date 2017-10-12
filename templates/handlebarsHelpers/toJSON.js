@@ -6,3 +6,4 @@ const Handlebars = require('handlebars');
 module.exports = function toJSON(object) {
   return new Handlebars.SafeString(JSON.stringify(object));
 };
+

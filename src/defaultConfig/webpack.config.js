@@ -46,11 +46,11 @@ module.exports = (huron) => {
           use: {
             loader: 'handlebars-loader',
             options: {
-              helperDirs: path.join(
+              helperDirs: [path.join(
                 __dirname,
                 '../../',
-                'templates/handlebars-helpers'
-              ),
+                'templates/handlebarsHelpers'
+              )],
             },
           },
         },

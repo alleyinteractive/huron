@@ -9,8 +9,8 @@ import program from './parseArgs';
 import requireExternal from './requireExternal';
 
 const cwd = process.cwd();
-const defaultWebpack = require('../default-config/webpack.config');
-const defaultHuron = require('../default-config/huron.config');
+const defaultWebpack = require('../defaultConfig/webpack.config');
+const defaultHuron = require('../defaultConfig/huron.config');
 
 // Require configs passed in by user from CLI
 let defaultConfig = false;

@@ -33,12 +33,12 @@ function parseArgs() {
     .option(
       '-c, --huron-config [huronConfig]',
       '[huronConfig] for all huron options',
-      path.resolve(__dirname, '../default-config/huron.config.js')
+      path.resolve(__dirname, '../defaultConfig/huron.config.js')
     )
     .option(
       '-w, --webpack-config [webpackConfig]',
       '[webpackConfig] for all webpack options',
-      path.resolve(__dirname, '../default-config/webpack.config.js')
+      path.resolve(__dirname, '../defaultConfig/webpack.config.js')
     )
     .option('-p, --production', 'compile assets once for production');
 
