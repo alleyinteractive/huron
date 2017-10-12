@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 /* eslint-disable no-underscore-dangle */
 // Accept the huron.js module for Huron development
@@ -566,11 +566,11 @@ class InsertNodes {
       preparedData = Object.assign({}, data[modifier], { modifier });
     }
 
-    if (this._store.classnames) {
+    if (this._store.classNames) {
       preparedData = Object.assign(
         {},
         data,
-        { styles: this._store.classnames }
+        { classNames: this._store.classNames }
       );
     }
 
@@ -652,7 +652,8 @@ class InsertNodes {
           const modifier = InsertNodes
             .getDataAttribute(modifiedPlaceholder, 'huron-modifier');
           const parent = modifiedPlaceholder.parentNode;
-          const rendered = this.prepareData(modifier, meta);
+          const data = this.prepareData(modifier, meta.data);
+          const rendered = meta.render(data);
           const renderedTemplate = InsertNodes.convertToElement(rendered)
               .querySelector('template');
           let renderedContents = null;

@@ -316,8 +316,11 @@ export function matchKssDir(filepath, huron) {
 }
 
 export function mergeClassnameJSON(directory) {
-  const files = fs.readdirSync(directory);
+  if (!directory) {
+    return {};
+  }
 
+  const files = fs.readdirSync(directory);
   const classnamesMerged = files.reduce((acc, file) => {
     const fileInfo = path.parse(file);
     let classnames = {};

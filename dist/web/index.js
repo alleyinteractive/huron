@@ -512,8 +512,8 @@ var InsertNodes = function () {
         preparedData = Object.assign({}, data[modifier], { modifier: modifier });
       }
 
-      if (this._store.classnames) {
-        preparedData = Object.assign({}, data, { styles: this._store.classnames });
+      if (this._store.classNames) {
+        preparedData = Object.assign({}, data, { styles: this._store.classNames });
       }
 
       return preparedData;
@@ -602,7 +602,8 @@ var InsertNodes = function () {
             var modifiedPlaceholder = currentTag;
             var modifier = InsertNodes.getDataAttribute(modifiedPlaceholder, 'huron-modifier');
             var parent = modifiedPlaceholder.parentNode;
-            var rendered = _this7.prepareData(modifier, meta);
+            var data = _this7.prepareData(modifier, meta.data);
+            var rendered = meta.render(data);
             var renderedTemplate = InsertNodes.convertToElement(rendered).querySelector('template');
             var renderedContents = null;
 

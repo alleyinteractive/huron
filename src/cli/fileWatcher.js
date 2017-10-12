@@ -26,8 +26,15 @@ export const extensions = [
 // Generate watch list for Gaze, start gaze
 export const watchedFiles = [];
 
-// Push KSS source directories and section template to Gaze
+// Watch section template
 watchedFiles.push(path.resolve(__dirname, huron.get('sectionTemplate')));
+
+// Watch cssmodules classname files (if they exist)
+if (huron.get('classnames')) {
+  watchedFiles.push(path.resolve(huron.get('classnames')));
+}
+
+// Watch all provided kss directories
 huron.get('kss').forEach((dir) => {
   watchedFiles.push(
     `${removeTrailingSlash(dir)}/**/*.+(${extensions.join('|')})`

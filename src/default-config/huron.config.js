@@ -16,6 +16,7 @@ module.exports = {
   prototypes: ['index'],
   root: 'dist/',
   sectionTemplate: path.join(__dirname, '../../templates/section.hbs'),
+  classNames: false,
   templates: {
     rule: {
       test: /\.(hbs|handlebars)$/,
