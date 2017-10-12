@@ -41,31 +41,6 @@ class InsertNodes {
   }
 
   /**
-   * Apply a modifier to a render function
-   *
-   * @param {string} modifier - target modifier
-   * @param {object} meta - module metadata
-   * @return {string} rendered - the modified HTML module
-   */
-  static applyModifier(modifier, meta) {
-    let rendered = false;
-    let data = meta.data;
-
-    if (data) {
-      // If we have a modifier, use it, otherwise use the entire data set
-      if (modifier && meta.data[modifier]) {
-        data = Object.assign({}, meta.data[modifier], { modifier });
-      }
-
-      rendered = meta.render(data);
-    } else {
-      rendered = meta.render();
-    }
-
-    return rendered;
-  }
-
-  /**
    * Get markup from any type of module (html, json or template)
    *
    * @param {string} content - String corresponding to markup
@@ -119,7 +94,7 @@ class InsertNodes {
    * @return {string} key - generated MD5 Hash
    */
   static generateModuleHash(key) {
-    return crypto.createHash('md5').update(key).digest("hex");
+    return crypto.createHash('md5').update(key).digest('hex');
   }
 
   /**
@@ -573,6 +548,35 @@ class InsertNodes {
         );
       }
     });
+  }
+
+  /**
+   * Apply a modifier and merge classnames into template data, if it exists
+   *
+   * @param {object} data - data with which to render template
+   * @param {string} modifier - target modifier
+   *
+   * @return {string} rendered - the modified HTML module
+   */
+  prepareData(data, modifier) {
+    let preparedData = data;
+
+    // If we have a modifier, use it, otherwise use the entire data set
+    if (modifier && data && data[modifier]) {
+      preparedData = Object.assign({}, data[modifier], { modifier });
+    }
+
+    if (this._store.classnames) {
+      preparedData = Object.assign(
+        {},
+        data,
+        { styles: this._store.classnames }
+      );
+    }
+
+    console.log(preparedData);
+
+    return preparedData;
   }
 
   /**

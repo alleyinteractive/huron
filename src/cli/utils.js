@@ -314,3 +314,28 @@ export function matchKssDir(filepath, huron) {
 
   return false;
 }
+
+export function mergeClassnameJSON(directory) {
+  const files = fs.readdirSync(directory);
+
+  const classnamesMerged = files.reduce((acc, file) => {
+    const fileInfo = path.parse(file);
+    let classnames = {};
+
+    if ('.json' === fileInfo.ext) {
+      try {
+        const contents = fs.readFileSync(
+          path.join(directory, file),
+          'utf8'
+        );
+        classnames = JSON.parse(contents);
+      } catch (e) {
+        classnames = {};
+      }
+    }
+
+    return Object.assign({}, acc, { [fileInfo.name]: classnames });
+  }, {});
+
+  return classnamesMerged;
+}

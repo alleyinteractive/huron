@@ -8,31 +8,16 @@ const CleanPlugin = require('clean-webpack-plugin');
 
 module.exports = function getConfig(env) {
   const context = path.join(__dirname, '../');
-  const entry = ['./src/cli/huron-cli'];
-  let plugins = [
-    new CleanPlugin(['dist/cli'], {
-      root: context,
-      exclude: 'huron-cli.js',
-    }),
-  ];
-
-  // Manage entry
-  if ('dev' === env.process) {
-    entry.unshift('webpack/hot/poll');
-  }
-
-  // Manage plugins
-  if ('dev' === env.process) {
-    plugins.push(
-      new webpack.HotModuleReplacementPlugin(),
-      new webpack.NamedModulesPlugin()
-    );
-  }
 
   return {
     context,
-    entry,
-    plugins,
+    entry: ['./src/cli/index'],
+    plugins: [
+      new CleanPlugin(['dist/cli'], {
+        root: context,
+        exclude: 'huron-cli.js',
+      }),
+    ],
     target: 'node',
     devtool: 'cheap-module-source-map',
     output: {

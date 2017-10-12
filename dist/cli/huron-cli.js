@@ -161,6 +161,7 @@ exports.removeFile = removeFile;
 exports.writeSectionTemplate = writeSectionTemplate;
 exports.getSection = getSection;
 exports.matchKssDir = matchKssDir;
+exports.mergeClassnameJSON = mergeClassnameJSON;
 /** @module cli/utilities */
 
 const cwd = process.cwd(); // Current working directory
@@ -428,6 +429,28 @@ function matchKssDir(filepath, huron) {
   return false;
 }
 
+function mergeClassnameJSON(directory) {
+  const files = fs.readdirSync(directory);
+
+  const classnamesMerged = files.reduce((acc, file) => {
+    const fileInfo = path.parse(file);
+    let classnames = {};
+
+    if ('.json' === fileInfo.ext) {
+      try {
+        const contents = fs.readFileSync(path.join(directory, file), 'utf8');
+        classnames = JSON.parse(contents);
+      } catch (e) {
+        classnames = {};
+      }
+    }
+
+    return Object.assign({}, acc, { [fileInfo.name]: classnames });
+  }, {});
+
+  return classnamesMerged;
+}
+
 /***/ }),
 /* 5 */
 /***/ (function(module, exports) {
@@ -536,7 +559,7 @@ const path = __webpack_require__(0);
 const fs = __webpack_require__(2);
 
 const cwd = process.cwd();
-const huronScript = fs.readFileSync(path.join(__dirname, '../web/huron.js'), 'utf8');
+const huronScript = fs.readFileSync(path.join(__dirname, '../web/index.js'), 'utf8');
 
 /**
  * Write code for requiring all generated huron assets
