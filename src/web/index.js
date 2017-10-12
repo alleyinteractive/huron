@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import compose from 'lodash/fp/compose';
 
 /* eslint-disable no-underscore-dangle */
 // Accept the huron.js module for Huron development
@@ -38,6 +39,23 @@ class InsertNodes {
     // Inits
     this.cycleModules();
     this.cycleStyleguide();
+  }
+
+  /**
+   * Apply a modifier if one exists
+   *
+   * @param {object} data - data with which to render template
+   * @param {string} modifier - target modifier
+   *
+   * @return {string} data - subset of data object for supplied modifier
+   */
+  static applyModifier(data, modifier) {
+    // If we have a modifier, use it, otherwise use the entire data set
+    if (modifier && data && data[modifier]) {
+      return Object.assign({}, data[modifier], { modifier });
+    }
+
+    return data;
   }
 
   /**
@@ -558,23 +576,12 @@ class InsertNodes {
    *
    * @return {string} rendered - the modified HTML module
    */
-  prepareData(data, modifier) {
-    let preparedData = data;
-
-    // If we have a modifier, use it, otherwise use the entire data set
-    if (modifier && data && data[modifier]) {
-      preparedData = Object.assign({}, data[modifier], { modifier });
-    }
-
+  provideClassnames(data) {
     if (this._store.classNames) {
-      preparedData = Object.assign(
-        {},
-        data,
-        { classNames: this._store.classNames }
-      );
+      return Object.assign({}, data, { classNames: this._store.classNames });
     }
 
-    return preparedData;
+    return data;
   }
 
   /**
@@ -652,7 +659,10 @@ class InsertNodes {
           const modifier = InsertNodes
             .getDataAttribute(modifiedPlaceholder, 'huron-modifier');
           const parent = modifiedPlaceholder.parentNode;
-          const data = this.prepareData(modifier, meta.data);
+          const data = compose(
+            this.provideClassnames.bind(this),
+            InsertNodes.applyModifier
+          )(meta.data, modifier);
           const rendered = meta.render(data);
           const renderedTemplate = InsertNodes.convertToElement(rendered)
               .querySelector('template');

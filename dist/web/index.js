@@ -4,11 +4,19 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+var _crypto = require('crypto');
+
+var _crypto2 = _interopRequireDefault(_crypto);
+
+var _compose = require('lodash/fp/compose');
+
+var _compose2 = _interopRequireDefault(_compose);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var crypto = require('crypto');
 
 /* eslint-disable no-underscore-dangle */
 // Accept the huron.js module for Huron development
@@ -53,10 +61,12 @@ var InsertNodes = function () {
   }
 
   /**
-   * Get markup from any type of module (html, json or template)
+   * Apply a modifier if one exists
    *
-   * @param {string} content - String corresponding to markup
-   * @return {object} el.firstElementChild - HTML module
+   * @param {object} data - data with which to render template
+   * @param {string} modifier - target modifier
+   *
+   * @return {string} data - subset of data object for supplied modifier
    */
 
 
@@ -503,20 +513,13 @@ var InsertNodes = function () {
      */
 
   }, {
-    key: 'prepareData',
-    value: function prepareData(data, modifier) {
-      var preparedData = data;
-
-      // If we have a modifier, use it, otherwise use the entire data set
-      if (modifier && data && data[modifier]) {
-        preparedData = Object.assign({}, data[modifier], { modifier: modifier });
-      }
-
+    key: 'provideClassnames',
+    value: function provideClassnames(data) {
       if (this._store.classNames) {
-        preparedData = Object.assign({}, data, { styles: this._store.classNames });
+        return Object.assign({}, data, { classNames: this._store.classNames });
       }
 
-      return preparedData;
+      return data;
     }
 
     /**
@@ -602,7 +605,7 @@ var InsertNodes = function () {
             var modifiedPlaceholder = currentTag;
             var modifier = InsertNodes.getDataAttribute(modifiedPlaceholder, 'huron-modifier');
             var parent = modifiedPlaceholder.parentNode;
-            var data = _this7.prepareData(modifier, meta.data);
+            var data = (0, _compose2.default)(_this7.provideClassnames.bind(_this7), InsertNodes.applyModifier)(meta.data, modifier);
             var rendered = meta.render(data);
             var renderedTemplate = InsertNodes.convertToElement(rendered).querySelector('template');
             var renderedContents = null;
@@ -697,6 +700,24 @@ var InsertNodes = function () {
       this._sectionTemplatePath = store.sectionTemplatePath;
     }
   }], [{
+    key: 'applyModifier',
+    value: function applyModifier(data, modifier) {
+      // If we have a modifier, use it, otherwise use the entire data set
+      if (modifier && data && data[modifier]) {
+        return Object.assign({}, data[modifier], { modifier: modifier });
+      }
+
+      return data;
+    }
+
+    /**
+     * Get markup from any type of module (html, json or template)
+     *
+     * @param {string} content - String corresponding to markup
+     * @return {object} el.firstElementChild - HTML module
+     */
+
+  }, {
     key: 'convertToElement',
     value: function convertToElement(content) {
       var el = document.createElement('div');
@@ -744,7 +765,7 @@ var InsertNodes = function () {
   }, {
     key: 'generateModuleHash',
     value: function generateModuleHash(key) {
-      return crypto.createHash('md5').update(key).digest('hex');
+      return _crypto2.default.createHash('md5').update(key).digest('hex');
     }
 
     /**
