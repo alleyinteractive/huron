@@ -315,12 +315,26 @@ export function matchKssDir(filepath, huron) {
   return false;
 }
 
+/**
+ * Merge JSON files for css modules classnames in a provided directory
+ *
+ * @function mergeClassnameJSON
+ * @param {string} directory - directory containing classname JSON files
+ *
+ * @return {object} classnamesMerged - merged classnames. contents of each JSON file is nested within
+ *                           the returned object by filename. (e.g. article.json -> { article: {...json contents}})
+ */
 export function mergeClassnameJSON(directory) {
-  if (!directory) {
+  let files;
+
+  // Try to read through classnames directory
+  try {
+    files = fs.readdirSync(directory);
+  } catch (e) {
     return {};
   }
 
-  const files = fs.readdirSync(directory);
+  // Merge classname json files
   const classnamesMerged = files.reduce((acc, file) => {
     const fileInfo = path.parse(file);
     let classnames = {};
@@ -343,6 +357,13 @@ export function mergeClassnameJSON(directory) {
   return classnamesMerged;
 }
 
+/**
+ * Remove the trailing slash from a provided directory
+ *
+ * @function removeTrailingSlash
+ * @param {string} directory - directory path
+ * @return {string} directory - directory path with trailing slash removed
+ */
 export function removeTrailingSlash(directory) {
   if ('/' === directory.slice(-1)) {
     return directory.slice(0, -1);
