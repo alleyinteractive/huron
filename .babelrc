@@ -22,7 +22,11 @@
       "presets": [
         ["env", {
           "targets": {
-            "browsers": "last 3 versions",
+            "browsers": [
+              "last 3 versions",
+              "ie 11",
+              "ios 8",
+            ]
           }
         }]
       ]

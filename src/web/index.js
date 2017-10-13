@@ -1,4 +1,3 @@
-import crypto from 'crypto';
 import compose from 'lodash/fp/compose';
 
 /* eslint-disable no-underscore-dangle */
@@ -12,7 +11,7 @@ if (module.hot) {
  * into an element with attribute [huron-id] corresponding to the reference URI of the target KSS section,
  * and [huron-type] corresponding with the required KSS field
  */
-class InsertNodes {
+export default class InsertNodes {
 
   constructor(modules, store) {
     /** webpack module list in which keys are relative require paths and values are the module contents */
@@ -112,7 +111,7 @@ class InsertNodes {
    * @return {string} key - generated MD5 Hash
    */
   static generateModuleHash(key) {
-    return crypto.createHash('md5').update(key).digest('hex');
+    return `_${key.replace(/[/.]/g, '_')}`;
   }
 
   /**
@@ -287,12 +286,10 @@ class InsertNodes {
     }
 
     if (id && type) {
-      const hashKey = 'data' === type ? this._templates[key] : key;
       const renderData = this.getModuleRender(type, key, module);
-      const hash = InsertNodes.generateModuleHash(hashKey);
 
       if (renderData) {
-        return Object.assign({ id, type, key, hash, module }, renderData);
+        return Object.assign({ id, type, key, module }, renderData);
       }
     }
 
@@ -598,19 +595,19 @@ class InsertNodes {
   /**
    * Recursively remove old tags
    *
-   * @param {string} hash - hash of module for which we need to remove old tags
+   * @param {string} key - key of module for which we need to remove old tags
    * @param {object} tag - tag to start our search with
    *                       (usually the tag immediately preceding the current placeholder)
    */
-  removeOldTags(hash, tag) {
+  removeOldTags(key, tag) {
     if (tag) {
-      const parentHash = InsertNodes.getDataAttribute(tag, 'parent-hash');
-      const selfHash = InsertNodes.getDataAttribute(tag, 'self-hash');
+      const parentModule = InsertNodes.getDataAttribute(tag, 'parent-module');
+      const selfModule = InsertNodes.getDataAttribute(tag, 'self-module');
 
-      if (parentHash === hash && selfHash !== hash) {
+      if (parentModule === key && selfModule !== key) {
         // This is a child of the current module,
         // so remove it and its children (if applicable)
-        const childrenHash = selfHash;
+        const childrenHash = selfModule;
         let nextTag = tag.previousSibling;
 
         if (childrenHash) {
@@ -620,7 +617,7 @@ class InsertNodes {
         }
 
         tag.parentNode.removeChild(tag);
-        this.removeOldTags(hash, nextTag);
+        this.removeOldTags(key, nextTag);
       }
     }
   }
@@ -669,7 +666,7 @@ class InsertNodes {
           let renderedContents = null;
 
           // Remove existing module tags
-          this.removeOldTags(meta.hash, modifiedPlaceholder.previousSibling);
+          this.removeOldTags(meta.key, modifiedPlaceholder.previousSibling);
 
           // Get the contents of the rendered template
           renderedContents = [
@@ -681,7 +678,7 @@ class InsertNodes {
             const newEl = element;
 
             if (1 === newEl.nodeType) {
-              newEl.dataset.parentHash = meta.hash;
+              newEl.dataset.parentModule = meta.key;
               hasStyleguideHelpers = !hasStyleguideHelpers ?
                 InsertNodes.isSectionHelper(newEl, meta) :
                 hasStyleguideHelpers;
@@ -691,7 +688,7 @@ class InsertNodes {
           });
 
           // Add module hash to this placeholder
-          modifiedPlaceholder.dataset.selfHash = meta.hash;
+          modifiedPlaceholder.dataset.selfModule = meta.key;
 
           // Hide the placeholder
           modifiedPlaceholder.style.display = 'none';
@@ -756,11 +753,4 @@ class InsertNodes {
     this._sectionTemplatePath = store.sectionTemplatePath;
   }
 }
-/* eslint-enable no-underscore-dangle */
-
-// Create a new instance of the InsertNodes class
-/*eslint-disable*/
-// Create object for modifiying the templates on the page and
-// initial first templates.
-const insert = new InsertNodes(modules, store);
-/*eslint-enable*/
+/* eslint-enable */
