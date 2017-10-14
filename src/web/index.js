@@ -754,6 +754,7 @@ export default class InsertNodes {
     this._types = store.types;
     this._sectionTemplatePath = store.sectionTemplatePath;
 
+    // Completely rerender prototype if any CSS modules classnames change
     if (!isEqual(this._classNames, store.classNames)) {
       this._classNames = store.classNames;
       this.cycleModules();

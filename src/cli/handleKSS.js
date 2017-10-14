@@ -49,7 +49,7 @@ export function updateKSS(filepath, store) {
           newStore = unsetSection(oldSection, file, newStore, false);
         }
 
-        writeStore(store, newStore);
+        writeStore(newStore);
         console.log(
           chalk.green(
             `KSS source in ${filepath} changed or added`

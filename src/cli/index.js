@@ -8,7 +8,7 @@ import {
   updateClassNames,
 } from './actions';
 import { requireTemplates, writeStore } from './requireTemplates';
-import { mergeClassnameJSON, matchKssDir } from './utils';
+import { matchKssDir } from './utils';
 import program from './parseArgs';
 import startWebpack from './server';
 import { defaultStore, config } from './defaultStore';
@@ -32,7 +32,7 @@ if (!program.production) {
   gaze.on('all', (event, filepath) => {
     newStore = updateClassNames(filepath, newStore);
     writeStore(newStore);
-  })
+  });
 
   /**
    * Anonymous handler for Gaze 'changed' event indicating a file has changed
@@ -73,7 +73,7 @@ if (!program.production) {
    * @param {string} filepath - absolute path of changed file
    */
   gaze.on('renamed', (newPath, oldPath) => {
-    if (matchKssDir(filepath, huron)) {
+    if (matchKssDir(newPath, huron)) {
       newStore = deleteFile(oldPath, newStore);
       newStore = updateFile(newPath, newStore);
       writeStore(newStore);

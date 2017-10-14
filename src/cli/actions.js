@@ -198,7 +198,7 @@ export function updateClassNames(filepath, store) {
     const oldClassnames = store.get('classNames');
     const newClassnames = utils.mergeClassnameJSON(classNamesPath);
 
-    if (! isEqual(oldClassnames, newClassnames)) {
+    if (!isEqual(oldClassnames, newClassnames)) {
       return store.set('classNames', newClassnames);
     }
   }
