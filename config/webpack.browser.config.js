@@ -25,6 +25,12 @@ module.exports = function getConfig(env) {
     module: {
       rules: [
         {
+          enforce: 'pre',
+          test: /\.js$/,
+          exclude: [/node_modules/, /\.min\.js$/],
+          use: 'eslint-loader',
+        },
+        {
           test: /\.js$/,
           exclude: /node_modules/,
           use: 'babel-loader',
