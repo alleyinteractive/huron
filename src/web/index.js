@@ -107,16 +107,6 @@ export default class InsertNodes {
   }
 
   /**
-   * Generate a hash string from a module key
-   *
-   * @param {string} key - module key (require path) to convert into a hash
-   * @return {string} key - generated MD5 Hash
-   */
-  static generateModuleHash(key) {
-    return `_${key.replace(/[/.]/g, '_')}`;
-  }
-
-  /**
    * Retrieve a data attribute from a tag using one of two methods
    *
    * @param {HTMLElement} tag - DOM node on which to check for a data attribute
@@ -237,6 +227,25 @@ export default class InsertNodes {
   }
 
   /**
+   * Generate a hash string from a module key
+   *
+   * @param {string} key - module key (require path) to convert into a hash
+   * @return {string} key - generated MD5 Hash
+   */
+  generateModuleHash(key) {
+    let currentKey = key;
+
+    // If module key is for data, use template key instead
+    if (key.includes('-section.json')) {
+      currentKey = this._sectionTemplatePath;
+    } else if (key.includes('.json')) {
+      currentKey = this._templates[key];
+    }
+
+    return `_${currentKey.replace(/[/.]/g, '_')}`;
+  }
+
+  /**
    * Get module metadata from a module require path
    *
    * @param  {string} key - Module require path
@@ -289,9 +298,10 @@ export default class InsertNodes {
 
     if (id && type) {
       const renderData = this.getModuleRender(type, key, module);
+      const replaceKey = this.generateModuleHash(key);
 
       if (renderData) {
-        return Object.assign({ id, type, key, module }, renderData);
+        return Object.assign({ id, type, key, replaceKey, module }, renderData);
       }
     }
 
@@ -597,29 +607,29 @@ export default class InsertNodes {
   /**
    * Recursively remove old tags
    *
-   * @param {string} key - key of module for which we need to remove old tags
+   * @param {string} replaceKey - key of module for which we need to remove old tags
    * @param {object} tag - tag to start our search with
    *                       (usually the tag immediately preceding the current placeholder)
    */
-  removeOldTags(key, tag) {
+  removeOldTags(replaceKey, tag) {
     if (tag) {
       const parentModule = InsertNodes.getDataAttribute(tag, 'parent-module');
       const selfModule = InsertNodes.getDataAttribute(tag, 'self-module');
 
-      if (parentModule === key && selfModule !== key) {
+      if (parentModule === replaceKey && selfModule !== replaceKey) {
         // This is a child of the current module,
         // so remove it and its children (if applicable)
-        const childrenHash = selfModule;
+        const childrenModule = selfModule;
         let nextTag = tag.previousSibling;
 
-        if (childrenHash) {
-          this.removeOldTags(childrenHash, nextTag);
+        if (childrenModule) {
+          this.removeOldTags(childrenModule, nextTag);
           // Reset nextTag if we removed a child
           nextTag = tag.previousSibling;
         }
 
         tag.parentNode.removeChild(tag);
-        this.removeOldTags(key, nextTag);
+        this.removeOldTags(replaceKey, nextTag);
       }
     }
   }
@@ -668,7 +678,10 @@ export default class InsertNodes {
           let renderedContents = null;
 
           // Remove existing module tags
-          this.removeOldTags(meta.key, modifiedPlaceholder.previousSibling);
+          this.removeOldTags(
+            meta.replaceKey,
+            modifiedPlaceholder.previousSibling
+          );
 
           // Get the contents of the rendered template
           renderedContents = [
@@ -680,7 +693,7 @@ export default class InsertNodes {
             const newEl = element;
 
             if (1 === newEl.nodeType) {
-              newEl.dataset.parentModule = meta.key;
+              newEl.dataset.parentModule = meta.replaceKey;
               hasStyleguideHelpers = !hasStyleguideHelpers ?
                 InsertNodes.isSectionHelper(newEl, meta) :
                 hasStyleguideHelpers;
@@ -690,7 +703,7 @@ export default class InsertNodes {
           });
 
           // Add module hash to this placeholder
-          modifiedPlaceholder.dataset.selfModule = meta.key;
+          modifiedPlaceholder.dataset.selfModule = meta.replaceKey;
 
           // Hide the placeholder
           modifiedPlaceholder.style.display = 'none';
@@ -756,8 +769,13 @@ export default class InsertNodes {
 
     // Completely rerender prototype if any CSS modules classnames change
     if (!isEqual(this._classNames, store.classNames)) {
+      const isInitialRender = !this._classNames;
       this._classNames = store.classNames;
-      this.cycleModules();
+
+      // Only rerender after initial render (when classnames is not falsy)
+      if (!isInitialRender) {
+        this.cycleModules();
+      }
     }
   }
 }

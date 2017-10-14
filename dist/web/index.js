@@ -34,6 +34,9 @@ module.exports =
 /******/ 	// expose the module cache
 /******/ 	__webpack_require__.c = installedModules;
 /******/
+/******/ 	// identity function for calling harmony imports with the correct context
+/******/ 	__webpack_require__.i = function(value) { return value; };
+/******/
 /******/ 	// define getter function for harmony exports
 /******/ 	__webpack_require__.d = function(exports, name, getter) {
 /******/ 		if(!__webpack_require__.o(exports, name)) {
@@ -1405,6 +1408,28 @@ var InsertNodes = function () {
     }
 
     /**
+     * Generate a hash string from a module key
+     *
+     * @param {string} key - module key (require path) to convert into a hash
+     * @return {string} key - generated MD5 Hash
+     */
+
+  }, {
+    key: 'generateModuleHash',
+    value: function generateModuleHash(key) {
+      var currentKey = key;
+
+      // If module key is for data, use template key instead
+      if (key.includes('-section.json')) {
+        currentKey = this._sectionTemplatePath;
+      } else if (key.includes('.json')) {
+        currentKey = this._templates[key];
+      }
+
+      return '_' + currentKey.replace(/[/.]/g, '_');
+    }
+
+    /**
      * Get module metadata from a module require path
      *
      * @param  {string} key - Module require path
@@ -1460,9 +1485,10 @@ var InsertNodes = function () {
 
       if (id && type) {
         var renderData = this.getModuleRender(type, key, module);
+        var replaceKey = this.generateModuleHash(key);
 
         if (renderData) {
-          return Object.assign({ id: id, type: type, key: key, module: module }, renderData);
+          return Object.assign({ id: id, type: type, key: key, replaceKey: replaceKey, module: module }, renderData);
         }
       }
 
@@ -1780,32 +1806,32 @@ var InsertNodes = function () {
     /**
      * Recursively remove old tags
      *
-     * @param {string} key - key of module for which we need to remove old tags
+     * @param {string} replaceKey - key of module for which we need to remove old tags
      * @param {object} tag - tag to start our search with
      *                       (usually the tag immediately preceding the current placeholder)
      */
 
   }, {
     key: 'removeOldTags',
-    value: function removeOldTags(key, tag) {
+    value: function removeOldTags(replaceKey, tag) {
       if (tag) {
         var parentModule = InsertNodes.getDataAttribute(tag, 'parent-module');
         var selfModule = InsertNodes.getDataAttribute(tag, 'self-module');
 
-        if (parentModule === key && selfModule !== key) {
+        if (parentModule === replaceKey && selfModule !== replaceKey) {
           // This is a child of the current module,
           // so remove it and its children (if applicable)
-          var childrenHash = selfModule;
+          var childrenModule = selfModule;
           var nextTag = tag.previousSibling;
 
-          if (childrenHash) {
-            this.removeOldTags(childrenHash, nextTag);
+          if (childrenModule) {
+            this.removeOldTags(childrenModule, nextTag);
             // Reset nextTag if we removed a child
             nextTag = tag.previousSibling;
           }
 
           tag.parentNode.removeChild(tag);
-          this.removeOldTags(key, nextTag);
+          this.removeOldTags(replaceKey, nextTag);
         }
       }
     }
@@ -1852,7 +1878,7 @@ var InsertNodes = function () {
             var renderedContents = null;
 
             // Remove existing module tags
-            _this7.removeOldTags(meta.key, modifiedPlaceholder.previousSibling);
+            _this7.removeOldTags(meta.replaceKey, modifiedPlaceholder.previousSibling);
 
             // Get the contents of the rendered template
             renderedContents = [].concat(_toConsumableArray(renderedTemplate.content.children));
@@ -1862,7 +1888,7 @@ var InsertNodes = function () {
               var newEl = element;
 
               if (1 === newEl.nodeType) {
-                newEl.dataset.parentModule = meta.key;
+                newEl.dataset.parentModule = meta.replaceKey;
                 hasStyleguideHelpers = !hasStyleguideHelpers ? InsertNodes.isSectionHelper(newEl, meta) : hasStyleguideHelpers;
 
                 parent.insertBefore(newEl, modifiedPlaceholder);
@@ -1870,7 +1896,7 @@ var InsertNodes = function () {
             });
 
             // Add module hash to this placeholder
-            modifiedPlaceholder.dataset.selfModule = meta.key;
+            modifiedPlaceholder.dataset.selfModule = meta.replaceKey;
 
             // Hide the placeholder
             modifiedPlaceholder.style.display = 'none';
@@ -1942,8 +1968,13 @@ var InsertNodes = function () {
 
       // Completely rerender prototype if any CSS modules classnames change
       if (!(0, _fp.isEqual)(this._classNames, store.classNames)) {
+        var isInitialRender = !this._classNames;
         this._classNames = store.classNames;
-        this.cycleModules();
+
+        // Only rerender after initial render (when classnames is not falsy)
+        if (!isInitialRender) {
+          this.cycleModules();
+        }
       }
     }
   }], [{
@@ -2000,19 +2031,6 @@ var InsertNodes = function () {
       console.log(' // eslint-disable-line no-console\n      filter ' + filter + ' is not in a valid format.\n      module filters must include \'property\', \'values\', and \'include\' properties\n    ');
 
       return match;
-    }
-
-    /**
-     * Generate a hash string from a module key
-     *
-     * @param {string} key - module key (require path) to convert into a hash
-     * @return {string} key - generated MD5 Hash
-     */
-
-  }, {
-    key: 'generateModuleHash',
-    value: function generateModuleHash(key) {
-      return '_' + key.replace(/[/.]/g, '_');
     }
 
     /**
