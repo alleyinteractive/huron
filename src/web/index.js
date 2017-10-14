@@ -1,4 +1,4 @@
-import compose from 'lodash/fp/compose';
+import { compose, isEqual } from 'lodash/fp';
 
 /* eslint-disable no-underscore-dangle */
 // Accept the huron.js module for Huron development
@@ -28,6 +28,8 @@ export default class InsertNodes {
     this._prototypes = null;
     /** array of valid huron placeholder types */
     this._types = null;
+    /** array of CSS modules classnames */
+    this._classNames = null;
 
     /** Cache for module metadata */
     this.meta = {};
@@ -574,8 +576,8 @@ export default class InsertNodes {
    * @return {string} rendered - the modified HTML module
    */
   provideClassnames(data) {
-    if (this._store.classNames) {
-      return Object.assign({}, data, { classNames: this._store.classNames });
+    if (this._classNames) {
+      return Object.assign({}, data, { classNames: this._classNames });
     }
 
     return data;
@@ -751,6 +753,11 @@ export default class InsertNodes {
     this._prototypes = store.prototypes;
     this._types = store.types;
     this._sectionTemplatePath = store.sectionTemplatePath;
+
+    if (!isEqual(this._classNames, store.classNames)) {
+      this._classNames = store.classNames;
+      this.cycleModules();
+    }
   }
 }
 /* eslint-enable */

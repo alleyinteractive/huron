@@ -1,8 +1,14 @@
 // Local imports
 import chalk from 'chalk';
 
-import { initFiles, updateFile, deleteFile } from './actions';
+import {
+  initFiles,
+  updateFile,
+  deleteFile,
+  updateClassNames,
+} from './actions';
 import { requireTemplates, writeStore } from './requireTemplates';
+import { mergeClassnameJSON, matchKssDir } from './utils';
 import program from './parseArgs';
 import startWebpack from './server';
 import { defaultStore, config } from './defaultStore';
@@ -14,6 +20,7 @@ import gaze from './fileWatcher';
  * @global
  */
 const store = initFiles(gaze.watched(), defaultStore);
+const huron = defaultStore.get('config');
 
 requireTemplates(store);
 writeStore(store);
@@ -21,6 +28,11 @@ writeStore(store);
 if (!program.production) {
   /** @module cli/gaze */
   let newStore = store;
+
+  gaze.on('all', (event, filepath) => {
+    newStore = updateClassNames(filepath, newStore);
+    writeStore(newStore);
+  })
 
   /**
    * Anonymous handler for Gaze 'changed' event indicating a file has changed
@@ -30,7 +42,10 @@ if (!program.production) {
    * @param {string} filepath - absolute path of changed file
    */
   gaze.on('changed', (filepath) => {
-    newStore = updateFile(filepath, newStore);
+    if (matchKssDir(filepath, huron)) {
+      newStore = updateFile(filepath, newStore);
+    }
+
     console.log(chalk.green(`${filepath} updated!`));
   });
 
@@ -42,8 +57,11 @@ if (!program.production) {
    * @param {string} filepath - absolute path of changed file
    */
   gaze.on('added', (filepath) => {
-    newStore = updateFile(filepath, newStore);
-    writeStore(newStore);
+    if (matchKssDir(filepath, huron)) {
+      newStore = updateFile(filepath, newStore);
+      writeStore(newStore);
+    }
+
     console.log(chalk.blue(`${filepath} added!`));
   });
 
@@ -55,9 +73,12 @@ if (!program.production) {
    * @param {string} filepath - absolute path of changed file
    */
   gaze.on('renamed', (newPath, oldPath) => {
-    newStore = deleteFile(oldPath, newStore);
-    newStore = updateFile(newPath, newStore);
-    writeStore(newStore);
+    if (matchKssDir(filepath, huron)) {
+      newStore = deleteFile(oldPath, newStore);
+      newStore = updateFile(newPath, newStore);
+      writeStore(newStore);
+    }
+
     console.log(chalk.blue(`${newPath} added!`));
   });
 
@@ -69,8 +90,11 @@ if (!program.production) {
    * @param {string} filepath - absolute path of changed file
    */
   gaze.on('deleted', (filepath) => {
-    newStore = deleteFile(filepath, newStore);
-    writeStore(newStore);
+    if (matchKssDir(filepath, huron)) {
+      newStore = deleteFile(filepath, newStore);
+      writeStore(newStore);
+    }
+
     console.log(chalk.red(`${filepath} deleted`));
   });
 } else {
@@ -79,7 +103,3 @@ if (!program.production) {
 
 // Start webpack or build for production
 startWebpack(config);
-
-if (module.hot) {
-  module.hot.accept();
-}

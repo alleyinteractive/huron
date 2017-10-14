@@ -3,6 +3,7 @@
 // Imports
 import path from 'path';
 import chalk from 'chalk';
+import isEqual from 'lodash/isEqual';
 
 import {
   updateHTML,
@@ -21,11 +22,11 @@ import * as utils from './utils';
  *
  * @param {object} data - object containing directory and file paths
  * @param {object} store - memory store
- * @param {object} huron - huron configuration options
  * @return {object} newStore - map object of entire data store
  */
 export function initFiles(data, store, depth = 0) {
   const type = Object.prototype.toString.call(data);
+  const huron = store.get('config');
   let newStore = store;
   let info;
   let files;
@@ -48,7 +49,9 @@ export function initFiles(data, store, depth = 0) {
 
     case '[object String]':
       info = path.parse(data);
-      if (info.ext) {
+
+      // Only call update if data is a filepath and it's within the KSS source directory
+      if (info.ext && utils.matchKssDir(data, huron)) {
         newStore = updateFile(data, store);
       }
       break;
@@ -178,4 +181,27 @@ export function deleteFile(filepath, store) {
   }
 
   return newStore;
+}
+
+/**
+ * Logic for updating localized classnames from CSS modules
+ *
+ * @param {string} filepath - path to updated file. usually passed in from Gaze
+ * @param {object} store - memory store
+ *
+ * @return void
+ */
+export function updateClassNames(filepath, store) {
+  const classNamesPath = store.getIn(['config', 'classNames']);
+
+  if (filepath.includes(classNamesPath)) {
+    const oldClassnames = store.get('classNames');
+    const newClassnames = utils.mergeClassnameJSON(classNamesPath);
+
+    if (! isEqual(oldClassnames, newClassnames)) {
+      return store.set('classNames', newClassnames);
+    }
+  }
+
+  return store;
 }

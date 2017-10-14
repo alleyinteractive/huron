@@ -78,6 +78,9 @@ In Huron, everything is a "prototype" (even a style guide). Unlike previous vers
  * You may attach the Huron data attributes to any tag, but generally we use a generic `<div>`
  * A separate HTML document is automatically built for each of your configured prototypes using the HTML webpack plugin and a custom EJS [template](templates/prototype-template.ejs). More information on this can be found in the [templates readme](templates/README.md).
 
+## Using CSS Modules
+If you're using CSS modules in your production site, it makes sense to also use it when developing in-browser prototypes. Huron supports usage of certain CSS modules implementations (specifically any that is capable of producing JSON output containing localized classes). All that's needed in order to configure this is the `classNames` configuration property, more details for which are in the [configuration docs](src/default-config/README.md). Once you have that set up, all classes will be be provided to every template. These classes are available on a `classNames` object, under which all classes are nested and organized by filename. For example, if your build produces two JSON files for localized classes called `article.json` and `home.json`, you can access those classes in your huron templates via `classNames.article[classname]` and `classNames.home[className]` respectively.
+
 ## For more specific information
 This file contains basic information on Huron installation and writing prototypes. However, there are several other subsections of this documentation:
 

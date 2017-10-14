@@ -298,19 +298,12 @@ export function getSection(search, field, store) {
  */
 export function matchKssDir(filepath, huron) {
   const kssSource = huron.get('kss');
-  /* eslint-disable space-unary-ops */
   // Include forward slash in our test to make sure we're matchin a directory, not a file extension
   const kssMatch = kssSource.filter((dir) => filepath.includes(`/${dir}`));
-  /* eslint-enable space-unary-ops */
 
   if (kssMatch.length) {
     return kssMatch[0];
   }
-
-  console.error(
-    chalk.red(`filepath ${filepath} does not exist in any
-    of the configured KSS directories`)
-  );
 
   return false;
 }

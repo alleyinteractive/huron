@@ -129,8 +129,9 @@ ${hotTemplate}\n\n
  * @param {object} store - memory store
  * @param {string} changed - filepath of changed KSS section, if applicable
  */
-export const writeStore = function writeStore(store) {
-  const huron = store.get('config');
+export const writeStore = function writeStore(store, newStore = false) {
+  const updatedStore = newStore || store;
+  const huron = updatedStore.get('config');
   const outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
 
   // Write updated data store
@@ -138,7 +139,7 @@ export const writeStore = function writeStore(store) {
   fs.outputFileSync(
     path.join(outputPath, 'huron-store.js'),
     `/*eslint-disable*/
-    module.exports = ${JSON.stringify(store.toJSON())}
+    module.exports = ${JSON.stringify(updatedStore.toJSON())}
     /*eslint-disable*/\n`
   );
 };

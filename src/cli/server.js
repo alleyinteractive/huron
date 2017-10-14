@@ -2,6 +2,7 @@
 import webpack from 'webpack';
 import WebpackDevServer from 'webpack-dev-server';
 import chalk from 'chalk';
+import open from 'opn';
 
 import createDevServerConfig from '../../config/devServer.config';
 import program from './parseArgs';
@@ -55,6 +56,8 @@ export default function startWebpack(config) {
     });
   } else {
     const server = new WebpackDevServer(compiler, createDevServerConfig(huron));
+    const prototypeName = huron.prototypes[0].title || huron.prototypes[0];
+
     server.listen(
       huron.port,
       'localhost',
@@ -64,6 +67,7 @@ export default function startWebpack(config) {
         }
 
         console.log(`Listening at http://localhost:${huron.port}/`);
+        open(`http://localhost:${huron.port}/${huron.root}/${prototypeName}.html`);
         return true;
       }
     );

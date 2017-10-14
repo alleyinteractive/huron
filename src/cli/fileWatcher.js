@@ -30,8 +30,10 @@ export const watchedFiles = [];
 watchedFiles.push(path.resolve(__dirname, huron.get('sectionTemplate')));
 
 // Watch cssmodules classname files (if they exist)
-if (huron.get('classnames')) {
-  watchedFiles.push(path.resolve(huron.get('classnames')));
+if (huron.get('classNames')) {
+  watchedFiles.push(
+    `${path.resolve(huron.get('classNames'))}/*.json`
+  );
 }
 
 // Watch all provided kss directories

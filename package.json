@@ -11,13 +11,13 @@
   "scripts": {
     "doc": "./node_modules/.bin/jsdoc src -r -c ./config/jsdoc.json",
     "help": "./node_modules/.bin/babel-node src/cli/index.js -h",
+    "prebuild": "eslint -c config/.eslintrc src/**",
+    "build": "npm run build-cli && npm run test:once && npm run build-web",
     "dev": "concurrently -k \"npm run dev-cli\" \"npm run dev-web\"",
     "dev-cli": "BABEL_ENV=cli webpack --config config/webpack.server.config.js -d --watch --progress",
     "build-cli": "BABEL_ENV=cli webpack --config config/webpack.server.config.js",
     "dev-web": "BABEL_ENV=browser webpack --config config/webpack.browser.config.js -d --watch --progress",
     "build-web": "BABEL_ENV=browser webpack --config config/webpack.browser.config.js",
-    "prebuild": "eslint -c config/.eslintrc src/**",
-    "build": "npm run build-cli && npm run test:once && npm run build-web",
     "test:once": "jest",
     "test": "jest --watch"
   },
@@ -45,6 +45,7 @@
     "json-loader": "0.5.4",
     "kss": "3.0.0-beta.14",
     "lodash": "^4.17.4",
+    "opn": "^5.1.0",
     "style-loader": "0.13.1",
     "webpack": "^3.7.1",
     "webpack-dev-server": "^2.9.1"
