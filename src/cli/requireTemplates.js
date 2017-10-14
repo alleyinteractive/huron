@@ -1,11 +1,11 @@
 /** @module cli/require-templates */
 
-const path = require('path');
-const fs = require('fs-extra');
+import path from 'path';
+import fs from 'fs-extra';
 
 const cwd = process.cwd();
 const huronScript = fs.readFileSync(
-  path.join(__dirname, '../web/huron.js'),
+  path.join(__dirname, '../web/index.js'),
   'utf8'
 );
 
@@ -27,8 +27,9 @@ export const requireTemplates = function requireTemplates(store) {
   const requirePath = `'../${huron.get('output')}'`;
 
   // Initialize templates, js, css and Hot Module Replacement acceptance logic
-  const prepend = `
-var store = require('./huron-store.js');
+  const hotTemplate = `
+var store = require('./huron-store');
+var InsertNodes = require('./insertNodes').default;
 var sectionTemplate = require('./section.hbs');
 var assets = require.context(${requirePath}, true, ${requireRegex});
 var modules = {};
@@ -38,6 +39,10 @@ modules['${store.get('sectionTemplatePath')}'] = sectionTemplate;
 assets.keys().forEach(function(key) {
   modules[key] = assets(key);
 });
+
+var insert = window.insert ? window.insert :
+  new InsertNodes(modules, store);
+window.insert = insert;
 
 if (module.hot) {
   // Hot Module Replacement for huron components (json, hbs, html)
@@ -87,9 +92,8 @@ if (module.hot) {
       updateStore(require('./huron-store.js'));
     }
   );
-}\n`;
+}
 
-  const append = `
 function hotReplace(key, module, modules) {
   insert.modules = modules;
   if (key === store.sectionTemplatePath) {
@@ -107,10 +111,14 @@ function updateStore(newStore) {
   // Write the contents of this script.
   // @todo lint this file.
   fs.outputFileSync(
-    path.join(outputPath, 'huron.js'),
+    path.join(outputPath, 'index.js'),
     `/*eslint-disable*/\n
-${prepend}\n\n${huronScript}\n\n${append}\n
+${hotTemplate}\n\n
 /*eslint-enable*/\n`
+  );
+  fs.outputFileSync(
+    path.join(outputPath, 'insertNodes.js'),
+    huronScript
   );
 };
 
@@ -121,8 +129,9 @@ ${prepend}\n\n${huronScript}\n\n${append}\n
  * @param {object} store - memory store
  * @param {string} changed - filepath of changed KSS section, if applicable
  */
-export const writeStore = function writeStore(store) {
-  const huron = store.get('config');
+export const writeStore = function writeStore(store, newStore = false) {
+  const updatedStore = newStore || store;
+  const huron = updatedStore.get('config');
   const outputPath = path.join(cwd, huron.get('root'), 'huron-assets');
 
   // Write updated data store
@@ -130,7 +139,7 @@ export const writeStore = function writeStore(store) {
   fs.outputFileSync(
     path.join(outputPath, 'huron-store.js'),
     `/*eslint-disable*/
-    module.exports = ${JSON.stringify(store.toJSON())}
+    module.exports = ${JSON.stringify(updatedStore.toJSON())}
     /*eslint-disable*/\n`
   );
 };

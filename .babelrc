@@ -4,7 +4,7 @@
       "presets": [
         ["env", {
           "targets": {
-            "node": "6.5",
+            "node": "6.11.4",
           }
         }]
       ]
@@ -13,7 +13,7 @@
       "presets": [
         ["env", {
           "targets": {
-            "node": "6.5",
+            "node": "6.11.4",
           }
         }]
       ]
@@ -22,7 +22,11 @@
       "presets": [
         ["env", {
           "targets": {
-            "browsers": "last 3 versions",
+            "browsers": [
+              "last 3 versions",
+              "ie 11",
+              "ios 8",
+            ]
           }
         }]
       ]

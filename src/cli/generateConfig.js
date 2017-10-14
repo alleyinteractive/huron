@@ -1,26 +1,25 @@
 /** @module cli/generate-config */
-import program from './parse-args';
-import requireExternal from './require-external';
+import path from 'path';
+import url from 'url';
+import fs from 'fs-extra';
+import webpack from 'webpack';
+import HTMLWebpackPlugin from 'html-webpack-plugin';
+
+import program from './parseArgs';
+import requireExternal from './requireExternal';
 
 const cwd = process.cwd();
-const path = require('path');
-const url = require('url');
-const fs = require('fs-extra');
-const webpack = require('webpack');
-const HTMLWebpackPlugin = require('html-webpack-plugin');
-const defaultWebpack = require('../default-config/webpack.config');
-const defaultHuron = require('../default-config/huron.config');
+const defaultWebpack = require('../defaultConfig/webpack.config');
+const defaultHuron = require('../defaultConfig/huron.config');
 
 // Require configs passed in by user from CLI
 let defaultConfig = false;
-const localConfigPath = ! path.isAbsolute(program.webpackConfig) ?
-  path.join(cwd, program.webpackConfig) :
-  program.webpackConfig;
-const localHuronPath = ! path.isAbsolute(program.huronConfig) ?
-  path.join(cwd, program.huronConfig) :
-  program.huronConfig;
-const localConfig = requireExternal(localConfigPath);
-const localHuron = requireExternal(localHuronPath);
+const localConfig = requireExternal(
+  path.resolve(program.webpackConfig)
+);
+const localHuron = requireExternal(
+  path.resolve(program.huronConfig)
+);
 
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
@@ -86,15 +85,15 @@ function configureEntries(huron, config) {
   const newConfig = config;
 
   newConfig.entry = {};
-  if (! program.production) {
+  if (!program.production) {
     newConfig.entry[huron.entry] = [
       `webpack-dev-server/client?http://localhost:${huron.port}`,
       'webpack/hot/dev-server',
-      path.join(cwd, huron.root, 'huron-assets/huron'),
+      path.join(cwd, huron.root, 'huron-assets/index'),
     ].concat(entry);
   } else {
     newConfig.entry[huron.entry] = [
-      path.join(cwd, huron.root, 'huron-assets/huron'),
+      path.join(cwd, huron.root, 'huron-assets/index'),
     ].concat(entry);
   }
 
@@ -113,7 +112,7 @@ function configurePlugins(huron, config) {
 
   newConfig.plugins = config.plugins || [];
 
-  if (! program.production) {
+  if (!program.production) {
     if (newConfig.plugins && newConfig.plugins.length) {
       newConfig.plugins = newConfig.plugins.filter(
         (plugin) => 'HotModuleReplacementPlugin' !== plugin.constructor.name &&
@@ -211,7 +210,7 @@ function configurePrototypes(huron, config) {
       {}.hasOwnProperty.call(prototype, 'title')
     ) {
       // Create filename based on configured title if not provided
-      if (! prototype.filename) {
+      if (!prototype.filename) {
         newPrototype.filename = `${prototype.title}.html`;
       }
 
@@ -280,8 +279,8 @@ function moveAdditionalAssets(assets, subdir = '', huron) {
     let contents = false;
 
     if (
-      ! path.isAbsolute(asset) &&
-      ! assetURL.protocol
+      !path.isAbsolute(asset) &&
+      !assetURL.protocol
     ) {
       try {
         contents = fs.readFileSync(sourcePath);

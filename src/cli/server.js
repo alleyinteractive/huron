@@ -1,10 +1,11 @@
 /** @module cli/webpack-server */
+import webpack from 'webpack';
+import WebpackDevServer from 'webpack-dev-server';
+import chalk from 'chalk';
+import open from 'opn';
 
-import program from './parse-args';
-
-const webpack = require('webpack');
-const WebpackDevServer = require('webpack-dev-server');
-const chalk = require('chalk'); // Colorize terminal output
+import createDevServerConfig from '../../config/devServer.config';
+import program from './parseArgs';
 
 /**
  * Spin up webpack-dev-server or, if production flag is set, run webpack a single time
@@ -54,24 +55,9 @@ export default function startWebpack(config) {
       }
     });
   } else {
-    const server = new WebpackDevServer(compiler, {
-      hot: true,
-      quiet: false,
-      noInfo: false,
-      stats: {
-        colors: true,
-        hash: false,
-        version: false,
-        assets: false,
-        chunks: false,
-        modules: false,
-        reasons: false,
-        children: false,
-        source: false,
-      },
-      contentBase: huron.root,
-      publicPath: `http://localhost:${huron.port}/${huron.root}`,
-    });
+    const server = new WebpackDevServer(compiler, createDevServerConfig(huron));
+    const prototypeName = huron.prototypes[0].title || huron.prototypes[0];
+
     server.listen(
       huron.port,
       'localhost',
@@ -81,6 +67,7 @@ export default function startWebpack(config) {
         }
 
         console.log(`Listening at http://localhost:${huron.port}/`);
+        open(`http://localhost:${huron.port}/${huron.root}/${prototypeName}.html`);
         return true;
       }
     );

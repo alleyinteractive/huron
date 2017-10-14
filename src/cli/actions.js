@@ -1,19 +1,19 @@
 /** @module cli/actions */
 
 // Imports
+import path from 'path';
+import chalk from 'chalk';
+import isEqual from 'lodash/isEqual';
+
 import {
   updateHTML,
   deleteHTML,
   updatePrototype,
   deletePrototype,
-} from './handle-html';
-import { updateTemplate, deleteTemplate } from './handle-templates';
-import { updateKSS, deleteKSS } from './handle-kss';
+} from './handleHTML';
+import { updateTemplate, deleteTemplate } from './handleTemplates';
+import { updateKSS, deleteKSS } from './handleKSS';
 import * as utils from './utils';
-
-// Requires
-const path = require('path');
-const chalk = require('chalk'); // Colorize terminal output
 
 // EXPORTED FUNCTIONS
 
@@ -22,11 +22,11 @@ const chalk = require('chalk'); // Colorize terminal output
  *
  * @param {object} data - object containing directory and file paths
  * @param {object} store - memory store
- * @param {object} huron - huron configuration options
  * @return {object} newStore - map object of entire data store
  */
 export function initFiles(data, store, depth = 0) {
   const type = Object.prototype.toString.call(data);
+  const huron = store.get('config');
   let newStore = store;
   let info;
   let files;
@@ -49,7 +49,9 @@ export function initFiles(data, store, depth = 0) {
 
     case '[object String]':
       info = path.parse(data);
-      if (info.ext) {
+
+      // Only call update if data is a filepath and it's within the KSS source directory
+      if (info.ext && utils.matchKssDir(data, huron)) {
         newStore = updateFile(data, store);
       }
       break;
@@ -86,8 +88,8 @@ export function updateFile(filepath, store) {
       if (section) {
         return updateHTML(filepath, section, store);
       } else if (
-        - 1 !== file.dir.indexOf('prototypes') &&
-        - 1 !== file.name.indexOf('prototype-')
+        file.dir.includes('prototypes') &&
+        file.name.includes('prototype-')
       ) {
         return updatePrototype(filepath, store);
       }
@@ -146,8 +148,8 @@ export function deleteFile(filepath, store) {
       if (section) {
         newStore = deleteHTML(filepath, section, store);
       } else if (
-        - 1 !== file.dir.indexOf('prototypes') &&
-        - 1 !== file.name.indexOf('prototype-')
+        file.dir.includes('prototypes') &&
+        file.name.includes('prototype-')
       ) {
         newStore = deletePrototype(filepath, store);
       }
@@ -179,4 +181,27 @@ export function deleteFile(filepath, store) {
   }
 
   return newStore;
+}
+
+/**
+ * Logic for updating localized classnames from CSS modules
+ *
+ * @param {string} filepath - path to updated file. usually passed in from Gaze
+ * @param {object} store - memory store
+ *
+ * @return void
+ */
+export function updateClassNames(filepath, store) {
+  const classNamesPath = store.getIn(['config', 'classNames']);
+
+  if (filepath.includes(classNamesPath)) {
+    const oldClassnames = store.get('classNames');
+    const newClassnames = utils.mergeClassnameJSON(classNamesPath);
+
+    if (!isEqual(oldClassnames, newClassnames)) {
+      return store.set('classNames', newClassnames);
+    }
+  }
+
+  return store;
 }

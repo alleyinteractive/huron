@@ -1,4 +1,4 @@
-import program from '../cli/parse-args';
+import program from '../cli/parseArgs';
 
 const webpack = require('webpack');
 const path = require('path');
@@ -46,11 +46,11 @@ module.exports = (huron) => {
           use: {
             loader: 'handlebars-loader',
             options: {
-              helperDirs: path.join(
+              helperDirs: [path.join(
                 __dirname,
                 '../../',
-                'templates/handlebars-helpers'
-              ),
+                'templates/handlebarsHelpers'
+              )],
             },
           },
         },

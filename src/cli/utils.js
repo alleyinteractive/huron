@@ -1,9 +1,9 @@
 /** @module cli/utilities */
+import path from 'path';
+import fs from 'fs-extra';
+import chalk from 'chalk';
 
 const cwd = process.cwd(); // Current working directory
-const path = require('path');
-const fs = require('fs-extra');
-const chalk = require('chalk'); // Colorize terminal output
 
 /**
  * Ensure predictable data structure for KSS section data
@@ -15,7 +15,7 @@ const chalk = require('chalk'); // Colorize terminal output
 export function normalizeSectionData(section) {
   const data = section.data || section;
 
-  if (! data.referenceURI || '' === data.referenceURI) {
+  if (!data.referenceURI || '' === data.referenceURI) {
     data.referenceURI = section.referenceURI();
   }
 
@@ -34,7 +34,7 @@ export function writeSectionData(store, section, sectionPath = false) {
   let outputPath = sectionPath;
   let sectionFileInfo;
 
-  if (! outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
+  if (!outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
     sectionFileInfo = path.parse(section.kssPath);
     outputPath = path.join(
       sectionFileInfo.dir,
@@ -298,19 +298,69 @@ export function getSection(search, field, store) {
  */
 export function matchKssDir(filepath, huron) {
   const kssSource = huron.get('kss');
-  /* eslint-disable space-unary-ops */
   // Include forward slash in our test to make sure we're matchin a directory, not a file extension
   const kssMatch = kssSource.filter((dir) => filepath.includes(`/${dir}`));
-  /* eslint-enable space-unary-ops */
 
   if (kssMatch.length) {
     return kssMatch[0];
   }
 
-  console.error(
-    chalk.red(`filepath ${filepath} does not exist in any
-    of the configured KSS directories`)
-  );
-
   return false;
+}
+
+/**
+ * Merge JSON files for css modules classnames in a provided directory
+ *
+ * @function mergeClassnameJSON
+ * @param {string} directory - directory containing classname JSON files
+ *
+ * @return {object} classnamesMerged - merged classnames. contents of each JSON file is nested within
+ *                           the returned object by filename. (e.g. article.json -> { article: {...json contents}})
+ */
+export function mergeClassnameJSON(directory) {
+  let files;
+
+  // Try to read through classnames directory
+  try {
+    files = fs.readdirSync(directory);
+  } catch (e) {
+    return {};
+  }
+
+  // Merge classname json files
+  const classnamesMerged = files.reduce((acc, file) => {
+    const fileInfo = path.parse(file);
+    let classnames = {};
+
+    if ('.json' === fileInfo.ext) {
+      try {
+        const contents = fs.readFileSync(
+          path.join(directory, file),
+          'utf8'
+        );
+        classnames = JSON.parse(contents);
+      } catch (e) {
+        classnames = {};
+      }
+    }
+
+    return Object.assign({}, acc, { [fileInfo.name]: classnames });
+  }, {});
+
+  return classnamesMerged;
+}
+
+/**
+ * Remove the trailing slash from a provided directory
+ *
+ * @function removeTrailingSlash
+ * @param {string} directory - directory path
+ * @return {string} directory - directory path with trailing slash removed
+ */
+export function removeTrailingSlash(directory) {
+  if ('/' === directory.slice(-1)) {
+    return directory.slice(0, -1);
+  }
+
+  return directory;
 }

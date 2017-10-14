@@ -8,36 +8,23 @@ const CleanPlugin = require('clean-webpack-plugin');
 
 module.exports = function getConfig(env) {
   const context = path.join(__dirname, '../');
-  const entry = ['./src/cli/huron-cli'];
-  let plugins = [
-    new CleanPlugin(['dist/cli'], {
-      root: context,
-      exclude: 'huron-cli.js',
-    }),
-  ];
-
-  // Manage entry
-  if ('dev' === env.process) {
-    entry.unshift('webpack/hot/poll');
-  }
-
-  // Manage plugins
-  if ('dev' === env.process) {
-    plugins.push(
-      new webpack.HotModuleReplacementPlugin(),
-      new webpack.NamedModulesPlugin()
-    );
-  }
 
   return {
     context,
-    entry,
-    plugins,
+    entry: {
+      cli: ['./src/cli/index'],
+    },
+    plugins: [
+      new CleanPlugin(['dist/cli'], {
+        root: context,
+        exclude: 'index.js',
+      }),
+    ],
     target: 'node',
     devtool: 'cheap-module-source-map',
     output: {
       path: path.join(context, 'dist/cli'),
-      filename: 'huron-cli.js',
+      filename: 'index.js',
       chunkFilename: '[name].chunk.min.js',
       publicPath: '../',
     },
@@ -49,8 +36,14 @@ module.exports = function getConfig(env) {
       __dirname: false,
     },
     module: {
-      noParse: /require-external/,
+      noParse: /requireExternal/,
       rules: [
+        {
+          enforce: 'pre',
+          test: /\.js$/,
+          exclude: [/node_modules/, /\.min\.js$/],
+          use: 'eslint-loader',
+        },
         {
           test: /\.js$/,
           exclude: /node_modules/,

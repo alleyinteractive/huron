@@ -1,12 +1,11 @@
 /** @module cli/parse-arguments */
 /* eslint-disable space-unary-ops */
 
+import program from 'commander';
+import path from 'path';
+
 // Requires
 /** @global */
-const program = require('commander'); // Easy program flags
-const path = require('path');
-
-export default program;
 
 /**
  * Process huron CLI arguments
@@ -34,12 +33,12 @@ function parseArgs() {
     .option(
       '-c, --huron-config [huronConfig]',
       '[huronConfig] for all huron options',
-      path.resolve(__dirname, '../default-config/huron.config.js')
+      path.resolve(__dirname, '../defaultConfig/huron.config.js')
     )
     .option(
       '-w, --webpack-config [webpackConfig]',
       '[webpackConfig] for all webpack options',
-      path.resolve(__dirname, '../default-config/webpack.config.js')
+      path.resolve(__dirname, '../defaultConfig/webpack.config.js')
     )
     .option('-p, --production', 'compile assets once for production');
 
@@ -56,3 +55,5 @@ function parseArgs() {
 
 parseArgs();
 /* eslint-enable */
+
+export default program;

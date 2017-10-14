@@ -1,8 +1,8 @@
 /** @module cli/html-handler */
-import * as utils from './utils';
+import path from 'path';
+import fs from 'fs-extra';
 
-const path = require('path');
-const fs = require('fs-extra');
+import * as utils from './utils';
 
 /**
  * Handle update of an HMTL template
