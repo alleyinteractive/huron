@@ -27,7 +27,7 @@ export const extensions = [
 export const watchedFiles = [];
 
 // Watch section template
-watchedFiles.push(path.resolve(__dirname, huron.get('sectionTemplate')));
+watchedFiles.push(path.resolve(huron.get('sectionTemplate')));
 
 // Watch cssmodules classname files (if they exist)
 if (huron.get('classNames')) {

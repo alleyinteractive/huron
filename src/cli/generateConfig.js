@@ -169,7 +169,7 @@ function configureLoaders(huron, config) {
  */
 function configurePrototypes(huron, config) {
   const wrapperTemplate = fs.readFileSync(
-    path.join(__dirname, '../../templates/prototype-template.hbs'),
+    path.join(__dirname, '../../templates/prototypeTemplate.hbs'),
     'utf8'
   );
 
@@ -182,7 +182,7 @@ function configurePrototypes(huron, config) {
     template: path.join(
       cwd,
       huron.root,
-      'huron-assets/prototype-template.hbs'
+      'huron-assets/prototypeTemplate.hbs'
     ),
     inject: false,
     chunks: [huron.entry],
@@ -191,7 +191,7 @@ function configurePrototypes(huron, config) {
 
   // Write prototype template file for HTML webpack plugin
   fs.outputFileSync(
-    path.join(cwd, huron.root, 'huron-assets/prototype-template.hbs'),
+    path.join(cwd, huron.root, 'huron-assets/prototypeTemplate.hbs'),
     wrapperTemplate
   );
 

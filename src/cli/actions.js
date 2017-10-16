@@ -49,7 +49,7 @@ export function initFiles(data, store, depth = 0) {
       info = path.parse(data);
 
       // Only call update if data is a filepath and it's within the KSS source directory
-      if (info.ext && utils.matchKssDir(data, huron)) {
+      if (info.ext && !data.includes(huron.get('classNames'))) {
         newStore = updateFile(data, store);
       }
       break;

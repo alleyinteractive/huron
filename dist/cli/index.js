@@ -1030,7 +1030,7 @@ function initFiles(data, store, depth = 0) {
       info = _path2.default.parse(data);
 
       // Only call update if data is a filepath and it's within the KSS source directory
-      if (info.ext && utils.matchKssDir(data, huron)) {
+      if (info.ext && !data.includes(huron.get('classNames'))) {
         newStore = updateFile(data, store);
       }
       break;
@@ -1222,7 +1222,7 @@ const extensions = exports.extensions = [huron.get('kssExtension'), huron.get('t
 const watchedFiles = exports.watchedFiles = [];
 
 // Watch section template
-watchedFiles.push(_path2.default.resolve(__dirname, huron.get('sectionTemplate')));
+watchedFiles.push(_path2.default.resolve(huron.get('sectionTemplate')));
 
 // Watch cssmodules classname files (if they exist)
 if (huron.get('classNames')) {
@@ -1423,7 +1423,7 @@ function configureLoaders(huron, config) {
  * @return {object} newConfig - updated data store
  */
 function configurePrototypes(huron, config) {
-  const wrapperTemplate = _fsExtra2.default.readFileSync(_path2.default.join(__dirname, '../../templates/prototype-template.hbs'), 'utf8');
+  const wrapperTemplate = _fsExtra2.default.readFileSync(_path2.default.join(__dirname, '../../templates/prototypeTemplate.hbs'), 'utf8');
 
   const defaultHTMLPluginOptions = {
     title: 'Huron',
@@ -1431,14 +1431,14 @@ function configurePrototypes(huron, config) {
     js: [],
     css: [],
     filename: 'index.html',
-    template: _path2.default.join(cwd, huron.root, 'huron-assets/prototype-template.hbs'),
+    template: _path2.default.join(cwd, huron.root, 'huron-assets/prototypeTemplate.hbs'),
     inject: false,
     chunks: [huron.entry]
   };
   const newConfig = config;
 
   // Write prototype template file for HTML webpack plugin
-  _fsExtra2.default.outputFileSync(_path2.default.join(cwd, huron.root, 'huron-assets/prototype-template.hbs'), wrapperTemplate);
+  _fsExtra2.default.outputFileSync(_path2.default.join(cwd, huron.root, 'huron-assets/prototypeTemplate.hbs'), wrapperTemplate);
 
   huron.prototypes.forEach(prototype => {
     const newPrototype = prototype;
