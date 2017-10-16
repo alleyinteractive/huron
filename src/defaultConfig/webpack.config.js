@@ -1,9 +1,9 @@
+import webpack from 'webpack';
+import path from 'path';
+
 import program from '../cli/parseArgs';
 
-const webpack = require('webpack');
-const path = require('path');
-
-module.exports = (huron) => {
+export default (huron) => {
   const cwd = process.cwd();
 
   return {
