@@ -2081,8 +2081,6 @@ var InsertNodes = function () {
 
   return InsertNodes;
 }();
-/* eslint-enable */
-
 
 exports.default = InsertNodes;
 
