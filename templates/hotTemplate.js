@@ -1,4 +1,4 @@
-/* globals requirePath, requireRegex, sectionTemplatePath */
+/* globals hotScope */
 
 // NOTE: This is not a normal JS file! It is pulled in by the CLI as a string
 // and prepended to the browser script after replacing anything referenced via `hotScope[variable]`

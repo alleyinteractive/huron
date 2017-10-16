@@ -8,7 +8,6 @@ const CleanPlugin = require('clean-webpack-plugin');
 
 module.exports = function getConfig(env) {
   const context = path.join(__dirname, '../');
-  const include = path.join(__dirname, '../src/cli');
 
   return {
     context,
@@ -37,17 +36,17 @@ module.exports = function getConfig(env) {
       __dirname: false,
     },
     module: {
-      noParse: [/requireExternal/, /hotTemplate/],
+      noParse: [/requireExternal/],
       rules: [
         {
           enforce: 'pre',
           test: /\.js$/,
-          include,
+          exclude: [/node_modules/, /\.min\.js$/],
           use: 'eslint-loader',
         },
         {
           test: /\.js$/,
-          include,
+          exclude: [/node_modules/, /\.min\.js$/],
           use: 'babel-loader',
         },
       ],
