@@ -324,13 +324,14 @@ export function mergeClassnameJSON(directory) {
   try {
     files = fs.readdirSync(directory);
   } catch (e) {
+    console.warn(chalk.red(e));
     return {};
   }
 
   // Merge classname json files
-  const classnamesMerged = files.reduce((acc, file) => {
+  const classNamesMerged = files.reduce((acc, file) => {
     const fileInfo = path.parse(file);
-    let classnames = {};
+    let classNames = {};
 
     if ('.json' === fileInfo.ext) {
       try {
@@ -338,16 +339,17 @@ export function mergeClassnameJSON(directory) {
           path.join(directory, file),
           'utf8'
         );
-        classnames = JSON.parse(contents);
+        classNames = JSON.parse(contents);
       } catch (e) {
-        classnames = {};
+        console.warn(chalk.red(e));
+        return classNames;
       }
     }
 
-    return Object.assign({}, acc, { [fileInfo.name]: classnames });
+    return Object.assign({}, acc, { [fileInfo.name]: classNames });
   }, {});
 
-  return classnamesMerged;
+  return classNamesMerged;
 }
 
 /**

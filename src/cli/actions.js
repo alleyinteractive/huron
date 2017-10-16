@@ -15,8 +15,6 @@ import { updateTemplate, deleteTemplate } from './handleTemplates';
 import { updateKSS, deleteKSS } from './handleKSS';
 import * as utils from './utils';
 
-// EXPORTED FUNCTIONS
-
 /**
  * Recursively loop through initial watched files list from Gaze.
  *
