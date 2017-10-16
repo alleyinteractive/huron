@@ -61,7 +61,7 @@ KSS is a documentation syntax and styleguide generator. All documentation should
  	}
  	```
 
-* **Styleguide reference** - This is a required field, and must be written in the format `Styleguide [styleguide-section].[styleguide-subsection]`. You may have as many subsections as you like. You'll use this section reference when inserting markup in your prototypes by converting all `.` separators to `-`, creating a URI-like structure. We'll discuss this further in the next section.
+* **Styleguide reference** - This is a required field, and must be written in the format `Styleguide [styleguide-section].[styleguide-subsection]`. You may have as many subsections as you like. You'll use this section reference when inserting markup in your prototypes by converting all `.` separators to `-`, creating a URI-like structure. For example, `Styleguide search-form.header` can be inserted via `data-huron-id="search-form-header"` We'll discuss this further in the next section.
 * _NOTE: As of now, Huron only supports one KSS documentation block per file, meaning it's heavily geared toward CSS preprocessors like SASS or LESS. This is an issue on our radar, however, and will be implemented at some point._
 
 ## Writing prototypes

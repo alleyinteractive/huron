@@ -380,12 +380,16 @@ function matchKssDir(filepath, huron) {
 function mergeClassnameJSON(directory) {
   let files;
 
+  // If no config is provided, return immediately
+  if (!directory) {
+    return {};
+  }
+
   // Try to read through classnames directory
   try {
     files = _fsExtra2.default.readdirSync(directory);
   } catch (e) {
     console.warn(_chalk2.default.red(e));
-    return {};
   }
 
   // Merge classname json files
@@ -399,7 +403,6 @@ function mergeClassnameJSON(directory) {
         classNames = JSON.parse(contents);
       } catch (e) {
         console.warn(_chalk2.default.red(e));
-        return classNames;
       }
     }
 
@@ -773,87 +776,87 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @global
  */
 // Local imports
-const store = (0, _actions.initFiles)(_fileWatcher2.default.watched(), _defaultStore.defaultStore);
 const huron = _defaultStore.defaultStore.get('config');
+let store = (0, _actions.initFiles)(_fileWatcher2.default.watched(), _defaultStore.defaultStore);
 
 (0, _requireTemplates.requireTemplates)(store);
 (0, _requireTemplates.writeStore)(store);
 
-if (!_parseArgs2.default.production) {
-  /** @module cli/gaze */
-  let newStore = store;
-
-  _fileWatcher2.default.on('all', (event, filepath) => {
-    newStore = (0, _actions.updateClassNames)(filepath, newStore);
-    (0, _requireTemplates.writeStore)(newStore);
-  });
-
-  /**
-   * Anonymous handler for Gaze 'changed' event indicating a file has changed
-   *
-   * @callback changed
-   * @listens gaze:changed
-   * @param {string} filepath - absolute path of changed file
-   */
-  _fileWatcher2.default.on('changed', filepath => {
-    if ((0, _utils.matchKssDir)(filepath, huron)) {
-      newStore = (0, _actions.updateFile)(filepath, newStore);
-    }
-
-    console.log(_chalk2.default.green(`${filepath} updated!`));
-  });
-
-  /**
-   * Anonymous handler for Gaze 'added' event indicating a file has been added to the watched directories
-   *
-   * @callback added
-   * @listens gaze:added
-   * @param {string} filepath - absolute path of changed file
-   */
-  _fileWatcher2.default.on('added', filepath => {
-    if ((0, _utils.matchKssDir)(filepath, huron)) {
-      newStore = (0, _actions.updateFile)(filepath, newStore);
-      (0, _requireTemplates.writeStore)(newStore);
-    }
-
-    console.log(_chalk2.default.blue(`${filepath} added!`));
-  });
-
-  /**
-   * Anonymous handler for Gaze 'renamed' event indicating a file has been renamed
-   *
-   * @callback renamed
-   * @listens gaze:renamed
-   * @param {string} filepath - absolute path of changed file
-   */
-  _fileWatcher2.default.on('renamed', (newPath, oldPath) => {
-    if ((0, _utils.matchKssDir)(newPath, huron)) {
-      newStore = (0, _actions.deleteFile)(oldPath, newStore);
-      newStore = (0, _actions.updateFile)(newPath, newStore);
-      (0, _requireTemplates.writeStore)(newStore);
-    }
-
-    console.log(_chalk2.default.blue(`${newPath} added!`));
-  });
-
-  /**
-   * Anonymous handler for Gaze 'deleted' event indicating a file has been removed
-   *
-   * @callback deleted
-   * @listens gaze:deleted
-   * @param {string} filepath - absolute path of changed file
-   */
-  _fileWatcher2.default.on('deleted', filepath => {
-    if ((0, _utils.matchKssDir)(filepath, huron)) {
-      newStore = (0, _actions.deleteFile)(filepath, newStore);
-      (0, _requireTemplates.writeStore)(newStore);
-    }
-
-    console.log(_chalk2.default.red(`${filepath} deleted`));
-  });
-} else {
+// If building for production, close gaze and exit process once initFiles is done.
+if (_parseArgs2.default.production) {
   _fileWatcher2.default.close();
+  process.exit();
 }
+
+/** @module cli/gaze */
+_fileWatcher2.default.on('all', (event, filepath) => {
+  store = (0, _actions.updateClassNames)(filepath, store);
+  (0, _requireTemplates.writeStore)(store);
+});
+
+/**
+ * Anonymous handler for Gaze 'changed' event indicating a file has changed
+ *
+ * @callback changed
+ * @listens gaze:changed
+ * @param {string} filepath - absolute path of changed file
+ */
+_fileWatcher2.default.on('changed', filepath => {
+  if ((0, _utils.matchKssDir)(filepath, huron)) {
+    store = (0, _actions.updateFile)(filepath, store);
+  }
+
+  console.log(_chalk2.default.green(`${filepath} updated!`));
+});
+
+/**
+ * Anonymous handler for Gaze 'added' event indicating a file has been added to the watched directories
+ *
+ * @callback added
+ * @listens gaze:added
+ * @param {string} filepath - absolute path of changed file
+ */
+_fileWatcher2.default.on('added', filepath => {
+  if ((0, _utils.matchKssDir)(filepath, huron)) {
+    store = (0, _actions.updateFile)(filepath, store);
+    (0, _requireTemplates.writeStore)(store);
+  }
+
+  console.log(_chalk2.default.blue(`${filepath} added!`));
+});
+
+/**
+ * Anonymous handler for Gaze 'renamed' event indicating a file has been renamed
+ *
+ * @callback renamed
+ * @listens gaze:renamed
+ * @param {string} filepath - absolute path of changed file
+ */
+_fileWatcher2.default.on('renamed', (newPath, oldPath) => {
+  if ((0, _utils.matchKssDir)(newPath, huron)) {
+    store = (0, _actions.deleteFile)(oldPath, store);
+    store = (0, _actions.updateFile)(newPath, store);
+    (0, _requireTemplates.writeStore)(store);
+  }
+
+  console.log(_chalk2.default.blue(`${newPath} added!`));
+});
+
+/**
+ * Anonymous handler for Gaze 'deleted' event indicating a file has been removed
+ *
+ * @callback deleted
+ * @listens gaze:deleted
+ * @param {string} filepath - absolute path of changed file
+ */
+_fileWatcher2.default.on('deleted', filepath => {
+  if ((0, _utils.matchKssDir)(filepath, huron)) {
+    store = (0, _actions.deleteFile)(filepath, store);
+    (0, _requireTemplates.writeStore)(store);
+  }
+
+  console.log(_chalk2.default.red(`${filepath} deleted`));
+});
 
 // Start webpack or build for production
 (0, _server2.default)(_defaultStore.config);
