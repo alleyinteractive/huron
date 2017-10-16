@@ -1970,6 +1970,8 @@ var _parseArgs = __webpack_require__(4);
 
 var _parseArgs2 = _interopRequireDefault(_parseArgs);
 
+var _utils = __webpack_require__(1);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 /**
@@ -1979,7 +1981,6 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
  * @param {object} config - webpack configuration, preprocessed by {@link module:cli/generate-config generateConfig}
  * @see {@link module:cli/generate-config generateConfig}
  */
-/** @module cli/webpack-server */
 function startWebpack(config) {
   const huron = config.huron;
   const webpackConfig = config.webpack;
@@ -2017,11 +2018,11 @@ function startWebpack(config) {
       }
 
       console.log(`Listening at http://localhost:${huron.port}/`);
-      (0, _opn2.default)(`http://localhost:${huron.port}/${huron.root}/${prototypeName}.html`);
+      (0, _opn2.default)(`http://localhost:${huron.port}/${(0, _utils.removeTrailingSlash)(huron.root)}/${prototypeName}.html`);
       return true;
     });
   }
-}
+} /** @module cli/webpack-server */
 
 /***/ }),
 /* 18 */
