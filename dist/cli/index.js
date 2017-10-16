@@ -384,27 +384,29 @@ function mergeClassnameJSON(directory) {
   try {
     files = _fsExtra2.default.readdirSync(directory);
   } catch (e) {
+    console.warn(_chalk2.default.red(e));
     return {};
   }
 
   // Merge classname json files
-  const classnamesMerged = files.reduce((acc, file) => {
+  const classNamesMerged = files.reduce((acc, file) => {
     const fileInfo = _path2.default.parse(file);
-    let classnames = {};
+    let classNames = {};
 
     if ('.json' === fileInfo.ext) {
       try {
         const contents = _fsExtra2.default.readFileSync(_path2.default.join(directory, file), 'utf8');
-        classnames = JSON.parse(contents);
+        classNames = JSON.parse(contents);
       } catch (e) {
-        classnames = {};
+        console.warn(_chalk2.default.red(e));
+        return classNames;
       }
     }
 
-    return Object.assign({}, acc, { [fileInfo.name]: classnames });
+    return Object.assign({}, acc, { [fileInfo.name]: classNames });
   }, {});
 
-  return classnamesMerged;
+  return classNamesMerged;
 }
 
 /**
@@ -999,8 +1001,6 @@ var utils = _interopRequireWildcard(_utils);
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// EXPORTED FUNCTIONS
 
 /**
  * Recursively loop through initial watched files list from Gaze.
