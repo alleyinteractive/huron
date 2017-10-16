@@ -148,7 +148,7 @@ export default class InsertNodes {
   /**
    * Replace all template markers with the actual template markup.
    *
-   * @param {string} context - The hash context for the module
+   * @param {string} context - The within which to replace markup
    * @param {object} filter - Filter for modules. Fields explained in the filterModules() function docs
    */
   cycleModules(context = false, filter = false) {
@@ -227,17 +227,18 @@ export default class InsertNodes {
   }
 
   /**
-   * Generate a hash string from a module key
+   * Generate a unique key for targeting markup replacement
    *
-   * @param {string} key - module key (require path) to convert into a hash
-   * @return {string} key - generated MD5 Hash
+   * @param {string} key - module key (webpack require path) to convert into a replacement key
+   * @return {string} key - generated replacement key
    */
-  generateModuleHash(key) {
+  generateModuleReplaceKey(key) {
     let currentKey = key;
 
-    // If module key is for data, use template key instead
+    // If this is section data, use the section template path
     if (key.includes('-section.json')) {
       currentKey = this._sectionTemplatePath;
+    // If updated module is a json file, use template key instead
     } else if (key.includes('.json')) {
       currentKey = this._templates[key];
     }
@@ -298,7 +299,7 @@ export default class InsertNodes {
 
     if (id && type) {
       const renderData = this.getModuleRender(type, key, module);
-      const replaceKey = this.generateModuleHash(key);
+      const replaceKey = this.generateModuleReplaceKey(key);
 
       if (renderData) {
         return Object.assign({ id, type, key, replaceKey, module }, renderData);
@@ -702,7 +703,7 @@ export default class InsertNodes {
             }
           });
 
-          // Add module hash to this placeholder
+          // Add module replacement key to this placeholder
           modifiedPlaceholder.dataset.selfModule = meta.replaceKey;
 
           // Hide the placeholder

@@ -7,10 +7,10 @@ import HTMLWebpackPlugin from 'html-webpack-plugin';
 
 import program from './parseArgs';
 import requireExternal from './requireExternal';
+import defaultWebpack from '../defaultConfig/webpack.config';
+import defaultHuron from '../defaultConfig/huron.config';
 
 const cwd = process.cwd();
-const defaultWebpack = require('../defaultConfig/webpack.config');
-const defaultHuron = require('../defaultConfig/huron.config');
 
 // Require configs passed in by user from CLI
 let defaultConfig = false;
