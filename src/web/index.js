@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+import { compose, isEqual } from 'lodash/fp';
 
 /* eslint-disable no-underscore-dangle */
 // Accept the huron.js module for Huron development
@@ -11,7 +11,7 @@ if (module.hot) {
  * into an element with attribute [huron-id] corresponding to the reference URI of the target KSS section,
  * and [huron-type] corresponding with the required KSS field
  */
-class InsertNodes {
+export default class InsertNodes {
 
   constructor(modules, store) {
     /** webpack module list in which keys are relative require paths and values are the module contents */
@@ -28,6 +28,8 @@ class InsertNodes {
     this._prototypes = null;
     /** array of valid huron placeholder types */
     this._types = null;
+    /** array of CSS modules classnames */
+    this._classNames = null;
 
     /** Cache for module metadata */
     this.meta = {};
@@ -41,28 +43,20 @@ class InsertNodes {
   }
 
   /**
-   * Apply a modifier to a render function
+   * Apply a modifier if one exists
    *
+   * @param {object} data - data with which to render template
    * @param {string} modifier - target modifier
-   * @param {object} meta - module metadata
-   * @return {string} rendered - the modified HTML module
+   *
+   * @return {string} data - subset of data object for supplied modifier
    */
-  static applyModifier(modifier, meta) {
-    let rendered = false;
-    let data = meta.data;
-
-    if (data) {
-      // If we have a modifier, use it, otherwise use the entire data set
-      if (modifier && meta.data[modifier]) {
-        data = Object.assign({}, meta.data[modifier], { modifier });
-      }
-
-      rendered = meta.render(data);
-    } else {
-      rendered = meta.render();
+  static applyModifier(data, modifier) {
+    // If we have a modifier, use it, otherwise use the entire data set
+    if (modifier && data && data[modifier]) {
+      return Object.assign({}, data[modifier], { modifier });
     }
 
-    return rendered;
+    return data;
   }
 
   /**
@@ -113,16 +107,6 @@ class InsertNodes {
   }
 
   /**
-   * Generate a hash string from a module key
-   *
-   * @param {string} key - module key (require path) to convert into a hash
-   * @return {string} key - generated MD5 Hash
-   */
-  static generateModuleHash(key) {
-    return crypto.createHash('md5').update(key).digest("hex");
-  }
-
-  /**
    * Retrieve a data attribute from a tag using one of two methods
    *
    * @param {HTMLElement} tag - DOM node on which to check for a data attribute
@@ -138,7 +122,7 @@ class InsertNodes {
     }
 
     // Fallback to getAttribute for ugly old Safari
-    if (! data && tag.getAttribute) {
+    if (!data && tag.getAttribute) {
       data = tag.getAttribute(`data-${attr}`);
     }
 
@@ -164,7 +148,7 @@ class InsertNodes {
   /**
    * Replace all template markers with the actual template markup.
    *
-   * @param {string} context - The hash context for the module
+   * @param {string} context - The within which to replace markup
    * @param {object} filter - Filter for modules. Fields explained in the filterModules() function docs
    */
   cycleModules(context = false, filter = false) {
@@ -172,7 +156,7 @@ class InsertNodes {
     let elementList = context;
 
     // We're replacing top-level elements
-    if (! elementList) {
+    if (!elementList) {
       this.regenCache();
 
       // Find all top-level huron placeholders
@@ -243,6 +227,26 @@ class InsertNodes {
   }
 
   /**
+   * Generate a unique key for targeting markup replacement
+   *
+   * @param {string} key - module key (webpack require path) to convert into a replacement key
+   * @return {string} key - generated replacement key
+   */
+  generateModuleReplaceKey(key) {
+    let currentKey = key;
+
+    // If this is section data, use the section template path
+    if (key.includes('-section.json')) {
+      currentKey = this._sectionTemplatePath;
+    // If updated module is a json file, use template key instead
+    } else if (key.includes('.json')) {
+      currentKey = this._templates[key];
+    }
+
+    return `_${currentKey.replace(/[/.]/g, '_')}`;
+  }
+
+  /**
    * Get module metadata from a module require path
    *
    * @param  {string} key - Module require path
@@ -294,12 +298,11 @@ class InsertNodes {
     }
 
     if (id && type) {
-      const hashKey = 'data' === type ? this._templates[key] : key;
       const renderData = this.getModuleRender(type, key, module);
-      const hash = InsertNodes.generateModuleHash(hashKey);
+      const replaceKey = this.generateModuleReplaceKey(key);
 
       if (renderData) {
-        return Object.assign({ id, type, key, hash, module }, renderData);
+        return Object.assign({ id, type, key, replaceKey, module }, renderData);
       }
     }
 
@@ -351,7 +354,7 @@ class InsertNodes {
         const moduleKey = this.getModuleKeyFromTag(element);
 
         if (moduleKey) {
-          if (! moduleList[moduleKey]) {
+          if (!moduleList[moduleKey]) {
             moduleList[moduleKey] = [];
           }
           moduleList[moduleKey].push(element);
@@ -576,6 +579,22 @@ class InsertNodes {
   }
 
   /**
+   * Apply a modifier and merge classnames into template data, if it exists
+   *
+   * @param {object} data - data with which to render template
+   * @param {string} modifier - target modifier
+   *
+   * @return {string} rendered - the modified HTML module
+   */
+  provideClassnames(data) {
+    if (this._classNames) {
+      return Object.assign({}, data, { classNames: this._classNames });
+    }
+
+    return data;
+  }
+
+  /**
    * Regenerate module meta cache
    */
   regenCache() {
@@ -589,29 +608,29 @@ class InsertNodes {
   /**
    * Recursively remove old tags
    *
-   * @param {string} hash - hash of module for which we need to remove old tags
+   * @param {string} replaceKey - key of module for which we need to remove old tags
    * @param {object} tag - tag to start our search with
    *                       (usually the tag immediately preceding the current placeholder)
    */
-  removeOldTags(hash, tag) {
+  removeOldTags(replaceKey, tag) {
     if (tag) {
-      const parentHash = InsertNodes.getDataAttribute(tag, 'parent-hash');
-      const selfHash = InsertNodes.getDataAttribute(tag, 'self-hash');
+      const parentModule = InsertNodes.getDataAttribute(tag, 'parent-module');
+      const selfModule = InsertNodes.getDataAttribute(tag, 'self-module');
 
-      if (parentHash === hash && selfHash !== hash) {
+      if (parentModule === replaceKey && selfModule !== replaceKey) {
         // This is a child of the current module,
         // so remove it and its children (if applicable)
-        const childrenHash = selfHash;
+        const childrenModule = selfModule;
         let nextTag = tag.previousSibling;
 
-        if (childrenHash) {
-          this.removeOldTags(childrenHash, nextTag);
+        if (childrenModule) {
+          this.removeOldTags(childrenModule, nextTag);
           // Reset nextTag if we removed a child
           nextTag = tag.previousSibling;
         }
 
         tag.parentNode.removeChild(tag);
-        this.removeOldTags(hash, nextTag);
+        this.removeOldTags(replaceKey, nextTag);
       }
     }
   }
@@ -628,7 +647,7 @@ class InsertNodes {
     let replace = replaceElements;
     let hasStyleguideHelpers = false;
 
-    if (! replace) {
+    if (!replace) {
       replace = document.querySelectorAll(
         '[data-huron-id][data-huron-type]'
       );
@@ -650,13 +669,20 @@ class InsertNodes {
           const modifier = InsertNodes
             .getDataAttribute(modifiedPlaceholder, 'huron-modifier');
           const parent = modifiedPlaceholder.parentNode;
-          const rendered = InsertNodes.applyModifier(modifier, meta);
+          const data = compose(
+            this.provideClassnames.bind(this),
+            InsertNodes.applyModifier
+          )(meta.data, modifier);
+          const rendered = meta.render(data);
           const renderedTemplate = InsertNodes.convertToElement(rendered)
               .querySelector('template');
           let renderedContents = null;
 
           // Remove existing module tags
-          this.removeOldTags(meta.hash, modifiedPlaceholder.previousSibling);
+          this.removeOldTags(
+            meta.replaceKey,
+            modifiedPlaceholder.previousSibling
+          );
 
           // Get the contents of the rendered template
           renderedContents = [
@@ -668,8 +694,8 @@ class InsertNodes {
             const newEl = element;
 
             if (1 === newEl.nodeType) {
-              newEl.dataset.parentHash = meta.hash;
-              hasStyleguideHelpers = ! hasStyleguideHelpers ?
+              newEl.dataset.parentModule = meta.replaceKey;
+              hasStyleguideHelpers = !hasStyleguideHelpers ?
                 InsertNodes.isSectionHelper(newEl, meta) :
                 hasStyleguideHelpers;
 
@@ -677,8 +703,8 @@ class InsertNodes {
             }
           });
 
-          // Add module hash to this placeholder
-          modifiedPlaceholder.dataset.selfHash = meta.hash;
+          // Add module replacement key to this placeholder
+          modifiedPlaceholder.dataset.selfModule = meta.replaceKey;
 
           // Hide the placeholder
           modifiedPlaceholder.style.display = 'none';
@@ -715,7 +741,7 @@ class InsertNodes {
       return 'template';
     }
 
-    if (! this._types.includes(type)) {
+    if (!this._types.includes(type)) {
       return false;
     }
 
@@ -741,13 +767,16 @@ class InsertNodes {
     this._prototypes = store.prototypes;
     this._types = store.types;
     this._sectionTemplatePath = store.sectionTemplatePath;
+
+    // Completely rerender prototype if any CSS modules classnames change
+    if (!isEqual(this._classNames, store.classNames)) {
+      const isInitialRender = !this._classNames;
+      this._classNames = store.classNames;
+
+      // Only rerender after initial render (when classnames is not falsy)
+      if (!isInitialRender) {
+        this.cycleModules();
+      }
+    }
   }
 }
-/* eslint-enable no-underscore-dangle */
-
-// Create a new instance of the InsertNodes class
-/*eslint-disable*/
-// Create object for modifiying the templates on the page and
-// initial first templates.
-const insert = new InsertNodes(modules, store);
-/*eslint-enable*/

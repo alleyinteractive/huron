@@ -1,6 +1,6 @@
-const path = require('path');
+import path from 'path';
 
-module.exports = {
+export default {
   css: [],
   entry: 'huron',
   js: [],
@@ -16,10 +16,11 @@ module.exports = {
   prototypes: ['index'],
   root: 'dist/',
   sectionTemplate: path.join(__dirname, '../../templates/section.hbs'),
+  classNames: false,
   templates: {
     rule: {
       test: /\.(hbs|handlebars)$/,
-      use: 'handlebars-template-loader',
+      use: 'handlebars-loader',
     },
     extension: '.hbs',
   },

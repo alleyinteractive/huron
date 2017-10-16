@@ -1,14 +1,14 @@
 import { Map } from 'immutable';
-import generateConfig from './generate-config';
+
+import generateConfig from './generateConfig';
+import { mergeClassnameJSON } from './utils';
 // Create initial data structure
 
 // Merge Huron default webpack config with user config
 const config = generateConfig();
 
 // Make sure the kss option is represented as an array
-config.huron.kss = Array.isArray(config.huron.kss) ?
-  config.huron.kss :
-  [config.huron.kss];
+config.huron.kss = [].concat(config.huron.kss);
 
 /* eslint-disable */
 /**
@@ -16,7 +16,7 @@ config.huron.kss = Array.isArray(config.huron.kss) ?
  *
  * @global
  */
-const dataStructure = Map({
+const defaultStore = Map({
   types: [
     'template',
     'data',
@@ -26,6 +26,7 @@ const dataStructure = Map({
     'sections-template',
   ],
   config: Map(config.huron),
+  classNames: mergeClassnameJSON(config.huron.classNames),
   sections: Map({
     sectionsByPath: Map({}),
     sectionsByURI: Map({}),
@@ -38,4 +39,4 @@ const dataStructure = Map({
 });
 /* eslint-enable */
 
-export { dataStructure, config };
+export { defaultStore, config };
