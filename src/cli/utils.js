@@ -320,12 +320,16 @@ export function matchKssDir(filepath, huron) {
 export function mergeClassnameJSON(directory) {
   let files;
 
+  // If no config is provided, return immediately
+  if (!directory) {
+    return {};
+  }
+
   // Try to read through classnames directory
   try {
     files = fs.readdirSync(directory);
   } catch (e) {
     console.warn(chalk.red(e));
-    return {};
   }
 
   // Merge classname json files
@@ -342,7 +346,6 @@ export function mergeClassnameJSON(directory) {
         classNames = JSON.parse(contents);
       } catch (e) {
         console.warn(chalk.red(e));
-        return classNames;
       }
     }
 
