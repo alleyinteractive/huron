@@ -785,7 +785,6 @@ let store = (0, _actions.initFiles)(_fileWatcher2.default.watched(), _defaultSto
 // If building for production, close gaze and exit process once initFiles is done.
 if (_parseArgs2.default.production) {
   _fileWatcher2.default.close();
-  process.exit();
 }
 
 /** @module cli/gaze */
