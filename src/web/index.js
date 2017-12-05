@@ -780,4 +780,3 @@ export default class InsertNodes {
     }
   }
 }
-/* eslint-enable */
