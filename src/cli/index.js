@@ -28,7 +28,6 @@ writeStore(store);
 // If building for production, close gaze and exit process once initFiles is done.
 if (program.production) {
   gaze.close();
-  process.exit();
 }
 
 /** @module cli/gaze */

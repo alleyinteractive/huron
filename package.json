@@ -2,7 +2,7 @@
   "name": "huron",
   "description": "An in-browser prototyping tool built on top of webpack and kss-node",
   "author": "Alley Interactive",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "license": "GPL-2.0",
   "repository": {
     "type": "git",
