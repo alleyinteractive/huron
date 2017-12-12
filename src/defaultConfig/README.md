@@ -24,7 +24,7 @@ Object containing options to pass through to KSS-node. I can't find a good sourc
 
 * **output** {string} : default `'partials'` - Relative path (relative to the `huron.root` option) to the directory where you want your templates to be generated.
 * **port** {number} : default `8080` - `localhost` port from which to server your prototypes via webpack-dev-server
-* **prototypes** {array} : default `['index']` - Array of prototypes to generate via HTML webpack plugin. For each array entry you can either pass in a single string corresponding to the title of the prototype, or an object containing option overrides for HTML webpack plugin [(configuration)](https://github.com/ampedandwired/html-webpack-plugin). If you use an object, you must at least provide a `title` field. The title field, whether passed in as a string or the `title` property value, must be the same name as your prototype file located in your `prototypes` directory. So for example, if you provided `['homepage']` in the prototypes option, you would need to have a `prototypes/prototype-homepage.html` file in order for the prototype to display correctly.
+* **prototypes** {array} : default `['index']` - Array of prototypes to generate via HTML webpack plugin. For each array entry you can either pass in a single string corresponding to the title of the prototype, or an object containing option overrides for HTML webpack plugin [(configuration)][html_webpack_plugin]. If you use an object, you must at least provide a `title` field. The title field, whether passed in as a string or the `title` property value, must be the same name as your prototype file located in your `prototypes` directory. So for example, if you provided `['homepage']` in the prototypes option, you would need to have a `prototypes/prototype-homepage.html` file in order for the prototype to display correctly.
 * **root** {string} : default `'dist/'` - Root directory for `webpack-dev-server`. All static assets you need for your prototype(s) should be located in this directory. The `output` option should be relative to this path.
 * **sectionTemplate** {string} : default `path.join(__dirname, '../templates/section.hbs')` - Override for the template used to produce styleguide sections. This should always be a handlebars file, and will utilize the KSS data as its source.
 * **classNames** {string} : For use with CSS Modules. This option should point to a directory with JSON files containing localized classnames. NOTE: at the moment this will only work a CSS Modules implementation that produces JSON output, like `postcss-modules`. The CSS modules implementation offered by the `modules` option in `css-loader` currently will not work.
@@ -40,7 +40,7 @@ Object containing options to pass through to KSS-node. I can't find a good sourc
 }
 ```
 
-Object containing a webpack loader for your template files and a corresponding file extension. Instructions for configuring a webpack loader can be found [here](https://webpack.github.io/docs/configuration.html#module-loaders).
+Object containing a webpack loader for your template files and a corresponding file extension. Instructions for configuring a webpack loader can be found [here][module_loaders].
 * **window** {object} : default `{}` - Object containing variables that should be attached to the global `window` object on every prototype.
 * Complete default huron configuration object:
 
@@ -76,7 +76,7 @@ huron: {
 Huron will attempt to merge its own configuration requirements for webpack with your local configuration, allowing you to use the same build tools (and resulting scripts and styles) in your prototypes as you do on your live site.
 * Huron will automatically add `webpack-dev-server/client?http://localhost:${huron.port}`, `webpack/hot/dev-server` and the Huron front-end script to your configured entry point, so you do not need to worry about configuring this. In addition, Huron will de-dupe the `HotModuleReplacementPlugin()` if you're using it in your production webpack configuration.
 * Huron will automatically add configurations for the `html-loader` and `json-loader` for HTML templates and JSON data respectively
-* The HTML webpack plugin will be largely configured automatically, so you're only required to supply the title of the prototype. As described above, however, you may reconfigure the options. Just beware that this may break your setup, especially if you override the `chunks` option. NOTE: this is also the method by which you may supply a custom EJS template for your prototypes. Again, do this at your own risk and consult the [default template](../templates/prototype-teplate.ejs) first.
+* The HTML webpack plugin will be largely configured automatically, so you're only required to supply the title of the prototype. As described above, however, you may reconfigure the options. Just beware that this may break your setup, especially if you override the `chunks` option. NOTE: this is also the method by which you may supply a custom Handlebars template for your prototypes. Again, do this at your own risk and consult the [default template][prototype_template] first.
 * Huron will override the `devServer` property in your webpack config in favor of its own. This includes the `devServer.stats` object.
 * As described above, your Huron entry point should use the following guidelines:
   * Huron will only support a _single_ entry point. This entry point may be an array of modules, however.
@@ -84,3 +84,11 @@ Huron will attempt to merge its own configuration requirements for webpack with 
   * If you're using `extract-text-webpack-plugin` you will need to conditionally disable this for Huron in order to hot reload your styles.
   * In addition, your styles should conditionally run through the `style-loader` to properly support HMR.
   * To support the above conditions, our recommendation is to set a variable in your webpack config based on the npm lifecycle event. Example: `const isHuron = 'huron' === process.env.npm_lifecycle_event;`. This would be set to `true` when you run `npm run huron`.
+
+<!-- External links -->
+[html_webpack_plugin]: https://github.com/ampedandwired/html-webpack-plugin
+[module_loaders]: https://webpack.github.io/docs/configuration.html#module-loaders
+
+<!-- Docs -->
+[configuration_docs]: src/defaultConfig/README.md
+[prototype_template]: ../../templates/prototypeTemplate.hbs
