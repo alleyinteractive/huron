@@ -9,4 +9,5 @@ Example build command: `node huron/dist/cli/huron-cli.js --config 'client/config
 
 The source code for this CLI is documented via jsdoc. Run `npm install` inside the Huron directory and then run `npm run doc`. Documentation index page will be located at `source-docs/index.html`.
 
+<!-- External links -->
 [webpack_dev_server]: https://webpack.js.org/guides/development/#using-webpack-dev-server
