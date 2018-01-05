@@ -5,4 +5,7 @@ This directory contains the source code for the Huron browser script, used to in
 * Template data (JSON)
 * KSS source (CSS). NOTE: Some KSS fields may cause problems with HMR, most notably the styleguide section reference. This part of Huron is actively under refinement. Changes to the KSS `description`, `header`/`title` or in-line markup should work just fine, however.
 
-Further documentation on the InsertNodes class, which contains all this logic, is provided via jsdoc. See the [CLI](src/cli/README.md) readme
+Further documentation on the InsertNodes class, which contains all this logic, is provided via jsdoc. See the [CLI][cli_docs] README.
+
+<!-- Docs -->
+[cli_docs]: ../cli/README.md
