@@ -1,7 +1,11 @@
+// import path from 'path';
+
 export default (huron) => ({
   hot: true,
+  host: 'localhost',
   quiet: false,
   noInfo: false,
+  overlay: true,
   stats: {
     colors: true,
     hash: false,
@@ -13,7 +17,5 @@ export default (huron) => ({
     children: false,
     source: false,
   },
-  contentBase: huron.root,
-  overlay: true,
-  publicPath: `http://localhost:${huron.port}/${huron.root}`,
+  publicPath: `/${huron.root}`,
 });
