@@ -15,5 +15,5 @@ export default (huron) => ({
   },
   contentBase: huron.root,
   overlay: true,
-  publicPath: `http://localhost:${huron.port}/${huron.root}`,
+  publicPath: huron.root,
 });

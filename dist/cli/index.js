@@ -68,2134 +68,360 @@
 /************************************************************************/
 /******/ ([
 /* 0 */
+/* no static exports found */
+/* all exports used */
+/*!***********************!*\
+  !*** external "path" ***!
+  \***********************/
 /***/ (function(module, exports) {
 
-module.exports = require("path");
+eval("module.exports = require(\"path\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMC5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9leHRlcm5hbCBcInBhdGhcIj81YjJhIl0sInNvdXJjZXNDb250ZW50IjpbIm1vZHVsZS5leHBvcnRzID0gcmVxdWlyZShcInBhdGhcIik7XG5cblxuLy8vLy8vLy8vLy8vLy8vLy8vXG4vLyBXRUJQQUNLIEZPT1RFUlxuLy8gZXh0ZXJuYWwgXCJwYXRoXCJcbi8vIG1vZHVsZSBpZCA9IDBcbi8vIG1vZHVsZSBjaHVua3MgPSAwIl0sIm1hcHBpbmdzIjoiQUFBQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 1 */
+/* no static exports found */
+/* all exports used */
+/*!**************************!*\
+  !*** ./src/cli/utils.js ***!
+  \**************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.normalizeSectionData = normalizeSectionData;
-exports.writeSectionData = writeSectionData;
-exports.getTemplateDataPair = getTemplateDataPair;
-exports.normalizeHeader = normalizeHeader;
-exports.wrapMarkup = wrapMarkup;
-exports.generateFilename = generateFilename;
-exports.writeFile = writeFile;
-exports.removeFile = removeFile;
-exports.writeSectionTemplate = writeSectionTemplate;
-exports.getSection = getSection;
-exports.matchKssDir = matchKssDir;
-exports.mergeClassnameJSON = mergeClassnameJSON;
-exports.removeTrailingSlash = removeTrailingSlash;
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-var _fsExtra = __webpack_require__(3);
-
-var _fsExtra2 = _interopRequireDefault(_fsExtra);
-
-var _chalk = __webpack_require__(2);
-
-var _chalk2 = _interopRequireDefault(_chalk);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-const cwd = process.cwd(); // Current working directory
-
-/**
- * Ensure predictable data structure for KSS section data
- *
- * @function normalizeSectionData
- * @param {object} section - section data
- * @return {object} section data
- */
-/** @module cli/utilities */
-function normalizeSectionData(section) {
-  const data = section.data || section;
-
-  if (!data.referenceURI || '' === data.referenceURI) {
-    data.referenceURI = section.referenceURI();
-  }
-
-  return data;
-}
-
-/**
- * Ensure predictable data structure for KSS section data
- *
- * @function writeSectionData
- * @param {object} store - data store
- * @param {object} section - section data
- * @param {string} sectionPath - output destination for section data file
- */
-function writeSectionData(store, section, sectionPath = false) {
-  let outputPath = sectionPath;
-  let sectionFileInfo;
-
-  if (!outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {
-    sectionFileInfo = _path2.default.parse(section.kssPath);
-    outputPath = _path2.default.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
-  }
-
-  // Output section data
-  if (outputPath) {
-    return writeFile(section.referenceURI, 'section', outputPath, JSON.stringify(section), store);
-  }
-
-  console.warn( // eslint-disable-line no-console
-  _chalk2.default.red(`Failed to write section data for ${section.referenceURI}`));
-  return false;
-}
-
-/**
- * Find .json from a template file or vice versa
- *
- * @function getTemplateDataPair
- * @param {object} file - file object from path.parse()
- * @param {object} section - KSS section data
- * @return {string} relative path to module JSON file
- */
-function getTemplateDataPair(file, section, store) {
-  const huron = store.get('config');
-  const kssDir = matchKssDir(file.dir, huron);
-
-  if (kssDir) {
-    const componentPath = _path2.default.relative(_path2.default.resolve(cwd, kssDir), file.dir);
-    const partnerType = '.json' === file.ext ? 'template' : 'data';
-    const partnerExt = '.json' === file.ext ? huron.get('templates').extension : '.json';
-
-    const pairPath = _path2.default.join(componentPath, generateFilename(section.referenceURI, partnerType, partnerExt, store));
-
-    return `./${pairPath}`;
-  }
-
-  return false;
-}
-
-/**
- * Normalize a section title for use as a filename
- *
- * @function normalizeHeader
- * @param {string} header - section header extracted from KSS documentation
- * @return {string} modified header, lowercase and words separated by dash
- */
-function normalizeHeader(header) {
-  return header.toLowerCase().replace(/\s?\W\s?/g, '-');
-}
-
-/**
- * Wrap html in required template tags
- *
- * @function wrapMarkup
- * @param {string} content - html or template markup
- * @param {string} templateId - id of template (should be section reference)
- * @return {string} modified HTML
- */
-function wrapMarkup(content, templateId) {
-  return `<dom-module>
-<template id="${templateId}">
-${content}
-</template>
-</dom-module>\n`;
-}
-
-/**
- * Generate a filename based on referenceURI, type and file object
- *
- * @function generateFilename
- * @param  {string} id - The name of the file (with extension).
- * @param  {string} type - the type of file output
- * @param  {object} ext - file extension
- * @param  {store} store - data store
- * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
- */
-function generateFilename(id, type, ext, store) {
-  // Type of file and its corresponding extension(s)
-  const types = store.get('types');
-  const outputExt = '.scss' !== ext ? ext : '.html';
-
-  /* eslint-disable */
-  if (-1 === types.indexOf(type)) {
-    console.log(`Huron data ${type} does not exist`);
-    return false;
-  }
-  /* eslint-enable */
-
-  return `${id}-${type}${outputExt}`;
-}
-
-/**
- * Copy an HTML file into the huron output directory.
- *
- * @function writeFile
- * @param  {string} id - The name of the file (with extension).
- * @param  {string} content - The content of the file to write.
- * @param  {string} type - the type of file output
- * @param  {object} store - The data store
- * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
- */
-function writeFile(id, type, filepath, content, store) {
-  const huron = store.get('config');
-  const file = _path2.default.parse(filepath);
-  const filename = generateFilename(id, type, file.ext, store);
-  const kssDir = matchKssDir(filepath, huron);
-
-  if (kssDir) {
-    const componentPath = _path2.default.relative(_path2.default.resolve(cwd, kssDir), file.dir);
-    const outputRelative = _path2.default.join(huron.get('output'), componentPath, `${filename}`);
-    const outputPath = _path2.default.resolve(cwd, huron.get('root'), outputRelative);
-    let newContent = content;
-
-    if ('data' !== type && 'section' !== type) {
-      newContent = wrapMarkup(content, id);
-    }
-
-    try {
-      _fsExtra2.default.outputFileSync(outputPath, newContent);
-      console.log(_chalk2.default.green(`Writing ${outputRelative}`)); // eslint-disable-line no-console
-    } catch (e) {
-      console.log(_chalk2.default.red(`Failed to write ${outputRelative}`)); // eslint-disable-line no-console
-    }
-
-    return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
-  }
-
-  return false;
-}
-
-/**
- * Delete a file in the huron output directory
- *
- * @function removeFile
- * @param  {string} filename - The name of the file (with extension).
- * @param  {object} store - The data store
- * @return {string} Path to output file, relative to ouput dir (can be use in require statements)
- */
-function removeFile(id, type, filepath, store) {
-  const huron = store.get('config');
-  const file = _path2.default.parse(filepath);
-  const filename = generateFilename(id, type, file.ext, store);
-  const kssDir = matchKssDir(filepath, huron);
-
-  if (kssDir) {
-    const componentPath = _path2.default.relative(_path2.default.resolve(cwd, kssDir), file.dir);
-    const outputRelative = _path2.default.join(huron.get('output'), componentPath, `${filename}`);
-    const outputPath = _path2.default.resolve(cwd, huron.get('root'), outputRelative);
-
-    try {
-      _fsExtra2.default.removeSync(outputPath);
-      console.log(_chalk2.default.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console
-    } catch (e) {
-      console.log( // eslint-disable-line no-console
-      _chalk2.default.red(`${outputRelative} does not exist or cannot be deleted`));
-    }
-
-    return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
-  }
-
-  return false;
-}
-
-/**
- * Write a template for sections
- *
- * @function writeSectionTemplate
- * @param  {string} filepath - the original template file
- * @param  {object} store - data store
- * @return {object} updated store
- */
-function writeSectionTemplate(filepath, store) {
-  const huron = store.get('config');
-  const sectionTemplate = wrapMarkup(_fsExtra2.default.readFileSync(filepath, 'utf8'));
-  const componentPath = './huron-assets/section.hbs';
-  const output = _path2.default.join(cwd, huron.get('root'), componentPath);
-
-  // Move huron script and section template into huron root
-  _fsExtra2.default.outputFileSync(output, sectionTemplate);
-  console.log(_chalk2.default.green(`writing section template to ${output}`)); // eslint-disable-line no-console
-
-  return store.set('sectionTemplatePath', componentPath);
-}
-
-/**
- * Request for section data based on section reference
- *
- * @function writeSectionTemplate
- * @param {string} search - key on which to match section
- * @param {field} string - field in which to look to determine section
- * @param {obj} store - sections memory store
- */
-function getSection(search, field, store) {
-  const sectionValues = store.getIn(['sections', 'sectionsByPath']).valueSeq();
-  let selectedSection = false;
-
-  if (field) {
-    selectedSection = sectionValues.filter(value => value[field] === search).get(0);
-  } else {
-    selectedSection = store.getIn(['sections', 'sectionsByPath', search]);
-  }
-
-  return selectedSection;
-}
-
-/**
- * Find which configured KSS directory a filepath exists in
- *
- * @function matchKssDir
- * @param {string} filepath - filepath to search for
- * @param {object} huron - huron configuration
- * @return {string} kssMatch - relative path to KSS directory
- */
-function matchKssDir(filepath, huron) {
-  const kssSource = huron.get('kss');
-  // Include forward slash in our test to make sure we're matchin a directory, not a file extension
-  const kssMatch = kssSource.filter(dir => filepath.includes(`/${dir}`));
-
-  if (kssMatch.length) {
-    return kssMatch[0];
-  }
-
-  return false;
-}
-
-/**
- * Merge JSON files for css modules classnames in a provided directory
- *
- * @function mergeClassnameJSON
- * @param {string} directory - directory containing classname JSON files
- *
- * @return {object} classnamesMerged - merged classnames. contents of each JSON file is nested within
- *                           the returned object by filename. (e.g. article.json -> { article: {...json contents}})
- */
-function mergeClassnameJSON(directory) {
-  let files;
-
-  // If no config is provided, return immediately
-  if (!directory) {
-    return {};
-  }
-
-  // Try to read through classnames directory
-  try {
-    files = _fsExtra2.default.readdirSync(directory);
-  } catch (e) {
-    console.warn(_chalk2.default.red(e));
-  }
-
-  // Merge classname json files
-  const classNamesMerged = files.reduce((acc, file) => {
-    const fileInfo = _path2.default.parse(file);
-    let classNames = {};
-
-    if ('.json' === fileInfo.ext) {
-      try {
-        const contents = _fsExtra2.default.readFileSync(_path2.default.join(directory, file), 'utf8');
-        classNames = JSON.parse(contents);
-      } catch (e) {
-        console.warn(_chalk2.default.red(e));
-      }
-    }
-
-    return Object.assign({}, acc, { [fileInfo.name]: classNames });
-  }, {});
-
-  return classNamesMerged;
-}
-
-/**
- * Remove the trailing slash from a provided directory
- *
- * @function removeTrailingSlash
- * @param {string} directory - directory path
- * @return {string} directory - directory path with trailing slash removed
- */
-function removeTrailingSlash(directory) {
-  if ('/' === directory.slice(-1)) {
-    return directory.slice(0, -1);
-  }
-
-  return directory;
-}
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.normalizeSectionData = normalizeSectionData;\nexports.writeSectionData = writeSectionData;\nexports.getTemplateDataPair = getTemplateDataPair;\nexports.normalizeHeader = normalizeHeader;\nexports.wrapMarkup = wrapMarkup;\nexports.generateFilename = generateFilename;\nexports.writeFile = writeFile;\nexports.removeFile = removeFile;\nexports.writeSectionTemplate = writeSectionTemplate;\nexports.getSection = getSection;\nexports.matchKssDir = matchKssDir;\nexports.mergeClassnameJSON = mergeClassnameJSON;\nexports.removeTrailingSlash = removeTrailingSlash;\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nvar _fsExtra = __webpack_require__(/*! fs-extra */ 3);\n\nvar _fsExtra2 = _interopRequireDefault(_fsExtra);\n\nvar _chalk = __webpack_require__(/*! chalk */ 2);\n\nvar _chalk2 = _interopRequireDefault(_chalk);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nconst cwd = process.cwd(); // Current working directory\n\n/**\n * Ensure predictable data structure for KSS section data\n *\n * @function normalizeSectionData\n * @param {object} section - section data\n * @return {object} section data\n */\n/** @module cli/utilities */\nfunction normalizeSectionData(section) {\n  const data = section.data || section;\n\n  if (!data.referenceURI || '' === data.referenceURI) {\n    data.referenceURI = section.referenceURI();\n  }\n\n  return data;\n}\n\n/**\n * Ensure predictable data structure for KSS section data\n *\n * @function writeSectionData\n * @param {object} store - data store\n * @param {object} section - section data\n * @param {string} sectionPath - output destination for section data file\n */\nfunction writeSectionData(store, section, sectionPath = false) {\n  let outputPath = sectionPath;\n  let sectionFileInfo;\n\n  if (!outputPath && {}.hasOwnProperty.call(section, 'kssPath')) {\n    sectionFileInfo = _path2.default.parse(section.kssPath);\n    outputPath = _path2.default.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);\n  }\n\n  // Output section data\n  if (outputPath) {\n    return writeFile(section.referenceURI, 'section', outputPath, JSON.stringify(section), store);\n  }\n\n  console.warn( // eslint-disable-line no-console\n  _chalk2.default.red(`Failed to write section data for ${section.referenceURI}`));\n  return false;\n}\n\n/**\n * Find .json from a template file or vice versa\n *\n * @function getTemplateDataPair\n * @param {object} file - file object from path.parse()\n * @param {object} section - KSS section data\n * @return {string} relative path to module JSON file\n */\nfunction getTemplateDataPair(file, section, store) {\n  const huron = store.get('config');\n  const kssDir = matchKssDir(file.dir, huron);\n\n  if (kssDir) {\n    const componentPath = _path2.default.relative(_path2.default.resolve(cwd, kssDir), file.dir);\n    const partnerType = '.json' === file.ext ? 'template' : 'data';\n    const partnerExt = '.json' === file.ext ? huron.get('templates').extension : '.json';\n\n    const pairPath = _path2.default.join(componentPath, generateFilename(section.referenceURI, partnerType, partnerExt, store));\n\n    return `./${pairPath}`;\n  }\n\n  return false;\n}\n\n/**\n * Normalize a section title for use as a filename\n *\n * @function normalizeHeader\n * @param {string} header - section header extracted from KSS documentation\n * @return {string} modified header, lowercase and words separated by dash\n */\nfunction normalizeHeader(header) {\n  return header.toLowerCase().replace(/\\s?\\W\\s?/g, '-');\n}\n\n/**\n * Wrap html in required template tags\n *\n * @function wrapMarkup\n * @param {string} content - html or template markup\n * @param {string} templateId - id of template (should be section reference)\n * @return {string} modified HTML\n */\nfunction wrapMarkup(content, templateId) {\n  return `<dom-module>\n<template id=\"${templateId}\">\n${content}\n</template>\n</dom-module>\\n`;\n}\n\n/**\n * Generate a filename based on referenceURI, type and file object\n *\n * @function generateFilename\n * @param  {string} id - The name of the file (with extension).\n * @param  {string} type - the type of file output\n * @param  {object} ext - file extension\n * @param  {store} store - data store\n * @return {string} Path to output file, relative to ouput dir (can be use in require statements)\n */\nfunction generateFilename(id, type, ext, store) {\n  // Type of file and its corresponding extension(s)\n  const types = store.get('types');\n  const outputExt = '.scss' !== ext ? ext : '.html';\n\n  /* eslint-disable */\n  if (-1 === types.indexOf(type)) {\n    console.log(`Huron data ${type} does not exist`);\n    return false;\n  }\n  /* eslint-enable */\n\n  return `${id}-${type}${outputExt}`;\n}\n\n/**\n * Copy an HTML file into the huron output directory.\n *\n * @function writeFile\n * @param  {string} id - The name of the file (with extension).\n * @param  {string} content - The content of the file to write.\n * @param  {string} type - the type of file output\n * @param  {object} store - The data store\n * @return {string} Path to output file, relative to ouput dir (can be use in require statements)\n */\nfunction writeFile(id, type, filepath, content, store) {\n  const huron = store.get('config');\n  const file = _path2.default.parse(filepath);\n  const filename = generateFilename(id, type, file.ext, store);\n  const kssDir = matchKssDir(filepath, huron);\n\n  if (kssDir) {\n    const componentPath = _path2.default.relative(_path2.default.resolve(cwd, kssDir), file.dir);\n    const outputRelative = _path2.default.join(huron.get('output'), componentPath, `${filename}`);\n    const outputPath = _path2.default.resolve(cwd, huron.get('root'), outputRelative);\n    let newContent = content;\n\n    if ('data' !== type && 'section' !== type) {\n      newContent = wrapMarkup(content, id);\n    }\n\n    try {\n      _fsExtra2.default.outputFileSync(outputPath, newContent);\n      console.log(_chalk2.default.green(`Writing ${outputRelative}`)); // eslint-disable-line no-console\n    } catch (e) {\n      console.log(_chalk2.default.red(`Failed to write ${outputRelative}`)); // eslint-disable-line no-console\n    }\n\n    return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;\n  }\n\n  return false;\n}\n\n/**\n * Delete a file in the huron output directory\n *\n * @function removeFile\n * @param  {string} filename - The name of the file (with extension).\n * @param  {object} store - The data store\n * @return {string} Path to output file, relative to ouput dir (can be use in require statements)\n */\nfunction removeFile(id, type, filepath, store) {\n  const huron = store.get('config');\n  const file = _path2.default.parse(filepath);\n  const filename = generateFilename(id, type, file.ext, store);\n  const kssDir = matchKssDir(filepath, huron);\n\n  if (kssDir) {\n    const componentPath = _path2.default.relative(_path2.default.resolve(cwd, kssDir), file.dir);\n    const outputRelative = _path2.default.join(huron.get('output'), componentPath, `${filename}`);\n    const outputPath = _path2.default.resolve(cwd, huron.get('root'), outputRelative);\n\n    try {\n      _fsExtra2.default.removeSync(outputPath);\n      console.log(_chalk2.default.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console\n    } catch (e) {\n      console.log( // eslint-disable-line no-console\n      _chalk2.default.red(`${outputRelative} does not exist or cannot be deleted`));\n    }\n\n    return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;\n  }\n\n  return false;\n}\n\n/**\n * Write a template for sections\n *\n * @function writeSectionTemplate\n * @param  {string} filepath - the original template file\n * @param  {object} store - data store\n * @return {object} updated store\n */\nfunction writeSectionTemplate(filepath, store) {\n  const huron = store.get('config');\n  const sectionTemplate = wrapMarkup(_fsExtra2.default.readFileSync(filepath, 'utf8'));\n  const componentPath = './huron-assets/section.hbs';\n  const output = _path2.default.join(cwd, huron.get('root'), componentPath);\n\n  // Move huron script and section template into huron root\n  _fsExtra2.default.outputFileSync(output, sectionTemplate);\n  console.log(_chalk2.default.green(`writing section template to ${output}`)); // eslint-disable-line no-console\n\n  return store.set('sectionTemplatePath', componentPath);\n}\n\n/**\n * Request for section data based on section reference\n *\n * @function writeSectionTemplate\n * @param {string} search - key on which to match section\n * @param {field} string - field in which to look to determine section\n * @param {obj} store - sections memory store\n */\nfunction getSection(search, field, store) {\n  const sectionValues = store.getIn(['sections', 'sectionsByPath']).valueSeq();\n  let selectedSection = false;\n\n  if (field) {\n    selectedSection = sectionValues.filter(value => value[field] === search).get(0);\n  } else {\n    selectedSection = store.getIn(['sections', 'sectionsByPath', search]);\n  }\n\n  return selectedSection;\n}\n\n/**\n * Find which configured KSS directory a filepath exists in\n *\n * @function matchKssDir\n * @param {string} filepath - filepath to search for\n * @param {object} huron - huron configuration\n * @return {string} kssMatch - relative path to KSS directory\n */\nfunction matchKssDir(filepath, huron) {\n  const kssSource = huron.get('kss');\n  // Include forward slash in our test to make sure we're matchin a directory, not a file extension\n  const kssMatch = kssSource.filter(dir => filepath.includes(`/${dir}`));\n\n  if (kssMatch.length) {\n    return kssMatch[0];\n  }\n\n  return false;\n}\n\n/**\n * Merge JSON files for css modules classnames in a provided directory\n *\n * @function mergeClassnameJSON\n * @param {string} directory - directory containing classname JSON files\n *\n * @return {object} classnamesMerged - merged classnames. contents of each JSON file is nested within\n *                           the returned object by filename. (e.g. article.json -> { article: {...json contents}})\n */\nfunction mergeClassnameJSON(directory) {\n  let files;\n\n  // If no config is provided, return immediately\n  if (!directory) {\n    return {};\n  }\n\n  // Try to read through classnames directory\n  try {\n    files = _fsExtra2.default.readdirSync(directory);\n  } catch (e) {\n    console.warn(_chalk2.default.red(e));\n  }\n\n  // Merge classname json files\n  const classNamesMerged = files.reduce((acc, file) => {\n    const fileInfo = _path2.default.parse(file);\n    let classNames = {};\n\n    if ('.json' === fileInfo.ext) {\n      try {\n        const contents = _fsExtra2.default.readFileSync(_path2.default.join(directory, file), 'utf8');\n        classNames = JSON.parse(contents);\n      } catch (e) {\n        console.warn(_chalk2.default.red(e));\n      }\n    }\n\n    return Object.assign({}, acc, { [fileInfo.name]: classNames });\n  }, {});\n\n  return classNamesMerged;\n}\n\n/**\n * Remove the trailing slash from a provided directory\n *\n * @function removeTrailingSlash\n * @param {string} directory - directory path\n * @return {string} directory - directory path with trailing slash removed\n */\nfunction removeTrailingSlash(directory) {\n  if ('/' === directory.slice(-1)) {\n    return directory.slice(0, -1);\n  }\n\n  return directory;\n}//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMS5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9zcmMvY2xpL3V0aWxzLmpzP2U3MWMiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqIEBtb2R1bGUgY2xpL3V0aWxpdGllcyAqL1xuaW1wb3J0IHBhdGggZnJvbSAncGF0aCc7XG5pbXBvcnQgZnMgZnJvbSAnZnMtZXh0cmEnO1xuaW1wb3J0IGNoYWxrIGZyb20gJ2NoYWxrJztcblxuY29uc3QgY3dkID0gcHJvY2Vzcy5jd2QoKTsgLy8gQ3VycmVudCB3b3JraW5nIGRpcmVjdG9yeVxuXG4vKipcbiAqIEVuc3VyZSBwcmVkaWN0YWJsZSBkYXRhIHN0cnVjdHVyZSBmb3IgS1NTIHNlY3Rpb24gZGF0YVxuICpcbiAqIEBmdW5jdGlvbiBub3JtYWxpemVTZWN0aW9uRGF0YVxuICogQHBhcmFtIHtvYmplY3R9IHNlY3Rpb24gLSBzZWN0aW9uIGRhdGFcbiAqIEByZXR1cm4ge29iamVjdH0gc2VjdGlvbiBkYXRhXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBub3JtYWxpemVTZWN0aW9uRGF0YShzZWN0aW9uKSB7XG4gIGNvbnN0IGRhdGEgPSBzZWN0aW9uLmRhdGEgfHwgc2VjdGlvbjtcblxuICBpZiAoIWRhdGEucmVmZXJlbmNlVVJJIHx8ICcnID09PSBkYXRhLnJlZmVyZW5jZVVSSSkge1xuICAgIGRhdGEucmVmZXJlbmNlVVJJID0gc2VjdGlvbi5yZWZlcmVuY2VVUkkoKTtcbiAgfVxuXG4gIHJldHVybiBkYXRhO1xufVxuXG4vKipcbiAqIEVuc3VyZSBwcmVkaWN0YWJsZSBkYXRhIHN0cnVjdHVyZSBmb3IgS1NTIHNlY3Rpb24gZGF0YVxuICpcbiAqIEBmdW5jdGlvbiB3cml0ZVNlY3Rpb25EYXRhXG4gKiBAcGFyYW0ge29iamVjdH0gc3RvcmUgLSBkYXRhIHN0b3JlXG4gKiBAcGFyYW0ge29iamVjdH0gc2VjdGlvbiAtIHNlY3Rpb24gZGF0YVxuICogQHBhcmFtIHtzdHJpbmd9IHNlY3Rpb25QYXRoIC0gb3V0cHV0IGRlc3RpbmF0aW9uIGZvciBzZWN0aW9uIGRhdGEgZmlsZVxuICovXG5leHBvcnQgZnVuY3Rpb24gd3JpdGVTZWN0aW9uRGF0YShzdG9yZSwgc2VjdGlvbiwgc2VjdGlvblBhdGggPSBmYWxzZSkge1xuICBsZXQgb3V0cHV0UGF0aCA9IHNlY3Rpb25QYXRoO1xuICBsZXQgc2VjdGlvbkZpbGVJbmZvO1xuXG4gIGlmICghb3V0cHV0UGF0aCAmJiB7fS5oYXNPd25Qcm9wZXJ0eS5jYWxsKHNlY3Rpb24sICdrc3NQYXRoJykpIHtcbiAgICBzZWN0aW9uRmlsZUluZm8gPSBwYXRoLnBhcnNlKHNlY3Rpb24ua3NzUGF0aCk7XG4gICAgb3V0cHV0UGF0aCA9IHBhdGguam9pbihcbiAgICAgIHNlY3Rpb25GaWxlSW5mby5kaXIsXG4gICAgICBgJHtzZWN0aW9uRmlsZUluZm8ubmFtZX0uanNvbmBcbiAgICApO1xuICB9XG5cbiAgLy8gT3V0cHV0IHNlY3Rpb24gZGF0YVxuICBpZiAob3V0cHV0UGF0aCkge1xuICAgIHJldHVybiB3cml0ZUZpbGUoXG4gICAgICBzZWN0aW9uLnJlZmVyZW5jZVVSSSxcbiAgICAgICdzZWN0aW9uJyxcbiAgICAgIG91dHB1dFBhdGgsXG4gICAgICBKU09OLnN0cmluZ2lmeShzZWN0aW9uKSxcbiAgICAgIHN0b3JlXG4gICAgKTtcbiAgfVxuXG4gIGNvbnNvbGUud2FybiggLy8gZXNsaW50LWRpc2FibGUtbGluZSBuby1jb25zb2xlXG4gICAgY2hhbGsucmVkKGBGYWlsZWQgdG8gd3JpdGUgc2VjdGlvbiBkYXRhIGZvciAke3NlY3Rpb24ucmVmZXJlbmNlVVJJfWApXG4gICk7XG4gIHJldHVybiBmYWxzZTtcbn1cblxuLyoqXG4gKiBGaW5kIC5qc29uIGZyb20gYSB0ZW1wbGF0ZSBmaWxlIG9yIHZpY2UgdmVyc2FcbiAqXG4gKiBAZnVuY3Rpb24gZ2V0VGVtcGxhdGVEYXRhUGFpclxuICogQHBhcmFtIHtvYmplY3R9IGZpbGUgLSBmaWxlIG9iamVjdCBmcm9tIHBhdGgucGFyc2UoKVxuICogQHBhcmFtIHtvYmplY3R9IHNlY3Rpb24gLSBLU1Mgc2VjdGlvbiBkYXRhXG4gKiBAcmV0dXJuIHtzdHJpbmd9IHJlbGF0aXZlIHBhdGggdG8gbW9kdWxlIEpTT04gZmlsZVxuICovXG5leHBvcnQgZnVuY3Rpb24gZ2V0VGVtcGxhdGVEYXRhUGFpcihmaWxlLCBzZWN0aW9uLCBzdG9yZSkge1xuICBjb25zdCBodXJvbiA9IHN0b3JlLmdldCgnY29uZmlnJyk7XG4gIGNvbnN0IGtzc0RpciA9IG1hdGNoS3NzRGlyKGZpbGUuZGlyLCBodXJvbik7XG5cbiAgaWYgKGtzc0Rpcikge1xuICAgIGNvbnN0IGNvbXBvbmVudFBhdGggPSBwYXRoLnJlbGF0aXZlKFxuICAgICAgcGF0aC5yZXNvbHZlKGN3ZCwga3NzRGlyKSxcbiAgICAgIGZpbGUuZGlyXG4gICAgKTtcbiAgICBjb25zdCBwYXJ0bmVyVHlwZSA9ICcuanNvbicgPT09IGZpbGUuZXh0ID8gJ3RlbXBsYXRlJyA6ICdkYXRhJztcbiAgICBjb25zdCBwYXJ0bmVyRXh0ID0gJy5qc29uJyA9PT0gZmlsZS5leHQgP1xuICAgICAgaHVyb24uZ2V0KCd0ZW1wbGF0ZXMnKS5leHRlbnNpb24gOlxuICAgICAgJy5qc29uJztcblxuICAgIGNvbnN0IHBhaXJQYXRoID0gcGF0aC5qb2luKFxuICAgICAgY29tcG9uZW50UGF0aCxcbiAgICAgIGdlbmVyYXRlRmlsZW5hbWUoXG4gICAgICAgIHNlY3Rpb24ucmVmZXJlbmNlVVJJLFxuICAgICAgICBwYXJ0bmVyVHlwZSxcbiAgICAgICAgcGFydG5lckV4dCxcbiAgICAgICAgc3RvcmVcbiAgICAgIClcbiAgICApO1xuXG4gICAgcmV0dXJuIGAuLyR7cGFpclBhdGh9YDtcbiAgfVxuXG4gIHJldHVybiBmYWxzZTtcbn1cblxuLyoqXG4gKiBOb3JtYWxpemUgYSBzZWN0aW9uIHRpdGxlIGZvciB1c2UgYXMgYSBmaWxlbmFtZVxuICpcbiAqIEBmdW5jdGlvbiBub3JtYWxpemVIZWFkZXJcbiAqIEBwYXJhbSB7c3RyaW5nfSBoZWFkZXIgLSBzZWN0aW9uIGhlYWRlciBleHRyYWN0ZWQgZnJvbSBLU1MgZG9jdW1lbnRhdGlvblxuICogQHJldHVybiB7c3RyaW5nfSBtb2RpZmllZCBoZWFkZXIsIGxvd2VyY2FzZSBhbmQgd29yZHMgc2VwYXJhdGVkIGJ5IGRhc2hcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIG5vcm1hbGl6ZUhlYWRlcihoZWFkZXIpIHtcbiAgcmV0dXJuIGhlYWRlclxuICAgIC50b0xvd2VyQ2FzZSgpXG4gICAgLnJlcGxhY2UoL1xccz9cXFdcXHM/L2csICctJyk7XG59XG5cbi8qKlxuICogV3JhcCBodG1sIGluIHJlcXVpcmVkIHRlbXBsYXRlIHRhZ3NcbiAqXG4gKiBAZnVuY3Rpb24gd3JhcE1hcmt1cFxuICogQHBhcmFtIHtzdHJpbmd9IGNvbnRlbnQgLSBodG1sIG9yIHRlbXBsYXRlIG1hcmt1cFxuICogQHBhcmFtIHtzdHJpbmd9IHRlbXBsYXRlSWQgLSBpZCBvZiB0ZW1wbGF0ZSAoc2hvdWxkIGJlIHNlY3Rpb24gcmVmZXJlbmNlKVxuICogQHJldHVybiB7c3RyaW5nfSBtb2RpZmllZCBIVE1MXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiB3cmFwTWFya3VwKGNvbnRlbnQsIHRlbXBsYXRlSWQpIHtcbiAgcmV0dXJuIGA8ZG9tLW1vZHVsZT5cbjx0ZW1wbGF0ZSBpZD1cIiR7dGVtcGxhdGVJZH1cIj5cbiR7Y29udGVudH1cbjwvdGVtcGxhdGU+XG48L2RvbS1tb2R1bGU+XFxuYDtcbn1cblxuLyoqXG4gKiBHZW5lcmF0ZSBhIGZpbGVuYW1lIGJhc2VkIG9uIHJlZmVyZW5jZVVSSSwgdHlwZSBhbmQgZmlsZSBvYmplY3RcbiAqXG4gKiBAZnVuY3Rpb24gZ2VuZXJhdGVGaWxlbmFtZVxuICogQHBhcmFtICB7c3RyaW5nfSBpZCAtIFRoZSBuYW1lIG9mIHRoZSBmaWxlICh3aXRoIGV4dGVuc2lvbikuXG4gKiBAcGFyYW0gIHtzdHJpbmd9IHR5cGUgLSB0aGUgdHlwZSBvZiBmaWxlIG91dHB1dFxuICogQHBhcmFtICB7b2JqZWN0fSBleHQgLSBmaWxlIGV4dGVuc2lvblxuICogQHBhcmFtICB7c3RvcmV9IHN0b3JlIC0gZGF0YSBzdG9yZVxuICogQHJldHVybiB7c3RyaW5nfSBQYXRoIHRvIG91dHB1dCBmaWxlLCByZWxhdGl2ZSB0byBvdXB1dCBkaXIgKGNhbiBiZSB1c2UgaW4gcmVxdWlyZSBzdGF0ZW1lbnRzKVxuICovXG5leHBvcnQgZnVuY3Rpb24gZ2VuZXJhdGVGaWxlbmFtZShpZCwgdHlwZSwgZXh0LCBzdG9yZSkge1xuICAvLyBUeXBlIG9mIGZpbGUgYW5kIGl0cyBjb3JyZXNwb25kaW5nIGV4dGVuc2lvbihzKVxuICBjb25zdCB0eXBlcyA9IHN0b3JlLmdldCgndHlwZXMnKTtcbiAgY29uc3Qgb3V0cHV0RXh0ID0gJy5zY3NzJyAhPT0gZXh0ID8gZXh0IDogJy5odG1sJztcblxuICAvKiBlc2xpbnQtZGlzYWJsZSAqL1xuICBpZiAoLTEgPT09IHR5cGVzLmluZGV4T2YodHlwZSkpIHtcbiAgICBjb25zb2xlLmxvZyhgSHVyb24gZGF0YSAke3R5cGV9IGRvZXMgbm90IGV4aXN0YCk7XG4gICAgcmV0dXJuIGZhbHNlO1xuICB9XG4gIC8qIGVzbGludC1lbmFibGUgKi9cblxuICByZXR1cm4gYCR7aWR9LSR7dHlwZX0ke291dHB1dEV4dH1gO1xufVxuXG4vKipcbiAqIENvcHkgYW4gSFRNTCBmaWxlIGludG8gdGhlIGh1cm9uIG91dHB1dCBkaXJlY3RvcnkuXG4gKlxuICogQGZ1bmN0aW9uIHdyaXRlRmlsZVxuICogQHBhcmFtICB7c3RyaW5nfSBpZCAtIFRoZSBuYW1lIG9mIHRoZSBmaWxlICh3aXRoIGV4dGVuc2lvbikuXG4gKiBAcGFyYW0gIHtzdHJpbmd9IGNvbnRlbnQgLSBUaGUgY29udGVudCBvZiB0aGUgZmlsZSB0byB3cml0ZS5cbiAqIEBwYXJhbSAge3N0cmluZ30gdHlwZSAtIHRoZSB0eXBlIG9mIGZpbGUgb3V0cHV0XG4gKiBAcGFyYW0gIHtvYmplY3R9IHN0b3JlIC0gVGhlIGRhdGEgc3RvcmVcbiAqIEByZXR1cm4ge3N0cmluZ30gUGF0aCB0byBvdXRwdXQgZmlsZSwgcmVsYXRpdmUgdG8gb3VwdXQgZGlyIChjYW4gYmUgdXNlIGluIHJlcXVpcmUgc3RhdGVtZW50cylcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHdyaXRlRmlsZShpZCwgdHlwZSwgZmlsZXBhdGgsIGNvbnRlbnQsIHN0b3JlKSB7XG4gIGNvbnN0IGh1cm9uID0gc3RvcmUuZ2V0KCdjb25maWcnKTtcbiAgY29uc3QgZmlsZSA9IHBhdGgucGFyc2UoZmlsZXBhdGgpO1xuICBjb25zdCBmaWxlbmFtZSA9IGdlbmVyYXRlRmlsZW5hbWUoaWQsIHR5cGUsIGZpbGUuZXh0LCBzdG9yZSk7XG4gIGNvbnN0IGtzc0RpciA9IG1hdGNoS3NzRGlyKGZpbGVwYXRoLCBodXJvbik7XG5cbiAgaWYgKGtzc0Rpcikge1xuICAgIGNvbnN0IGNvbXBvbmVudFBhdGggPSBwYXRoLnJlbGF0aXZlKFxuICAgICAgcGF0aC5yZXNvbHZlKGN3ZCwga3NzRGlyKSxcbiAgICAgIGZpbGUuZGlyXG4gICAgKTtcbiAgICBjb25zdCBvdXRwdXRSZWxhdGl2ZSA9IHBhdGguam9pbihcbiAgICAgIGh1cm9uLmdldCgnb3V0cHV0JyksXG4gICAgICBjb21wb25lbnRQYXRoLFxuICAgICAgYCR7ZmlsZW5hbWV9YFxuICAgICk7XG4gICAgY29uc3Qgb3V0cHV0UGF0aCA9IHBhdGgucmVzb2x2ZShjd2QsIGh1cm9uLmdldCgncm9vdCcpLCBvdXRwdXRSZWxhdGl2ZSk7XG4gICAgbGV0IG5ld0NvbnRlbnQgPSBjb250ZW50O1xuXG4gICAgaWYgKCdkYXRhJyAhPT0gdHlwZSAmJiAnc2VjdGlvbicgIT09IHR5cGUpIHtcbiAgICAgIG5ld0NvbnRlbnQgPSB3cmFwTWFya3VwKGNvbnRlbnQsIGlkKTtcbiAgICB9XG5cbiAgICB0cnkge1xuICAgICAgZnMub3V0cHV0RmlsZVN5bmMob3V0cHV0UGF0aCwgbmV3Q29udGVudCk7XG4gICAgICBjb25zb2xlLmxvZyhjaGFsay5ncmVlbihgV3JpdGluZyAke291dHB1dFJlbGF0aXZlfWApKTsgLy8gZXNsaW50LWRpc2FibGUtbGluZSBuby1jb25zb2xlXG4gICAgfSBjYXRjaCAoZSkge1xuICAgICAgY29uc29sZS5sb2coY2hhbGsucmVkKGBGYWlsZWQgdG8gd3JpdGUgJHtvdXRwdXRSZWxhdGl2ZX1gKSk7IC8vIGVzbGludC1kaXNhYmxlLWxpbmUgbm8tY29uc29sZVxuICAgIH1cblxuICAgIHJldHVybiBgLi8ke291dHB1dFJlbGF0aXZlLnJlcGxhY2UoYCR7aHVyb24uZ2V0KCdvdXRwdXQnKX0vYCwgJycpfWA7XG4gIH1cblxuICByZXR1cm4gZmFsc2U7XG59XG5cbi8qKlxuICogRGVsZXRlIGEgZmlsZSBpbiB0aGUgaHVyb24gb3V0cHV0IGRpcmVjdG9yeVxuICpcbiAqIEBmdW5jdGlvbiByZW1vdmVGaWxlXG4gKiBAcGFyYW0gIHtzdHJpbmd9IGZpbGVuYW1lIC0gVGhlIG5hbWUgb2YgdGhlIGZpbGUgKHdpdGggZXh0ZW5zaW9uKS5cbiAqIEBwYXJhbSAge29iamVjdH0gc3RvcmUgLSBUaGUgZGF0YSBzdG9yZVxuICogQHJldHVybiB7c3RyaW5nfSBQYXRoIHRvIG91dHB1dCBmaWxlLCByZWxhdGl2ZSB0byBvdXB1dCBkaXIgKGNhbiBiZSB1c2UgaW4gcmVxdWlyZSBzdGF0ZW1lbnRzKVxuICovXG5leHBvcnQgZnVuY3Rpb24gcmVtb3ZlRmlsZShpZCwgdHlwZSwgZmlsZXBhdGgsIHN0b3JlKSB7XG4gIGNvbnN0IGh1cm9uID0gc3RvcmUuZ2V0KCdjb25maWcnKTtcbiAgY29uc3QgZmlsZSA9IHBhdGgucGFyc2UoZmlsZXBhdGgpO1xuICBjb25zdCBmaWxlbmFtZSA9IGdlbmVyYXRlRmlsZW5hbWUoaWQsIHR5cGUsIGZpbGUuZXh0LCBzdG9yZSk7XG4gIGNvbnN0IGtzc0RpciA9IG1hdGNoS3NzRGlyKGZpbGVwYXRoLCBodXJvbik7XG5cbiAgaWYgKGtzc0Rpcikge1xuICAgIGNvbnN0IGNvbXBvbmVudFBhdGggPSBwYXRoLnJlbGF0aXZlKFxuICAgICAgcGF0aC5yZXNvbHZlKGN3ZCwga3NzRGlyKSxcbiAgICAgIGZpbGUuZGlyXG4gICAgKTtcbiAgICBjb25zdCBvdXRwdXRSZWxhdGl2ZSA9IHBhdGguam9pbihcbiAgICAgIGh1cm9uLmdldCgnb3V0cHV0JyksXG4gICAgICBjb21wb25lbnRQYXRoLFxuICAgICAgYCR7ZmlsZW5hbWV9YFxuICAgICk7XG4gICAgY29uc3Qgb3V0cHV0UGF0aCA9IHBhdGgucmVzb2x2ZShjd2QsIGh1cm9uLmdldCgncm9vdCcpLCBvdXRwdXRSZWxhdGl2ZSk7XG5cbiAgICB0cnkge1xuICAgICAgZnMucmVtb3ZlU3luYyhvdXRwdXRQYXRoKTtcbiAgICAgIGNvbnNvbGUubG9nKGNoYWxrLmdyZWVuKGBSZW1vdmluZyAke291dHB1dFJlbGF0aXZlfWApKTsgLy8gZXNsaW50LWRpc2FibGUtbGluZSBuby1jb25zb2xlXG4gICAgfSBjYXRjaCAoZSkge1xuICAgICAgY29uc29sZS5sb2coIC8vIGVzbGludC1kaXNhYmxlLWxpbmUgbm8tY29uc29sZVxuICAgICAgICBjaGFsay5yZWQoYCR7b3V0cHV0UmVsYXRpdmV9IGRvZXMgbm90IGV4aXN0IG9yIGNhbm5vdCBiZSBkZWxldGVkYClcbiAgICAgICk7XG4gICAgfVxuXG4gICAgcmV0dXJuIGAuLyR7b3V0cHV0UmVsYXRpdmUucmVwbGFjZShgJHtodXJvbi5nZXQoJ291dHB1dCcpfS9gLCAnJyl9YDtcbiAgfVxuXG4gIHJldHVybiBmYWxzZTtcbn1cblxuLyoqXG4gKiBXcml0ZSBhIHRlbXBsYXRlIGZvciBzZWN0aW9uc1xuICpcbiAqIEBmdW5jdGlvbiB3cml0ZVNlY3Rpb25UZW1wbGF0ZVxuICogQHBhcmFtICB7c3RyaW5nfSBmaWxlcGF0aCAtIHRoZSBvcmlnaW5hbCB0ZW1wbGF0ZSBmaWxlXG4gKiBAcGFyYW0gIHtvYmplY3R9IHN0b3JlIC0gZGF0YSBzdG9yZVxuICogQHJldHVybiB7b2JqZWN0fSB1cGRhdGVkIHN0b3JlXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiB3cml0ZVNlY3Rpb25UZW1wbGF0ZShmaWxlcGF0aCwgc3RvcmUpIHtcbiAgY29uc3QgaHVyb24gPSBzdG9yZS5nZXQoJ2NvbmZpZycpO1xuICBjb25zdCBzZWN0aW9uVGVtcGxhdGUgPSB3cmFwTWFya3VwKGZzLnJlYWRGaWxlU3luYyhmaWxlcGF0aCwgJ3V0ZjgnKSk7XG4gIGNvbnN0IGNvbXBvbmVudFBhdGggPSAnLi9odXJvbi1hc3NldHMvc2VjdGlvbi5oYnMnO1xuICBjb25zdCBvdXRwdXQgPSBwYXRoLmpvaW4oXG4gICAgY3dkLFxuICAgIGh1cm9uLmdldCgncm9vdCcpLFxuICAgIGNvbXBvbmVudFBhdGhcbiAgKTtcblxuICAvLyBNb3ZlIGh1cm9uIHNjcmlwdCBhbmQgc2VjdGlvbiB0ZW1wbGF0ZSBpbnRvIGh1cm9uIHJvb3RcbiAgZnMub3V0cHV0RmlsZVN5bmMob3V0cHV0LCBzZWN0aW9uVGVtcGxhdGUpO1xuICBjb25zb2xlLmxvZyhjaGFsay5ncmVlbihgd3JpdGluZyBzZWN0aW9uIHRlbXBsYXRlIHRvICR7b3V0cHV0fWApKTsgLy8gZXNsaW50LWRpc2FibGUtbGluZSBuby1jb25zb2xlXG5cbiAgcmV0dXJuIHN0b3JlLnNldCgnc2VjdGlvblRlbXBsYXRlUGF0aCcsIGNvbXBvbmVudFBhdGgpO1xufVxuXG4vKipcbiAqIFJlcXVlc3QgZm9yIHNlY3Rpb24gZGF0YSBiYXNlZCBvbiBzZWN0aW9uIHJlZmVyZW5jZVxuICpcbiAqIEBmdW5jdGlvbiB3cml0ZVNlY3Rpb25UZW1wbGF0ZVxuICogQHBhcmFtIHtzdHJpbmd9IHNlYXJjaCAtIGtleSBvbiB3aGljaCB0byBtYXRjaCBzZWN0aW9uXG4gKiBAcGFyYW0ge2ZpZWxkfSBzdHJpbmcgLSBmaWVsZCBpbiB3aGljaCB0byBsb29rIHRvIGRldGVybWluZSBzZWN0aW9uXG4gKiBAcGFyYW0ge29ian0gc3RvcmUgLSBzZWN0aW9ucyBtZW1vcnkgc3RvcmVcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGdldFNlY3Rpb24oc2VhcmNoLCBmaWVsZCwgc3RvcmUpIHtcbiAgY29uc3Qgc2VjdGlvblZhbHVlcyA9IHN0b3JlXG4gICAgLmdldEluKFsnc2VjdGlvbnMnLCAnc2VjdGlvbnNCeVBhdGgnXSlcbiAgICAudmFsdWVTZXEoKTtcbiAgbGV0IHNlbGVjdGVkU2VjdGlvbiA9IGZhbHNlO1xuXG4gIGlmIChmaWVsZCkge1xuICAgIHNlbGVjdGVkU2VjdGlvbiA9IHNlY3Rpb25WYWx1ZXNcbiAgICAgIC5maWx0ZXIoKHZhbHVlKSA9PiB2YWx1ZVtmaWVsZF0gPT09IHNlYXJjaClcbiAgICAgIC5nZXQoMCk7XG4gIH0gZWxzZSB7XG4gICAgc2VsZWN0ZWRTZWN0aW9uID0gc3RvcmUuZ2V0SW4oWydzZWN0aW9ucycsICdzZWN0aW9uc0J5UGF0aCcsIHNlYXJjaF0pO1xuICB9XG5cbiAgcmV0dXJuIHNlbGVjdGVkU2VjdGlvbjtcbn1cblxuLyoqXG4gKiBGaW5kIHdoaWNoIGNvbmZpZ3VyZWQgS1NTIGRpcmVjdG9yeSBhIGZpbGVwYXRoIGV4aXN0cyBpblxuICpcbiAqIEBmdW5jdGlvbiBtYXRjaEtzc0RpclxuICogQHBhcmFtIHtzdHJpbmd9IGZpbGVwYXRoIC0gZmlsZXBhdGggdG8gc2VhcmNoIGZvclxuICogQHBhcmFtIHtvYmplY3R9IGh1cm9uIC0gaHVyb24gY29uZmlndXJhdGlvblxuICogQHJldHVybiB7c3RyaW5nfSBrc3NNYXRjaCAtIHJlbGF0aXZlIHBhdGggdG8gS1NTIGRpcmVjdG9yeVxuICovXG5leHBvcnQgZnVuY3Rpb24gbWF0Y2hLc3NEaXIoZmlsZXBhdGgsIGh1cm9uKSB7XG4gIGNvbnN0IGtzc1NvdXJjZSA9IGh1cm9uLmdldCgna3NzJyk7XG4gIC8vIEluY2x1ZGUgZm9yd2FyZCBzbGFzaCBpbiBvdXIgdGVzdCB0byBtYWtlIHN1cmUgd2UncmUgbWF0Y2hpbiBhIGRpcmVjdG9yeSwgbm90IGEgZmlsZSBleHRlbnNpb25cbiAgY29uc3Qga3NzTWF0Y2ggPSBrc3NTb3VyY2UuZmlsdGVyKChkaXIpID0+IGZpbGVwYXRoLmluY2x1ZGVzKGAvJHtkaXJ9YCkpO1xuXG4gIGlmIChrc3NNYXRjaC5sZW5ndGgpIHtcbiAgICByZXR1cm4ga3NzTWF0Y2hbMF07XG4gIH1cblxuICByZXR1cm4gZmFsc2U7XG59XG5cbi8qKlxuICogTWVyZ2UgSlNPTiBmaWxlcyBmb3IgY3NzIG1vZHVsZXMgY2xhc3NuYW1lcyBpbiBhIHByb3ZpZGVkIGRpcmVjdG9yeVxuICpcbiAqIEBmdW5jdGlvbiBtZXJnZUNsYXNzbmFtZUpTT05cbiAqIEBwYXJhbSB7c3RyaW5nfSBkaXJlY3RvcnkgLSBkaXJlY3RvcnkgY29udGFpbmluZyBjbGFzc25hbWUgSlNPTiBmaWxlc1xuICpcbiAqIEByZXR1cm4ge29iamVjdH0gY2xhc3NuYW1lc01lcmdlZCAtIG1lcmdlZCBjbGFzc25hbWVzLiBjb250ZW50cyBvZiBlYWNoIEpTT04gZmlsZSBpcyBuZXN0ZWQgd2l0aGluXG4gKiAgICAgICAgICAgICAgICAgICAgICAgICAgIHRoZSByZXR1cm5lZCBvYmplY3QgYnkgZmlsZW5hbWUuIChlLmcuIGFydGljbGUuanNvbiAtPiB7IGFydGljbGU6IHsuLi5qc29uIGNvbnRlbnRzfX0pXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBtZXJnZUNsYXNzbmFtZUpTT04oZGlyZWN0b3J5KSB7XG4gIGxldCBmaWxlcztcblxuICAvLyBJZiBubyBjb25maWcgaXMgcHJvdmlkZWQsIHJldHVybiBpbW1lZGlhdGVseVxuICBpZiAoIWRpcmVjdG9yeSkge1xuICAgIHJldHVybiB7fTtcbiAgfVxuXG4gIC8vIFRyeSB0byByZWFkIHRocm91Z2ggY2xhc3NuYW1lcyBkaXJlY3RvcnlcbiAgdHJ5IHtcbiAgICBmaWxlcyA9IGZzLnJlYWRkaXJTeW5jKGRpcmVjdG9yeSk7XG4gIH0gY2F0Y2ggKGUpIHtcbiAgICBjb25zb2xlLndhcm4oY2hhbGsucmVkKGUpKTtcbiAgfVxuXG4gIC8vIE1lcmdlIGNsYXNzbmFtZSBqc29uIGZpbGVzXG4gIGNvbnN0IGNsYXNzTmFtZXNNZXJnZWQgPSBmaWxlcy5yZWR1Y2UoKGFjYywgZmlsZSkgPT4ge1xuICAgIGNvbnN0IGZpbGVJbmZvID0gcGF0aC5wYXJzZShmaWxlKTtcbiAgICBsZXQgY2xhc3NOYW1lcyA9IHt9O1xuXG4gICAgaWYgKCcuanNvbicgPT09IGZpbGVJbmZvLmV4dCkge1xuICAgICAgdHJ5IHtcbiAgICAgICAgY29uc3QgY29udGVudHMgPSBmcy5yZWFkRmlsZVN5bmMoXG4gICAgICAgICAgcGF0aC5qb2luKGRpcmVjdG9yeSwgZmlsZSksXG4gICAgICAgICAgJ3V0ZjgnXG4gICAgICAgICk7XG4gICAgICAgIGNsYXNzTmFtZXMgPSBKU09OLnBhcnNlKGNvbnRlbnRzKTtcbiAgICAgIH0gY2F0Y2ggKGUpIHtcbiAgICAgICAgY29uc29sZS53YXJuKGNoYWxrLnJlZChlKSk7XG4gICAgICB9XG4gICAgfVxuXG4gICAgcmV0dXJuIE9iamVjdC5hc3NpZ24oe30sIGFjYywgeyBbZmlsZUluZm8ubmFtZV06IGNsYXNzTmFtZXMgfSk7XG4gIH0sIHt9KTtcblxuICByZXR1cm4gY2xhc3NOYW1lc01lcmdlZDtcbn1cblxuLyoqXG4gKiBSZW1vdmUgdGhlIHRyYWlsaW5nIHNsYXNoIGZyb20gYSBwcm92aWRlZCBkaXJlY3RvcnlcbiAqXG4gKiBAZnVuY3Rpb24gcmVtb3ZlVHJhaWxpbmdTbGFzaFxuICogQHBhcmFtIHtzdHJpbmd9IGRpcmVjdG9yeSAtIGRpcmVjdG9yeSBwYXRoXG4gKiBAcmV0dXJuIHtzdHJpbmd9IGRpcmVjdG9yeSAtIGRpcmVjdG9yeSBwYXRoIHdpdGggdHJhaWxpbmcgc2xhc2ggcmVtb3ZlZFxuICovXG5leHBvcnQgZnVuY3Rpb24gcmVtb3ZlVHJhaWxpbmdTbGFzaChkaXJlY3RvcnkpIHtcbiAgaWYgKCcvJyA9PT0gZGlyZWN0b3J5LnNsaWNlKC0xKSkge1xuICAgIHJldHVybiBkaXJlY3Rvcnkuc2xpY2UoMCwgLTEpO1xuICB9XG5cbiAgcmV0dXJuIGRpcmVjdG9yeTtcbn1cblxuXG5cbi8vIFdFQlBBQ0sgRk9PVEVSIC8vXG4vLyBzcmMvY2xpL3V0aWxzLmpzIl0sIm1hcHBpbmdzIjoiOzs7OztBQWNBO0FBa0JBO0FBcUNBO0FBcUNBO0FBY0E7QUFrQkE7QUF5QkE7QUE0Q0E7QUF5Q0E7QUF5QkE7QUF5QkE7QUFxQkE7QUE2Q0E7QUFDQTtBQTVXQTtBQUNBOzs7QUFBQTtBQUNBOzs7QUFBQTtBQUNBOzs7OztBQUNBO0FBQ0E7QUFDQTs7Ozs7OztBQVBBO0FBY0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7Ozs7QUFRQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUlBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFPQTtBQUNBO0FBQ0E7QUFDQTtBQUVBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7OztBQVFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUlBO0FBQ0E7QUFDQTtBQUdBO0FBQ0E7QUFTQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7OztBQU9BO0FBQ0E7QUFHQTtBQUNBO0FBQ0E7Ozs7Ozs7O0FBUUE7QUFDQTtBQUNBO0FBQ0E7O0FBRkE7QUFLQTtBQUNBO0FBQ0E7Ozs7Ozs7Ozs7QUFVQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7Ozs7OztBQVVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFJQTtBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7Ozs7QUFRQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSUE7QUFLQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7OztBQVFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7Ozs7Ozs7O0FBUUE7QUFDQTtBQUdBO0FBQ0E7QUFDQTtBQUNBO0FBR0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7Ozs7QUFRQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7Ozs7O0FBU0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUlBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7O0FBT0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EiLCJzb3VyY2VSb290IjoiIn0=");
 
 /***/ }),
 /* 2 */
+/* no static exports found */
+/* all exports used */
+/*!************************!*\
+  !*** external "chalk" ***!
+  \************************/
 /***/ (function(module, exports) {
 
-module.exports = require("chalk");
+eval("module.exports = require(\"chalk\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMi5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9leHRlcm5hbCBcImNoYWxrXCI/NTNmNyJdLCJzb3VyY2VzQ29udGVudCI6WyJtb2R1bGUuZXhwb3J0cyA9IHJlcXVpcmUoXCJjaGFsa1wiKTtcblxuXG4vLy8vLy8vLy8vLy8vLy8vLy9cbi8vIFdFQlBBQ0sgRk9PVEVSXG4vLyBleHRlcm5hbCBcImNoYWxrXCJcbi8vIG1vZHVsZSBpZCA9IDJcbi8vIG1vZHVsZSBjaHVua3MgPSAwIl0sIm1hcHBpbmdzIjoiQUFBQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 3 */
+/* no static exports found */
+/* all exports used */
+/*!***************************!*\
+  !*** external "fs-extra" ***!
+  \***************************/
 /***/ (function(module, exports) {
 
-module.exports = require("fs-extra");
+eval("module.exports = require(\"fs-extra\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMy5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9leHRlcm5hbCBcImZzLWV4dHJhXCI/N2NhNiJdLCJzb3VyY2VzQ29udGVudCI6WyJtb2R1bGUuZXhwb3J0cyA9IHJlcXVpcmUoXCJmcy1leHRyYVwiKTtcblxuXG4vLy8vLy8vLy8vLy8vLy8vLy9cbi8vIFdFQlBBQ0sgRk9PVEVSXG4vLyBleHRlcm5hbCBcImZzLWV4dHJhXCJcbi8vIG1vZHVsZSBpZCA9IDNcbi8vIG1vZHVsZSBjaHVua3MgPSAwIl0sIm1hcHBpbmdzIjoiQUFBQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 4 */
+/* no static exports found */
+/* all exports used */
+/*!******************************!*\
+  !*** ./src/cli/parseArgs.js ***!
+  \******************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _commander = __webpack_require__(21);
-
-var _commander2 = _interopRequireDefault(_commander);
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// Requires
-/** @global */
-
-/**
- * Process huron CLI arguments
- *
- * @function parseArgs
- * @example node huron/dist/cli/huron-cli.js --config 'client/config/webpack.config.js' --production
- */
-/** @module cli/parse-arguments */
-/* eslint-disable space-unary-ops */
-
-function parseArgs() {
-  const envArg = {};
-
-  process.argv = process.argv.filter(arg => {
-    if (-1 !== arg.indexOf('--env')) {
-      const envParts = arg.split('.')[1].split('=');
-
-      envArg[envParts[0]] = envParts[1] || true;
-      return false;
-    }
-
-    return true;
-  });
-
-  _commander2.default.version('1.0.1').option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options', _path2.default.resolve(__dirname, '../defaultConfig/huron.config.js')).option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options', _path2.default.resolve(__dirname, '../defaultConfig/webpack.config.js')).option('-p, --production', 'compile assets once for production');
-
-  _commander2.default.env = envArg;
-
-  // Only parse if we're not running tests
-  if (!process.env.npm_lifecycle_event || 'test' !== process.env.npm_lifecycle_event) {
-    _commander2.default.parse(process.argv);
-  }
-}
-
-parseArgs();
-/* eslint-enable */
-
-exports.default = _commander2.default;
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\n\nvar _commander = __webpack_require__(/*! commander */ 21);\n\nvar _commander2 = _interopRequireDefault(_commander);\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n// Requires\n/** @global */\n\n/**\n * Process huron CLI arguments\n *\n * @function parseArgs\n * @example node huron/dist/cli/huron-cli.js --config 'client/config/webpack.config.js' --production\n */\n/** @module cli/parse-arguments */\n/* eslint-disable space-unary-ops */\n\nfunction parseArgs() {\n  const envArg = {};\n\n  process.argv = process.argv.filter(arg => {\n    if (-1 !== arg.indexOf('--env')) {\n      const envParts = arg.split('.')[1].split('=');\n\n      envArg[envParts[0]] = envParts[1] || true;\n      return false;\n    }\n\n    return true;\n  });\n\n  _commander2.default.version('1.0.1').option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options', _path2.default.resolve(__dirname, '../defaultConfig/huron.config.js')).option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options', _path2.default.resolve(__dirname, '../defaultConfig/webpack.config.js')).option('-p, --production', 'compile assets once for production');\n\n  _commander2.default.env = envArg;\n\n  // Only parse if we're not running tests\n  if (!process.env.npm_lifecycle_event || 'test' !== process.env.npm_lifecycle_event) {\n    _commander2.default.parse(process.argv);\n  }\n}\n\nparseArgs();\n/* eslint-enable */\n\nexports.default = _commander2.default;//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiNC5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9zcmMvY2xpL3BhcnNlQXJncy5qcz9iYTdmIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKiBAbW9kdWxlIGNsaS9wYXJzZS1hcmd1bWVudHMgKi9cbi8qIGVzbGludC1kaXNhYmxlIHNwYWNlLXVuYXJ5LW9wcyAqL1xuXG5pbXBvcnQgcHJvZ3JhbSBmcm9tICdjb21tYW5kZXInO1xuaW1wb3J0IHBhdGggZnJvbSAncGF0aCc7XG5cbi8vIFJlcXVpcmVzXG4vKiogQGdsb2JhbCAqL1xuXG4vKipcbiAqIFByb2Nlc3MgaHVyb24gQ0xJIGFyZ3VtZW50c1xuICpcbiAqIEBmdW5jdGlvbiBwYXJzZUFyZ3NcbiAqIEBleGFtcGxlIG5vZGUgaHVyb24vZGlzdC9jbGkvaHVyb24tY2xpLmpzIC0tY29uZmlnICdjbGllbnQvY29uZmlnL3dlYnBhY2suY29uZmlnLmpzJyAtLXByb2R1Y3Rpb25cbiAqL1xuZnVuY3Rpb24gcGFyc2VBcmdzKCkge1xuICBjb25zdCBlbnZBcmcgPSB7fTtcblxuICBwcm9jZXNzLmFyZ3YgPSBwcm9jZXNzLmFyZ3YuZmlsdGVyKChhcmcpID0+IHtcbiAgICBpZiAoLTEgIT09IGFyZy5pbmRleE9mKCctLWVudicpKSB7XG4gICAgICBjb25zdCBlbnZQYXJ0cyA9IGFyZ1xuICAgICAgICAuc3BsaXQoJy4nKVsxXVxuICAgICAgICAuc3BsaXQoJz0nKTtcblxuICAgICAgZW52QXJnW2VudlBhcnRzWzBdXSA9IGVudlBhcnRzWzFdIHx8IHRydWU7XG4gICAgICByZXR1cm4gZmFsc2U7XG4gICAgfVxuXG4gICAgcmV0dXJuIHRydWU7XG4gIH0pO1xuXG4gIHByb2dyYW0udmVyc2lvbignMS4wLjEnKVxuICAgIC5vcHRpb24oXG4gICAgICAnLWMsIC0taHVyb24tY29uZmlnIFtodXJvbkNvbmZpZ10nLFxuICAgICAgJ1todXJvbkNvbmZpZ10gZm9yIGFsbCBodXJvbiBvcHRpb25zJyxcbiAgICAgIHBhdGgucmVzb2x2ZShfX2Rpcm5hbWUsICcuLi9kZWZhdWx0Q29uZmlnL2h1cm9uLmNvbmZpZy5qcycpXG4gICAgKVxuICAgIC5vcHRpb24oXG4gICAgICAnLXcsIC0td2VicGFjay1jb25maWcgW3dlYnBhY2tDb25maWddJyxcbiAgICAgICdbd2VicGFja0NvbmZpZ10gZm9yIGFsbCB3ZWJwYWNrIG9wdGlvbnMnLFxuICAgICAgcGF0aC5yZXNvbHZlKF9fZGlybmFtZSwgJy4uL2RlZmF1bHRDb25maWcvd2VicGFjay5jb25maWcuanMnKVxuICAgIClcbiAgICAub3B0aW9uKCctcCwgLS1wcm9kdWN0aW9uJywgJ2NvbXBpbGUgYXNzZXRzIG9uY2UgZm9yIHByb2R1Y3Rpb24nKTtcblxuICBwcm9ncmFtLmVudiA9IGVudkFyZztcblxuICAvLyBPbmx5IHBhcnNlIGlmIHdlJ3JlIG5vdCBydW5uaW5nIHRlc3RzXG4gIGlmIChcbiAgICAhIHByb2Nlc3MuZW52Lm5wbV9saWZlY3ljbGVfZXZlbnQgfHxcbiAgICAndGVzdCcgIT09IHByb2Nlc3MuZW52Lm5wbV9saWZlY3ljbGVfZXZlbnRcbiAgKSB7XG4gICAgcHJvZ3JhbS5wYXJzZShwcm9jZXNzLmFyZ3YpO1xuICB9XG59XG5cbnBhcnNlQXJncygpO1xuLyogZXNsaW50LWVuYWJsZSAqL1xuXG5leHBvcnQgZGVmYXVsdCBwcm9ncmFtO1xuXG5cblxuLy8gV0VCUEFDSyBGT09URVIgLy9cbi8vIHNyYy9jbGkvcGFyc2VBcmdzLmpzIl0sIm1hcHBpbmdzIjoiOzs7Ozs7QUFHQTtBQUNBOzs7QUFBQTtBQUNBOzs7OztBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7QUFUQTtBQUNBO0FBQ0E7QUFhQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUdBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQVlBO0FBQ0E7QUFDQTtBQUNBO0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 5 */
+/* no static exports found */
+/* all exports used */
+/*!**************************!*\
+  !*** external "webpack" ***!
+  \**************************/
 /***/ (function(module, exports) {
 
-module.exports = require("webpack");
+eval("module.exports = require(\"webpack\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiNS5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9leHRlcm5hbCBcIndlYnBhY2tcIj8zOTNkIl0sInNvdXJjZXNDb250ZW50IjpbIm1vZHVsZS5leHBvcnRzID0gcmVxdWlyZShcIndlYnBhY2tcIik7XG5cblxuLy8vLy8vLy8vLy8vLy8vLy8vXG4vLyBXRUJQQUNLIEZPT1RFUlxuLy8gZXh0ZXJuYWwgXCJ3ZWJwYWNrXCJcbi8vIG1vZHVsZSBpZCA9IDVcbi8vIG1vZHVsZSBjaHVua3MgPSAwIl0sIm1hcHBpbmdzIjoiQUFBQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 6 */
+/* no static exports found */
+/* all exports used */
+/*!*********************************!*\
+  !*** ./src/cli/defaultStore.js ***!
+  \*********************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.config = exports.defaultStore = undefined;
-
-var _immutable = __webpack_require__(24);
-
-var _generateConfig = __webpack_require__(13);
-
-var _generateConfig2 = _interopRequireDefault(_generateConfig);
-
-var _utils = __webpack_require__(1);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-// Create initial data structure
-
-// Merge Huron default webpack config with user config
-const config = (0, _generateConfig2.default)();
-
-// Make sure the kss option is represented as an array
-config.huron.kss = [].concat(config.huron.kss);
-
-/* eslint-disable */
-/**
- * Initial structure for immutable data store
- *
- * @global
- */
-const defaultStore = (0, _immutable.Map)({
-  types: ['template', 'data', 'description', 'section', 'prototype', 'sections-template'],
-  config: (0, _immutable.Map)(config.huron),
-  classNames: (0, _utils.mergeClassnameJSON)(config.huron.classNames),
-  sections: (0, _immutable.Map)({
-    sectionsByPath: (0, _immutable.Map)({}),
-    sectionsByURI: (0, _immutable.Map)({}),
-    sorted: {}
-  }),
-  templates: (0, _immutable.Map)({}),
-  prototypes: (0, _immutable.Map)({}),
-  sectionTemplatePath: '',
-  referenceDelimiter: '.'
-});
-/* eslint-enable */
-
-exports.defaultStore = defaultStore;
-exports.config = config;
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.config = exports.defaultStore = undefined;\n\nvar _immutable = __webpack_require__(/*! immutable */ 24);\n\nvar _generateConfig = __webpack_require__(/*! ./generateConfig */ 13);\n\nvar _generateConfig2 = _interopRequireDefault(_generateConfig);\n\nvar _utils = __webpack_require__(/*! ./utils */ 1);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n// Create initial data structure\n\n// Merge Huron default webpack config with user config\nconst config = (0, _generateConfig2.default)();\n\n// Make sure the kss option is represented as an array\nconfig.huron.kss = [].concat(config.huron.kss);\n\n/* eslint-disable */\n/**\n * Initial structure for immutable data store\n *\n * @global\n */\nconst defaultStore = (0, _immutable.Map)({\n  types: ['template', 'data', 'description', 'section', 'prototype', 'sections-template'],\n  config: (0, _immutable.Map)(config.huron),\n  classNames: (0, _utils.mergeClassnameJSON)(config.huron.classNames),\n  sections: (0, _immutable.Map)({\n    sectionsByPath: (0, _immutable.Map)({}),\n    sectionsByURI: (0, _immutable.Map)({}),\n    sorted: {}\n  }),\n  templates: (0, _immutable.Map)({}),\n  prototypes: (0, _immutable.Map)({}),\n  sectionTemplatePath: '',\n  referenceDelimiter: '.'\n});\n/* eslint-enable */\n\nexports.defaultStore = defaultStore;\nexports.config = config;//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiNi5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9zcmMvY2xpL2RlZmF1bHRTdG9yZS5qcz8zNzBmIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IE1hcCB9IGZyb20gJ2ltbXV0YWJsZSc7XG5cbmltcG9ydCBnZW5lcmF0ZUNvbmZpZyBmcm9tICcuL2dlbmVyYXRlQ29uZmlnJztcbmltcG9ydCB7IG1lcmdlQ2xhc3NuYW1lSlNPTiB9IGZyb20gJy4vdXRpbHMnO1xuLy8gQ3JlYXRlIGluaXRpYWwgZGF0YSBzdHJ1Y3R1cmVcblxuLy8gTWVyZ2UgSHVyb24gZGVmYXVsdCB3ZWJwYWNrIGNvbmZpZyB3aXRoIHVzZXIgY29uZmlnXG5jb25zdCBjb25maWcgPSBnZW5lcmF0ZUNvbmZpZygpO1xuXG4vLyBNYWtlIHN1cmUgdGhlIGtzcyBvcHRpb24gaXMgcmVwcmVzZW50ZWQgYXMgYW4gYXJyYXlcbmNvbmZpZy5odXJvbi5rc3MgPSBbXS5jb25jYXQoY29uZmlnLmh1cm9uLmtzcyk7XG5cbi8qIGVzbGludC1kaXNhYmxlICovXG4vKipcbiAqIEluaXRpYWwgc3RydWN0dXJlIGZvciBpbW11dGFibGUgZGF0YSBzdG9yZVxuICpcbiAqIEBnbG9iYWxcbiAqL1xuY29uc3QgZGVmYXVsdFN0b3JlID0gTWFwKHtcbiAgdHlwZXM6IFtcbiAgICAndGVtcGxhdGUnLFxuICAgICdkYXRhJyxcbiAgICAnZGVzY3JpcHRpb24nLFxuICAgICdzZWN0aW9uJyxcbiAgICAncHJvdG90eXBlJyxcbiAgICAnc2VjdGlvbnMtdGVtcGxhdGUnLFxuICBdLFxuICBjb25maWc6IE1hcChjb25maWcuaHVyb24pLFxuICBjbGFzc05hbWVzOiBtZXJnZUNsYXNzbmFtZUpTT04oY29uZmlnLmh1cm9uLmNsYXNzTmFtZXMpLFxuICBzZWN0aW9uczogTWFwKHtcbiAgICBzZWN0aW9uc0J5UGF0aDogTWFwKHt9KSxcbiAgICBzZWN0aW9uc0J5VVJJOiBNYXAoe30pLFxuICAgIHNvcnRlZDoge30sXG4gIH0pLFxuICB0ZW1wbGF0ZXM6IE1hcCh7fSksXG4gIHByb3RvdHlwZXM6IE1hcCh7fSksXG4gIHNlY3Rpb25UZW1wbGF0ZVBhdGg6ICcnLFxuICByZWZlcmVuY2VEZWxpbWl0ZXI6ICcuJyxcbn0pO1xuLyogZXNsaW50LWVuYWJsZSAqL1xuXG5leHBvcnQgeyBkZWZhdWx0U3RvcmUsIGNvbmZpZyB9O1xuXG5cblxuLy8gV0VCUEFDSyBGT09URVIgLy9cbi8vIHNyYy9jbGkvZGVmYXVsdFN0b3JlLmpzIl0sIm1hcHBpbmdzIjoiOzs7Ozs7O0FBQUE7QUFDQTtBQUNBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7OztBQUtBO0FBQ0E7QUFRQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFIQTtBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBbkJBO0FBcUJBO0FBQ0E7QUFDQTtBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 7 */
+/* no static exports found */
+/* all exports used */
+/*!************************************!*\
+  !*** ./src/cli/handleTemplates.js ***!
+  \************************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.updateTemplate = updateTemplate;
-exports.deleteTemplate = deleteTemplate;
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-var _fsExtra = __webpack_require__(3);
-
-var _fsExtra2 = _interopRequireDefault(_fsExtra);
-
-var _chalk = __webpack_require__(2);
-
-var _chalk2 = _interopRequireDefault(_chalk);
-
-var _utils = __webpack_require__(1);
-
-var utils = _interopRequireWildcard(_utils);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Handle update of a template or data (json) file
- *
- * @function updateTemplate
- * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} section - contains KSS section data
- * @param {object} store - memory store
- * @return {object} updated memory store
- */
-/** @module cli/template-handler */
-function updateTemplate(filepath, section, store) {
-  const file = _path2.default.parse(filepath);
-  const pairPath = utils.getTemplateDataPair(file, section, store);
-  const type = '.json' === file.ext ? 'data' : 'template';
-  const newSection = section;
-  const newStore = store;
-  let content = false;
-
-  try {
-    content = _fsExtra2.default.readFileSync(filepath, 'utf8');
-  } catch (e) {
-    console.log(_chalk2.default.red(`${filepath} does not exist`));
-  }
-
-  if (content) {
-    const requirePath = utils.writeFile(newSection.referenceURI, type, filepath, content, newStore);
-    newSection[`${type}Path`] = requirePath;
-
-    if ('template' === type) {
-      newSection.templateContent = content;
-
-      // Rewrite section data with template content
-      newSection.sectionPath = utils.writeSectionData(newStore, newSection);
-    }
-
-    return newStore.setIn(['templates', requirePath], pairPath).setIn(['sections', 'sectionsByPath', newSection.kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);
-  }
-
-  return newStore;
-}
-
-/**
- * Handle removal of a template or data (json) file
- *
- * @function deleteTemplate
- * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} section - contains KSS section data
- * @param {object} store - memory store
- * @return {object} updated memory store
- */
-function deleteTemplate(filepath, section, store) {
-  const file = _path2.default.parse(filepath);
-  const type = '.json' === file.ext ? 'data' : 'template';
-  const newSection = section;
-  const newStore = store;
-
-  // Remove partner
-  const requirePath = utils.removeFile(newSection.referenceURI, type, filepath, newStore);
-  delete newSection[`${type}Path`];
-
-  return newStore.deleteIn(['templates', requirePath]).setIn(['sections', 'sectionsByPath', newSection.kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);
-}
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.updateTemplate = updateTemplate;\nexports.deleteTemplate = deleteTemplate;\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nvar _fsExtra = __webpack_require__(/*! fs-extra */ 3);\n\nvar _fsExtra2 = _interopRequireDefault(_fsExtra);\n\nvar _chalk = __webpack_require__(/*! chalk */ 2);\n\nvar _chalk2 = _interopRequireDefault(_chalk);\n\nvar _utils = __webpack_require__(/*! ./utils */ 1);\n\nvar utils = _interopRequireWildcard(_utils);\n\nfunction _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n/**\n * Handle update of a template or data (json) file\n *\n * @function updateTemplate\n * @param {string} filepath - filepath of changed file (comes from gaze)\n * @param {object} section - contains KSS section data\n * @param {object} store - memory store\n * @return {object} updated memory store\n */\n/** @module cli/template-handler */\nfunction updateTemplate(filepath, section, store) {\n  const file = _path2.default.parse(filepath);\n  const pairPath = utils.getTemplateDataPair(file, section, store);\n  const type = '.json' === file.ext ? 'data' : 'template';\n  const newSection = section;\n  const newStore = store;\n  let content = false;\n\n  try {\n    content = _fsExtra2.default.readFileSync(filepath, 'utf8');\n  } catch (e) {\n    console.log(_chalk2.default.red(`${filepath} does not exist`));\n  }\n\n  if (content) {\n    const requirePath = utils.writeFile(newSection.referenceURI, type, filepath, content, newStore);\n    newSection[`${type}Path`] = requirePath;\n\n    if ('template' === type) {\n      newSection.templateContent = content;\n\n      // Rewrite section data with template content\n      newSection.sectionPath = utils.writeSectionData(newStore, newSection);\n    }\n\n    return newStore.setIn(['templates', requirePath], pairPath).setIn(['sections', 'sectionsByPath', newSection.kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);\n  }\n\n  return newStore;\n}\n\n/**\n * Handle removal of a template or data (json) file\n *\n * @function deleteTemplate\n * @param {string} filepath - filepath of changed file (comes from gaze)\n * @param {object} section - contains KSS section data\n * @param {object} store - memory store\n * @return {object} updated memory store\n */\nfunction deleteTemplate(filepath, section, store) {\n  const file = _path2.default.parse(filepath);\n  const type = '.json' === file.ext ? 'data' : 'template';\n  const newSection = section;\n  const newStore = store;\n\n  // Remove partner\n  const requirePath = utils.removeFile(newSection.referenceURI, type, filepath, newStore);\n  delete newSection[`${type}Path`];\n\n  return newStore.deleteIn(['templates', requirePath]).setIn(['sections', 'sectionsByPath', newSection.kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);\n}//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiNy5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9zcmMvY2xpL2hhbmRsZVRlbXBsYXRlcy5qcz8yYzdmIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKiBAbW9kdWxlIGNsaS90ZW1wbGF0ZS1oYW5kbGVyICovXG5pbXBvcnQgcGF0aCBmcm9tICdwYXRoJztcbmltcG9ydCBmcyBmcm9tICdmcy1leHRyYSc7XG5pbXBvcnQgY2hhbGsgZnJvbSAnY2hhbGsnO1xuXG5pbXBvcnQgKiBhcyB1dGlscyBmcm9tICcuL3V0aWxzJztcblxuLyoqXG4gKiBIYW5kbGUgdXBkYXRlIG9mIGEgdGVtcGxhdGUgb3IgZGF0YSAoanNvbikgZmlsZVxuICpcbiAqIEBmdW5jdGlvbiB1cGRhdGVUZW1wbGF0ZVxuICogQHBhcmFtIHtzdHJpbmd9IGZpbGVwYXRoIC0gZmlsZXBhdGggb2YgY2hhbmdlZCBmaWxlIChjb21lcyBmcm9tIGdhemUpXG4gKiBAcGFyYW0ge29iamVjdH0gc2VjdGlvbiAtIGNvbnRhaW5zIEtTUyBzZWN0aW9uIGRhdGFcbiAqIEBwYXJhbSB7b2JqZWN0fSBzdG9yZSAtIG1lbW9yeSBzdG9yZVxuICogQHJldHVybiB7b2JqZWN0fSB1cGRhdGVkIG1lbW9yeSBzdG9yZVxuICovXG5leHBvcnQgZnVuY3Rpb24gdXBkYXRlVGVtcGxhdGUoZmlsZXBhdGgsIHNlY3Rpb24sIHN0b3JlKSB7XG4gIGNvbnN0IGZpbGUgPSBwYXRoLnBhcnNlKGZpbGVwYXRoKTtcbiAgY29uc3QgcGFpclBhdGggPSB1dGlscy5nZXRUZW1wbGF0ZURhdGFQYWlyKGZpbGUsIHNlY3Rpb24sIHN0b3JlKTtcbiAgY29uc3QgdHlwZSA9ICcuanNvbicgPT09IGZpbGUuZXh0ID8gJ2RhdGEnIDogJ3RlbXBsYXRlJztcbiAgY29uc3QgbmV3U2VjdGlvbiA9IHNlY3Rpb247XG4gIGNvbnN0IG5ld1N0b3JlID0gc3RvcmU7XG4gIGxldCBjb250ZW50ID0gZmFsc2U7XG5cbiAgdHJ5IHtcbiAgICBjb250ZW50ID0gZnMucmVhZEZpbGVTeW5jKGZpbGVwYXRoLCAndXRmOCcpO1xuICB9IGNhdGNoIChlKSB7XG4gICAgY29uc29sZS5sb2coY2hhbGsucmVkKGAke2ZpbGVwYXRofSBkb2VzIG5vdCBleGlzdGApKTtcbiAgfVxuXG4gIGlmIChjb250ZW50KSB7XG4gICAgY29uc3QgcmVxdWlyZVBhdGggPSB1dGlscy53cml0ZUZpbGUoXG4gICAgICBuZXdTZWN0aW9uLnJlZmVyZW5jZVVSSSxcbiAgICAgIHR5cGUsXG4gICAgICBmaWxlcGF0aCxcbiAgICAgIGNvbnRlbnQsXG4gICAgICBuZXdTdG9yZVxuICAgICk7XG4gICAgbmV3U2VjdGlvbltgJHt0eXBlfVBhdGhgXSA9IHJlcXVpcmVQYXRoO1xuXG4gICAgaWYgKCd0ZW1wbGF0ZScgPT09IHR5cGUpIHtcbiAgICAgIG5ld1NlY3Rpb24udGVtcGxhdGVDb250ZW50ID0gY29udGVudDtcblxuICAgICAgLy8gUmV3cml0ZSBzZWN0aW9uIGRhdGEgd2l0aCB0ZW1wbGF0ZSBjb250ZW50XG4gICAgICBuZXdTZWN0aW9uLnNlY3Rpb25QYXRoID0gdXRpbHMud3JpdGVTZWN0aW9uRGF0YShuZXdTdG9yZSwgbmV3U2VjdGlvbik7XG4gICAgfVxuXG4gICAgcmV0dXJuIG5ld1N0b3JlXG4gICAgICAuc2V0SW4oXG4gICAgICAgIFsndGVtcGxhdGVzJywgcmVxdWlyZVBhdGhdLFxuICAgICAgICBwYWlyUGF0aFxuICAgICAgKVxuICAgICAgLnNldEluKFxuICAgICAgICBbJ3NlY3Rpb25zJywgJ3NlY3Rpb25zQnlQYXRoJywgbmV3U2VjdGlvbi5rc3NQYXRoXSxcbiAgICAgICAgbmV3U2VjdGlvblxuICAgICAgKVxuICAgICAgLnNldEluKFxuICAgICAgICBbJ3NlY3Rpb25zJywgJ3NlY3Rpb25zQnlVUkknLCBuZXdTZWN0aW9uLnJlZmVyZW5jZVVSSV0sXG4gICAgICAgIG5ld1NlY3Rpb25cbiAgICAgICk7XG4gIH1cblxuICByZXR1cm4gbmV3U3RvcmU7XG59XG5cbi8qKlxuICogSGFuZGxlIHJlbW92YWwgb2YgYSB0ZW1wbGF0ZSBvciBkYXRhIChqc29uKSBmaWxlXG4gKlxuICogQGZ1bmN0aW9uIGRlbGV0ZVRlbXBsYXRlXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZXBhdGggLSBmaWxlcGF0aCBvZiBjaGFuZ2VkIGZpbGUgKGNvbWVzIGZyb20gZ2F6ZSlcbiAqIEBwYXJhbSB7b2JqZWN0fSBzZWN0aW9uIC0gY29udGFpbnMgS1NTIHNlY3Rpb24gZGF0YVxuICogQHBhcmFtIHtvYmplY3R9IHN0b3JlIC0gbWVtb3J5IHN0b3JlXG4gKiBAcmV0dXJuIHtvYmplY3R9IHVwZGF0ZWQgbWVtb3J5IHN0b3JlXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBkZWxldGVUZW1wbGF0ZShmaWxlcGF0aCwgc2VjdGlvbiwgc3RvcmUpIHtcbiAgY29uc3QgZmlsZSA9IHBhdGgucGFyc2UoZmlsZXBhdGgpO1xuICBjb25zdCB0eXBlID0gJy5qc29uJyA9PT0gZmlsZS5leHQgPyAnZGF0YScgOiAndGVtcGxhdGUnO1xuICBjb25zdCBuZXdTZWN0aW9uID0gc2VjdGlvbjtcbiAgY29uc3QgbmV3U3RvcmUgPSBzdG9yZTtcblxuICAvLyBSZW1vdmUgcGFydG5lclxuICBjb25zdCByZXF1aXJlUGF0aCA9IHV0aWxzLnJlbW92ZUZpbGUoXG4gICAgbmV3U2VjdGlvbi5yZWZlcmVuY2VVUkksXG4gICAgdHlwZSxcbiAgICBmaWxlcGF0aCxcbiAgICBuZXdTdG9yZVxuICApO1xuICBkZWxldGUgbmV3U2VjdGlvbltgJHt0eXBlfVBhdGhgXTtcblxuICByZXR1cm4gbmV3U3RvcmVcbiAgICAuZGVsZXRlSW4oWyd0ZW1wbGF0ZXMnLCByZXF1aXJlUGF0aF0pXG4gICAgLnNldEluKFxuICAgICAgWydzZWN0aW9ucycsICdzZWN0aW9uc0J5UGF0aCcsIG5ld1NlY3Rpb24ua3NzUGF0aF0sXG4gICAgICBuZXdTZWN0aW9uXG4gICAgKVxuICAgIC5zZXRJbihcbiAgICAgIFsnc2VjdGlvbnMnLCAnc2VjdGlvbnNCeVVSSScsIG5ld1NlY3Rpb24ucmVmZXJlbmNlVVJJXSxcbiAgICAgIG5ld1NlY3Rpb25cbiAgICApO1xufVxuXG5cblxuLy8gV0VCUEFDSyBGT09URVIgLy9cbi8vIHNyYy9jbGkvaGFuZGxlVGVtcGxhdGVzLmpzIl0sIm1hcHBpbmdzIjoiOzs7OztBQWdCQTtBQTBEQTtBQUNBO0FBMUVBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUNBO0FBQ0E7QUFEQTtBQUNBOzs7OztBQUNBOzs7Ozs7Ozs7QUFQQTtBQWdCQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQU9BO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBYUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7Ozs7QUFTQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBTUE7QUFDQTtBQUNBO0FBVUEiLCJzb3VyY2VSb290IjoiIn0=");
 
 /***/ }),
 /* 8 */
+/* no static exports found */
+/* all exports used */
+/*!*************************************!*\
+  !*** ./src/cli/requireTemplates.js ***!
+  \*************************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.writeStore = exports.requireTemplates = undefined;
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-var _fsExtra = __webpack_require__(3);
-
-var _fsExtra2 = _interopRequireDefault(_fsExtra);
-
-var _hotTemplate = __webpack_require__(20);
-
-var _hotTemplate2 = _interopRequireDefault(_hotTemplate);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/* eslint-enable */
-
-const cwd = process.cwd();
-
-// We need to prepend this to the browser script as a string but still want to transpile it,
-// hence loading it using `raw-loader` so we receive a string from webpack
-/* eslint-disable */
-/** @module cli/require-templates */
-
-const huronScript = _fsExtra2.default.readFileSync(_path2.default.join(__dirname, '../web/index.js'), 'utf8');
-
-/**
- * Write code for requiring all generated huron assets
- *
- * @function requireTemplates
- * @param {object} store - memory store
- */
-const requireTemplates = exports.requireTemplates = function requireTemplates(store) {
-  const huron = store.get('config');
-  const outputPath = _path2.default.join(cwd, huron.get('root'), 'huron-assets');
-  // These will be used to replace strings in the hotTemplate.
-  // In order to accurately replace strings but still keep things parseable by eslint and babel,
-  // each replaceable value should be referenced in `hotTemplate.js` under the `hotScope` object.
-  // For example, if you need to replace a string with a value passed in from the CLI called `userVariable`,
-  // you would reference that string in `hotTemplate.js` with `hotScope.userVariable`.
-  const hotVariableScope = {
-    sectionTemplatePath: `'${huron.get('sectionTemplate')}'`,
-    requireRegex: new RegExp(`\\.html|\\.json|\\${huron.get('templates').extension}$`),
-    requirePath: `'../${huron.get('output')}'`
-  };
-  const hotTemplateTransformed = Object.keys(hotVariableScope).reduce((acc, curr) => acc.replace(new RegExp(`hotScope.${curr}`, 'g'), hotVariableScope[curr]), _hotTemplate2.default);
-
-  // Write the contents of this script.
-  _fsExtra2.default.outputFileSync(_path2.default.join(outputPath, 'index.js'), hotTemplateTransformed);
-  _fsExtra2.default.outputFileSync(_path2.default.join(outputPath, 'insertNodes.js'), huronScript);
-};
-
-/**
- * Output entire data store to a JS object and handle if any KSS data has changed
- *
- * @function writeStore
- * @param {object} store - memory store
- * @param {string} changed - filepath of changed KSS section, if applicable
- */
-const writeStore = exports.writeStore = function writeStore(store, newStore = false) {
-  const updatedStore = newStore || store;
-  const huron = updatedStore.get('config');
-  const outputPath = _path2.default.join(cwd, huron.get('root'), 'huron-assets');
-
-  // Write updated data store
-  _fsExtra2.default.outputFileSync(_path2.default.join(outputPath, 'huron-store.js'), `module.exports = ${JSON.stringify(updatedStore.toJSON())}`);
-};
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.writeStore = exports.requireTemplates = undefined;\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nvar _fsExtra = __webpack_require__(/*! fs-extra */ 3);\n\nvar _fsExtra2 = _interopRequireDefault(_fsExtra);\n\nvar _hotTemplate = __webpack_require__(/*! raw-loader!babel-loader!../../templates/hotTemplate */ 20);\n\nvar _hotTemplate2 = _interopRequireDefault(_hotTemplate);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n/* eslint-enable */\n\nconst cwd = process.cwd();\n\n// We need to prepend this to the browser script as a string but still want to transpile it,\n// hence loading it using `raw-loader` so we receive a string from webpack\n/* eslint-disable */\n/** @module cli/require-templates */\n\nconst huronScript = _fsExtra2.default.readFileSync(_path2.default.join(__dirname, '../web/index.js'), 'utf8');\n\n/**\n * Write code for requiring all generated huron assets\n *\n * @function requireTemplates\n * @param {object} store - memory store\n */\nconst requireTemplates = exports.requireTemplates = function requireTemplates(store) {\n  const huron = store.get('config');\n  const outputPath = _path2.default.join(cwd, huron.get('root'), 'huron-assets');\n  // These will be used to replace strings in the hotTemplate.\n  // In order to accurately replace strings but still keep things parseable by eslint and babel,\n  // each replaceable value should be referenced in `hotTemplate.js` under the `hotScope` object.\n  // For example, if you need to replace a string with a value passed in from the CLI called `userVariable`,\n  // you would reference that string in `hotTemplate.js` with `hotScope.userVariable`.\n  const hotVariableScope = {\n    sectionTemplatePath: `'${huron.get('sectionTemplate')}'`,\n    requireRegex: new RegExp(`\\\\.html|\\\\.json|\\\\${huron.get('templates').extension}$`),\n    requirePath: `'../${huron.get('output')}'`\n  };\n  const hotTemplateTransformed = Object.keys(hotVariableScope).reduce((acc, curr) => acc.replace(new RegExp(`hotScope.${curr}`, 'g'), hotVariableScope[curr]), _hotTemplate2.default);\n\n  // Write the contents of this script.\n  _fsExtra2.default.outputFileSync(_path2.default.join(outputPath, 'index.js'), hotTemplateTransformed);\n  _fsExtra2.default.outputFileSync(_path2.default.join(outputPath, 'insertNodes.js'), huronScript);\n};\n\n/**\n * Output entire data store to a JS object and handle if any KSS data has changed\n *\n * @function writeStore\n * @param {object} store - memory store\n * @param {string} changed - filepath of changed KSS section, if applicable\n */\nconst writeStore = exports.writeStore = function writeStore(store, newStore = false) {\n  const updatedStore = newStore || store;\n  const huron = updatedStore.get('config');\n  const outputPath = _path2.default.join(cwd, huron.get('root'), 'huron-assets');\n\n  // Write updated data store\n  _fsExtra2.default.outputFileSync(_path2.default.join(outputPath, 'huron-store.js'), `module.exports = ${JSON.stringify(updatedStore.toJSON())}`);\n};//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiOC5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9zcmMvY2xpL3JlcXVpcmVUZW1wbGF0ZXMuanM/ZmViYSJdLCJzb3VyY2VzQ29udGVudCI6WyIvKiogQG1vZHVsZSBjbGkvcmVxdWlyZS10ZW1wbGF0ZXMgKi9cbmltcG9ydCBwYXRoIGZyb20gJ3BhdGgnO1xuaW1wb3J0IGZzIGZyb20gJ2ZzLWV4dHJhJztcblxuLy8gV2UgbmVlZCB0byBwcmVwZW5kIHRoaXMgdG8gdGhlIGJyb3dzZXIgc2NyaXB0IGFzIGEgc3RyaW5nIGJ1dCBzdGlsbCB3YW50IHRvIHRyYW5zcGlsZSBpdCxcbi8vIGhlbmNlIGxvYWRpbmcgaXQgdXNpbmcgYHJhdy1sb2FkZXJgIHNvIHdlIHJlY2VpdmUgYSBzdHJpbmcgZnJvbSB3ZWJwYWNrXG4vKiBlc2xpbnQtZGlzYWJsZSAqL1xuaW1wb3J0IGhvdFRlbXBsYXRlIGZyb20gJyFyYXctbG9hZGVyIWJhYmVsLWxvYWRlciEuLi8uLi90ZW1wbGF0ZXMvaG90VGVtcGxhdGUnO1xuLyogZXNsaW50LWVuYWJsZSAqL1xuXG5jb25zdCBjd2QgPSBwcm9jZXNzLmN3ZCgpO1xuY29uc3QgaHVyb25TY3JpcHQgPSBmcy5yZWFkRmlsZVN5bmMoXG4gIHBhdGguam9pbihfX2Rpcm5hbWUsICcuLi93ZWIvaW5kZXguanMnKSxcbiAgJ3V0ZjgnXG4pO1xuXG4vKipcbiAqIFdyaXRlIGNvZGUgZm9yIHJlcXVpcmluZyBhbGwgZ2VuZXJhdGVkIGh1cm9uIGFzc2V0c1xuICpcbiAqIEBmdW5jdGlvbiByZXF1aXJlVGVtcGxhdGVzXG4gKiBAcGFyYW0ge29iamVjdH0gc3RvcmUgLSBtZW1vcnkgc3RvcmVcbiAqL1xuZXhwb3J0IGNvbnN0IHJlcXVpcmVUZW1wbGF0ZXMgPSBmdW5jdGlvbiByZXF1aXJlVGVtcGxhdGVzKHN0b3JlKSB7XG4gIGNvbnN0IGh1cm9uID0gc3RvcmUuZ2V0KCdjb25maWcnKTtcbiAgY29uc3Qgb3V0cHV0UGF0aCA9IHBhdGguam9pbihjd2QsIGh1cm9uLmdldCgncm9vdCcpLCAnaHVyb24tYXNzZXRzJyk7XG4gIC8vIFRoZXNlIHdpbGwgYmUgdXNlZCB0byByZXBsYWNlIHN0cmluZ3MgaW4gdGhlIGhvdFRlbXBsYXRlLlxuICAvLyBJbiBvcmRlciB0byBhY2N1cmF0ZWx5IHJlcGxhY2Ugc3RyaW5ncyBidXQgc3RpbGwga2VlcCB0aGluZ3MgcGFyc2VhYmxlIGJ5IGVzbGludCBhbmQgYmFiZWwsXG4gIC8vIGVhY2ggcmVwbGFjZWFibGUgdmFsdWUgc2hvdWxkIGJlIHJlZmVyZW5jZWQgaW4gYGhvdFRlbXBsYXRlLmpzYCB1bmRlciB0aGUgYGhvdFNjb3BlYCBvYmplY3QuXG4gIC8vIEZvciBleGFtcGxlLCBpZiB5b3UgbmVlZCB0byByZXBsYWNlIGEgc3RyaW5nIHdpdGggYSB2YWx1ZSBwYXNzZWQgaW4gZnJvbSB0aGUgQ0xJIGNhbGxlZCBgdXNlclZhcmlhYmxlYCxcbiAgLy8geW91IHdvdWxkIHJlZmVyZW5jZSB0aGF0IHN0cmluZyBpbiBgaG90VGVtcGxhdGUuanNgIHdpdGggYGhvdFNjb3BlLnVzZXJWYXJpYWJsZWAuXG4gIGNvbnN0IGhvdFZhcmlhYmxlU2NvcGUgPSB7XG4gICAgc2VjdGlvblRlbXBsYXRlUGF0aDogYCcke2h1cm9uLmdldCgnc2VjdGlvblRlbXBsYXRlJyl9J2AsXG4gICAgcmVxdWlyZVJlZ2V4OiBuZXcgUmVnRXhwKGBcXFxcLmh0bWx8XFxcXC5qc29ufFxcXFwke1xuICAgICAgaHVyb24uZ2V0KCd0ZW1wbGF0ZXMnKS5leHRlbnNpb25cbiAgICB9JGApLFxuICAgIHJlcXVpcmVQYXRoOiBgJy4uLyR7aHVyb24uZ2V0KCdvdXRwdXQnKX0nYCxcbiAgfTtcbiAgY29uc3QgaG90VGVtcGxhdGVUcmFuc2Zvcm1lZCA9IE9iamVjdC5rZXlzKGhvdFZhcmlhYmxlU2NvcGUpXG4gICAgLnJlZHVjZShcbiAgICAgIChhY2MsIGN1cnIpID0+IGFjYy5yZXBsYWNlKFxuICAgICAgICBuZXcgUmVnRXhwKGBob3RTY29wZS4ke2N1cnJ9YCwgJ2cnKSxcbiAgICAgICAgaG90VmFyaWFibGVTY29wZVtjdXJyXVxuICAgICAgKSwgaG90VGVtcGxhdGVcbiAgICApO1xuXG4gIC8vIFdyaXRlIHRoZSBjb250ZW50cyBvZiB0aGlzIHNjcmlwdC5cbiAgZnMub3V0cHV0RmlsZVN5bmMoXG4gICAgcGF0aC5qb2luKG91dHB1dFBhdGgsICdpbmRleC5qcycpLFxuICAgIGhvdFRlbXBsYXRlVHJhbnNmb3JtZWRcbiAgKTtcbiAgZnMub3V0cHV0RmlsZVN5bmMoXG4gICAgcGF0aC5qb2luKG91dHB1dFBhdGgsICdpbnNlcnROb2Rlcy5qcycpLFxuICAgIGh1cm9uU2NyaXB0XG4gICk7XG59O1xuXG4vKipcbiAqIE91dHB1dCBlbnRpcmUgZGF0YSBzdG9yZSB0byBhIEpTIG9iamVjdCBhbmQgaGFuZGxlIGlmIGFueSBLU1MgZGF0YSBoYXMgY2hhbmdlZFxuICpcbiAqIEBmdW5jdGlvbiB3cml0ZVN0b3JlXG4gKiBAcGFyYW0ge29iamVjdH0gc3RvcmUgLSBtZW1vcnkgc3RvcmVcbiAqIEBwYXJhbSB7c3RyaW5nfSBjaGFuZ2VkIC0gZmlsZXBhdGggb2YgY2hhbmdlZCBLU1Mgc2VjdGlvbiwgaWYgYXBwbGljYWJsZVxuICovXG5leHBvcnQgY29uc3Qgd3JpdGVTdG9yZSA9IGZ1bmN0aW9uIHdyaXRlU3RvcmUoc3RvcmUsIG5ld1N0b3JlID0gZmFsc2UpIHtcbiAgY29uc3QgdXBkYXRlZFN0b3JlID0gbmV3U3RvcmUgfHwgc3RvcmU7XG4gIGNvbnN0IGh1cm9uID0gdXBkYXRlZFN0b3JlLmdldCgnY29uZmlnJyk7XG4gIGNvbnN0IG91dHB1dFBhdGggPSBwYXRoLmpvaW4oY3dkLCBodXJvbi5nZXQoJ3Jvb3QnKSwgJ2h1cm9uLWFzc2V0cycpO1xuXG4gIC8vIFdyaXRlIHVwZGF0ZWQgZGF0YSBzdG9yZVxuICBmcy5vdXRwdXRGaWxlU3luYyhcbiAgICBwYXRoLmpvaW4ob3V0cHV0UGF0aCwgJ2h1cm9uLXN0b3JlLmpzJyksXG4gICAgYG1vZHVsZS5leHBvcnRzID0gJHtKU09OLnN0cmluZ2lmeSh1cGRhdGVkU3RvcmUudG9KU09OKCkpfWBcbiAgKTtcbn07XG5cblxuXG5cbi8vIFdFQlBBQ0sgRk9PVEVSIC8vXG4vLyBzcmMvY2xpL3JlcXVpcmVUZW1wbGF0ZXMuanMiXSwibWFwcGluZ3MiOiI7Ozs7Ozs7QUFDQTtBQUNBOzs7QUFBQTtBQUNBOzs7QUFJQTtBQUNBOzs7OztBQUFBO0FBQ0E7QUFDQTtBQUNBO0FBUEE7QUFDQTtBQUNBO0FBTkE7QUFDQTtBQVVBO0FBQ0E7QUFJQTs7Ozs7O0FBTUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUdBO0FBTEE7QUFPQTtBQUNBO0FBT0E7QUFDQTtBQUlBO0FBSUE7QUFDQTtBQUNBOzs7Ozs7O0FBT0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFJQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 9 */
+/* no static exports found */
+/* all exports used */
+/*!**************************!*\
+  !*** ./src/cli/index.js ***!
+  \**************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-var _chalk = __webpack_require__(2);
-
-var _chalk2 = _interopRequireDefault(_chalk);
-
-var _actions = __webpack_require__(11);
-
-var _requireTemplates = __webpack_require__(8);
-
-var _utils = __webpack_require__(1);
-
-var _parseArgs = __webpack_require__(4);
-
-var _parseArgs2 = _interopRequireDefault(_parseArgs);
-
-var _server = __webpack_require__(17);
-
-var _server2 = _interopRequireDefault(_server);
-
-var _defaultStore = __webpack_require__(6);
-
-var _fileWatcher = __webpack_require__(12);
-
-var _fileWatcher2 = _interopRequireDefault(_fileWatcher);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Initialize data store with files from gaze and original data structure
- *
- * @global
- */
-// Local imports
-const huron = _defaultStore.defaultStore.get('config');
-let store = (0, _actions.initFiles)(_fileWatcher2.default.watched(), _defaultStore.defaultStore);
-
-(0, _requireTemplates.requireTemplates)(store);
-(0, _requireTemplates.writeStore)(store);
-
-// If building for production, close gaze and exit process once initFiles is done.
-if (_parseArgs2.default.production) {
-  _fileWatcher2.default.close();
-}
-
-/** @module cli/gaze */
-_fileWatcher2.default.on('all', (event, filepath) => {
-  store = (0, _actions.updateClassNames)(filepath, store);
-  (0, _requireTemplates.writeStore)(store);
-});
-
-/**
- * Anonymous handler for Gaze 'changed' event indicating a file has changed
- *
- * @callback changed
- * @listens gaze:changed
- * @param {string} filepath - absolute path of changed file
- */
-_fileWatcher2.default.on('changed', filepath => {
-  if ((0, _utils.matchKssDir)(filepath, huron)) {
-    store = (0, _actions.updateFile)(filepath, store);
-  }
-
-  console.log(_chalk2.default.green(`${filepath} updated!`));
-});
-
-/**
- * Anonymous handler for Gaze 'added' event indicating a file has been added to the watched directories
- *
- * @callback added
- * @listens gaze:added
- * @param {string} filepath - absolute path of changed file
- */
-_fileWatcher2.default.on('added', filepath => {
-  if ((0, _utils.matchKssDir)(filepath, huron)) {
-    store = (0, _actions.updateFile)(filepath, store);
-    (0, _requireTemplates.writeStore)(store);
-  }
-
-  console.log(_chalk2.default.blue(`${filepath} added!`));
-});
-
-/**
- * Anonymous handler for Gaze 'renamed' event indicating a file has been renamed
- *
- * @callback renamed
- * @listens gaze:renamed
- * @param {string} filepath - absolute path of changed file
- */
-_fileWatcher2.default.on('renamed', (newPath, oldPath) => {
-  if ((0, _utils.matchKssDir)(newPath, huron)) {
-    store = (0, _actions.deleteFile)(oldPath, store);
-    store = (0, _actions.updateFile)(newPath, store);
-    (0, _requireTemplates.writeStore)(store);
-  }
-
-  console.log(_chalk2.default.blue(`${newPath} added!`));
-});
-
-/**
- * Anonymous handler for Gaze 'deleted' event indicating a file has been removed
- *
- * @callback deleted
- * @listens gaze:deleted
- * @param {string} filepath - absolute path of changed file
- */
-_fileWatcher2.default.on('deleted', filepath => {
-  if ((0, _utils.matchKssDir)(filepath, huron)) {
-    store = (0, _actions.deleteFile)(filepath, store);
-    (0, _requireTemplates.writeStore)(store);
-  }
-
-  console.log(_chalk2.default.red(`${filepath} deleted`));
-});
-
-// Start webpack or build for production
-(0, _server2.default)(_defaultStore.config);
+eval("\n\nvar _chalk = __webpack_require__(/*! chalk */ 2);\n\nvar _chalk2 = _interopRequireDefault(_chalk);\n\nvar _actions = __webpack_require__(/*! ./actions */ 11);\n\nvar _requireTemplates = __webpack_require__(/*! ./requireTemplates */ 8);\n\nvar _utils = __webpack_require__(/*! ./utils */ 1);\n\nvar _parseArgs = __webpack_require__(/*! ./parseArgs */ 4);\n\nvar _parseArgs2 = _interopRequireDefault(_parseArgs);\n\nvar _server = __webpack_require__(/*! ./server */ 17);\n\nvar _server2 = _interopRequireDefault(_server);\n\nvar _defaultStore = __webpack_require__(/*! ./defaultStore */ 6);\n\nvar _fileWatcher = __webpack_require__(/*! ./fileWatcher */ 12);\n\nvar _fileWatcher2 = _interopRequireDefault(_fileWatcher);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n/**\n * Initialize data store with files from gaze and original data structure\n *\n * @global\n */\n// Local imports\nconst huron = _defaultStore.defaultStore.get('config');\nlet store = (0, _actions.initFiles)(_fileWatcher2.default.watched(), _defaultStore.defaultStore);\n\n(0, _requireTemplates.requireTemplates)(store);\n(0, _requireTemplates.writeStore)(store);\n\n// If building for production, close gaze and exit process once initFiles is done.\nif (_parseArgs2.default.production) {\n  _fileWatcher2.default.close();\n}\n\n/** @module cli/gaze */\n_fileWatcher2.default.on('all', (event, filepath) => {\n  store = (0, _actions.updateClassNames)(filepath, store);\n  (0, _requireTemplates.writeStore)(store);\n});\n\n/**\n * Anonymous handler for Gaze 'changed' event indicating a file has changed\n *\n * @callback changed\n * @listens gaze:changed\n * @param {string} filepath - absolute path of changed file\n */\n_fileWatcher2.default.on('changed', filepath => {\n  if ((0, _utils.matchKssDir)(filepath, huron)) {\n    store = (0, _actions.updateFile)(filepath, store);\n  }\n\n  console.log(_chalk2.default.green(`${filepath} updated!`));\n});\n\n/**\n * Anonymous handler for Gaze 'added' event indicating a file has been added to the watched directories\n *\n * @callback added\n * @listens gaze:added\n * @param {string} filepath - absolute path of changed file\n */\n_fileWatcher2.default.on('added', filepath => {\n  if ((0, _utils.matchKssDir)(filepath, huron)) {\n    store = (0, _actions.updateFile)(filepath, store);\n    (0, _requireTemplates.writeStore)(store);\n  }\n\n  console.log(_chalk2.default.blue(`${filepath} added!`));\n});\n\n/**\n * Anonymous handler for Gaze 'renamed' event indicating a file has been renamed\n *\n * @callback renamed\n * @listens gaze:renamed\n * @param {string} filepath - absolute path of changed file\n */\n_fileWatcher2.default.on('renamed', (newPath, oldPath) => {\n  if ((0, _utils.matchKssDir)(newPath, huron)) {\n    store = (0, _actions.deleteFile)(oldPath, store);\n    store = (0, _actions.updateFile)(newPath, store);\n    (0, _requireTemplates.writeStore)(store);\n  }\n\n  console.log(_chalk2.default.blue(`${newPath} added!`));\n});\n\n/**\n * Anonymous handler for Gaze 'deleted' event indicating a file has been removed\n *\n * @callback deleted\n * @listens gaze:deleted\n * @param {string} filepath - absolute path of changed file\n */\n_fileWatcher2.default.on('deleted', filepath => {\n  if ((0, _utils.matchKssDir)(filepath, huron)) {\n    store = (0, _actions.deleteFile)(filepath, store);\n    (0, _requireTemplates.writeStore)(store);\n  }\n\n  console.log(_chalk2.default.red(`${filepath} deleted`));\n});\n\n// Start webpack or build for production\n(0, _server2.default)(_defaultStore.config);//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiOS5qcyIsInNvdXJjZXMiOlsid2VicGFjazovLy9zcmMvY2xpL2luZGV4LmpzPzg2N2IiXSwic291cmNlc0NvbnRlbnQiOlsiLy8gTG9jYWwgaW1wb3J0c1xuaW1wb3J0IGNoYWxrIGZyb20gJ2NoYWxrJztcblxuaW1wb3J0IHtcbiAgaW5pdEZpbGVzLFxuICB1cGRhdGVGaWxlLFxuICBkZWxldGVGaWxlLFxuICB1cGRhdGVDbGFzc05hbWVzLFxufSBmcm9tICcuL2FjdGlvbnMnO1xuaW1wb3J0IHsgcmVxdWlyZVRlbXBsYXRlcywgd3JpdGVTdG9yZSB9IGZyb20gJy4vcmVxdWlyZVRlbXBsYXRlcyc7XG5pbXBvcnQgeyBtYXRjaEtzc0RpciB9IGZyb20gJy4vdXRpbHMnO1xuaW1wb3J0IHByb2dyYW0gZnJvbSAnLi9wYXJzZUFyZ3MnO1xuaW1wb3J0IHN0YXJ0V2VicGFjayBmcm9tICcuL3NlcnZlcic7XG5pbXBvcnQgeyBkZWZhdWx0U3RvcmUsIGNvbmZpZyB9IGZyb20gJy4vZGVmYXVsdFN0b3JlJztcbmltcG9ydCBnYXplIGZyb20gJy4vZmlsZVdhdGNoZXInO1xuXG4vKipcbiAqIEluaXRpYWxpemUgZGF0YSBzdG9yZSB3aXRoIGZpbGVzIGZyb20gZ2F6ZSBhbmQgb3JpZ2luYWwgZGF0YSBzdHJ1Y3R1cmVcbiAqXG4gKiBAZ2xvYmFsXG4gKi9cbmNvbnN0IGh1cm9uID0gZGVmYXVsdFN0b3JlLmdldCgnY29uZmlnJyk7XG5sZXQgc3RvcmUgPSBpbml0RmlsZXMoZ2F6ZS53YXRjaGVkKCksIGRlZmF1bHRTdG9yZSk7XG5cbnJlcXVpcmVUZW1wbGF0ZXMoc3RvcmUpO1xud3JpdGVTdG9yZShzdG9yZSk7XG5cbi8vIElmIGJ1aWxkaW5nIGZvciBwcm9kdWN0aW9uLCBjbG9zZSBnYXplIGFuZCBleGl0IHByb2Nlc3Mgb25jZSBpbml0RmlsZXMgaXMgZG9uZS5cbmlmIChwcm9ncmFtLnByb2R1Y3Rpb24pIHtcbiAgZ2F6ZS5jbG9zZSgpO1xufVxuXG4vKiogQG1vZHVsZSBjbGkvZ2F6ZSAqL1xuZ2F6ZS5vbignYWxsJywgKGV2ZW50LCBmaWxlcGF0aCkgPT4ge1xuICBzdG9yZSA9IHVwZGF0ZUNsYXNzTmFtZXMoZmlsZXBhdGgsIHN0b3JlKTtcbiAgd3JpdGVTdG9yZShzdG9yZSk7XG59KTtcblxuLyoqXG4gKiBBbm9ueW1vdXMgaGFuZGxlciBmb3IgR2F6ZSAnY2hhbmdlZCcgZXZlbnQgaW5kaWNhdGluZyBhIGZpbGUgaGFzIGNoYW5nZWRcbiAqXG4gKiBAY2FsbGJhY2sgY2hhbmdlZFxuICogQGxpc3RlbnMgZ2F6ZTpjaGFuZ2VkXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZXBhdGggLSBhYnNvbHV0ZSBwYXRoIG9mIGNoYW5nZWQgZmlsZVxuICovXG5nYXplLm9uKCdjaGFuZ2VkJywgKGZpbGVwYXRoKSA9PiB7XG4gIGlmIChtYXRjaEtzc0RpcihmaWxlcGF0aCwgaHVyb24pKSB7XG4gICAgc3RvcmUgPSB1cGRhdGVGaWxlKGZpbGVwYXRoLCBzdG9yZSk7XG4gIH1cblxuICBjb25zb2xlLmxvZyhjaGFsay5ncmVlbihgJHtmaWxlcGF0aH0gdXBkYXRlZCFgKSk7XG59KTtcblxuLyoqXG4gKiBBbm9ueW1vdXMgaGFuZGxlciBmb3IgR2F6ZSAnYWRkZWQnIGV2ZW50IGluZGljYXRpbmcgYSBmaWxlIGhhcyBiZWVuIGFkZGVkIHRvIHRoZSB3YXRjaGVkIGRpcmVjdG9yaWVzXG4gKlxuICogQGNhbGxiYWNrIGFkZGVkXG4gKiBAbGlzdGVucyBnYXplOmFkZGVkXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZXBhdGggLSBhYnNvbHV0ZSBwYXRoIG9mIGNoYW5nZWQgZmlsZVxuICovXG5nYXplLm9uKCdhZGRlZCcsIChmaWxlcGF0aCkgPT4ge1xuICBpZiAobWF0Y2hLc3NEaXIoZmlsZXBhdGgsIGh1cm9uKSkge1xuICAgIHN0b3JlID0gdXBkYXRlRmlsZShmaWxlcGF0aCwgc3RvcmUpO1xuICAgIHdyaXRlU3RvcmUoc3RvcmUpO1xuICB9XG5cbiAgY29uc29sZS5sb2coY2hhbGsuYmx1ZShgJHtmaWxlcGF0aH0gYWRkZWQhYCkpO1xufSk7XG5cbi8qKlxuICogQW5vbnltb3VzIGhhbmRsZXIgZm9yIEdhemUgJ3JlbmFtZWQnIGV2ZW50IGluZGljYXRpbmcgYSBmaWxlIGhhcyBiZWVuIHJlbmFtZWRcbiAqXG4gKiBAY2FsbGJhY2sgcmVuYW1lZFxuICogQGxpc3RlbnMgZ2F6ZTpyZW5hbWVkXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZXBhdGggLSBhYnNvbHV0ZSBwYXRoIG9mIGNoYW5nZWQgZmlsZVxuICovXG5nYXplLm9uKCdyZW5hbWVkJywgKG5ld1BhdGgsIG9sZFBhdGgpID0+IHtcbiAgaWYgKG1hdGNoS3NzRGlyKG5ld1BhdGgsIGh1cm9uKSkge1xuICAgIHN0b3JlID0gZGVsZXRlRmlsZShvbGRQYXRoLCBzdG9yZSk7XG4gICAgc3RvcmUgPSB1cGRhdGVGaWxlKG5ld1BhdGgsIHN0b3JlKTtcbiAgICB3cml0ZVN0b3JlKHN0b3JlKTtcbiAgfVxuXG4gIGNvbnNvbGUubG9nKGNoYWxrLmJsdWUoYCR7bmV3UGF0aH0gYWRkZWQhYCkpO1xufSk7XG5cbi8qKlxuICogQW5vbnltb3VzIGhhbmRsZXIgZm9yIEdhemUgJ2RlbGV0ZWQnIGV2ZW50IGluZGljYXRpbmcgYSBmaWxlIGhhcyBiZWVuIHJlbW92ZWRcbiAqXG4gKiBAY2FsbGJhY2sgZGVsZXRlZFxuICogQGxpc3RlbnMgZ2F6ZTpkZWxldGVkXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZXBhdGggLSBhYnNvbHV0ZSBwYXRoIG9mIGNoYW5nZWQgZmlsZVxuICovXG5nYXplLm9uKCdkZWxldGVkJywgKGZpbGVwYXRoKSA9PiB7XG4gIGlmIChtYXRjaEtzc0RpcihmaWxlcGF0aCwgaHVyb24pKSB7XG4gICAgc3RvcmUgPSBkZWxldGVGaWxlKGZpbGVwYXRoLCBzdG9yZSk7XG4gICAgd3JpdGVTdG9yZShzdG9yZSk7XG4gIH1cblxuICBjb25zb2xlLmxvZyhjaGFsay5yZWQoYCR7ZmlsZXBhdGh9IGRlbGV0ZWRgKSk7XG59KTtcblxuLy8gU3RhcnQgd2VicGFjayBvciBidWlsZCBmb3IgcHJvZHVjdGlvblxuc3RhcnRXZWJwYWNrKGNvbmZpZyk7XG5cblxuXG4vLyBXRUJQQUNLIEZPT1RFUiAvL1xuLy8gc3JjL2NsaS9pbmRleC5qcyJdLCJtYXBwaW5ncyI6Ijs7QUFDQTtBQUNBOzs7QUFDQTtBQUNBO0FBS0E7QUFDQTtBQUFBO0FBQ0E7QUFBQTtBQUNBOzs7QUFBQTtBQUNBOzs7QUFBQTtBQUNBO0FBQUE7QUFDQTs7Ozs7QUFDQTs7Ozs7QUFoQkE7QUFxQkE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7O0FBT0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7O0FBT0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7Ozs7Ozs7QUFPQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7O0FBT0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 10 */
+/* no static exports found */
+/* all exports used */
+/*!************************************!*\
+  !*** ./config/devServer.config.js ***!
+  \************************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-exports.default = huron => ({
-  hot: true,
-  quiet: false,
-  noInfo: false,
-  stats: {
-    colors: true,
-    hash: false,
-    version: false,
-    assets: false,
-    chunks: false,
-    modules: false,
-    reasons: false,
-    children: false,
-    source: false
-  },
-  contentBase: huron.root,
-  overlay: true,
-  publicPath: `http://localhost:${huron.port}/${huron.root}`
-});
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\n\nexports.default = huron => ({\n  hot: true,\n  quiet: false,\n  noInfo: false,\n  stats: {\n    colors: true,\n    hash: false,\n    version: false,\n    assets: false,\n    chunks: false,\n    modules: false,\n    reasons: false,\n    children: false,\n    source: false\n  },\n  contentBase: huron.root,\n  overlay: true,\n  publicPath: huron.root\n});//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTAuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vY29uZmlnL2RldlNlcnZlci5jb25maWcuanM/YzhlNCJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgZGVmYXVsdCAoaHVyb24pID0+ICh7XG4gIGhvdDogdHJ1ZSxcbiAgcXVpZXQ6IGZhbHNlLFxuICBub0luZm86IGZhbHNlLFxuICBzdGF0czoge1xuICAgIGNvbG9yczogdHJ1ZSxcbiAgICBoYXNoOiBmYWxzZSxcbiAgICB2ZXJzaW9uOiBmYWxzZSxcbiAgICBhc3NldHM6IGZhbHNlLFxuICAgIGNodW5rczogZmFsc2UsXG4gICAgbW9kdWxlczogZmFsc2UsXG4gICAgcmVhc29uczogZmFsc2UsXG4gICAgY2hpbGRyZW46IGZhbHNlLFxuICAgIHNvdXJjZTogZmFsc2UsXG4gIH0sXG4gIGNvbnRlbnRCYXNlOiBodXJvbi5yb290LFxuICBvdmVybGF5OiB0cnVlLFxuICBwdWJsaWNQYXRoOiBodXJvbi5yb290LFxufSk7XG5cblxuXG4vLyBXRUJQQUNLIEZPT1RFUiAvL1xuLy8gY29uZmlnL2RldlNlcnZlci5jb25maWcuanMiXSwibWFwcGluZ3MiOiI7Ozs7OztBQUFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFUQTtBQVdBO0FBQ0E7QUFDQTtBQWpCQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 11 */
+/* no static exports found */
+/* all exports used */
+/*!****************************!*\
+  !*** ./src/cli/actions.js ***!
+  \****************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.initFiles = initFiles;
-exports.updateFile = updateFile;
-exports.deleteFile = deleteFile;
-exports.updateClassNames = updateClassNames;
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-var _chalk = __webpack_require__(2);
-
-var _chalk2 = _interopRequireDefault(_chalk);
-
-var _isEqual = __webpack_require__(26);
-
-var _isEqual2 = _interopRequireDefault(_isEqual);
-
-var _handleHTML = __webpack_require__(14);
-
-var _handleTemplates = __webpack_require__(7);
-
-var _handleKSS = __webpack_require__(15);
-
-var _utils = __webpack_require__(1);
-
-var utils = _interopRequireWildcard(_utils);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Recursively loop through initial watched files list from Gaze.
- *
- * @param {object} data - object containing directory and file paths
- * @param {object} store - memory store
- * @return {object} newStore - map object of entire data store
- */
-function initFiles(data, store, depth = 0) {
-  const type = Object.prototype.toString.call(data);
-  const huron = store.get('config');
-  let newStore = store;
-  let info;
-  let files;
-
-  switch (type) {
-    case '[object Object]':
-      files = Object.keys(data);
-      newStore = files.reduce((prevStore, file) => initFiles(data[file], prevStore, depth), newStore);
-      break;
-
-    case '[object Array]':
-      newStore = data.reduce((prevStore, file) => initFiles(file, prevStore, depth), newStore);
-      break;
-
-    case '[object String]':
-      info = _path2.default.parse(data);
-
-      // Only call update if data is a filepath and it's within the KSS source directory
-      if (info.ext && !data.includes(huron.get('classNames'))) {
-        newStore = updateFile(data, store);
-      }
-      break;
-
-    default:
-      break;
-  }
-
-  return newStore;
-}
-
-/**
- * Logic for updating and writing file information based on file type (extension)
- *
- * @param {string} filepath - path to updated file. usually passed in from Gaze
- * @param {object} store - memory store
- * @return {object} store - map object of map object of entire data store
- */
-/** @module cli/actions */
-
-// Imports
-function updateFile(filepath, store) {
-  const huron = store.get('config');
-  const file = _path2.default.parse(filepath);
-  let field;
-  let section;
-
-  if (filepath.includes(huron.get('sectionTemplate'))) {
-    return utils.writeSectionTemplate(filepath, store);
-  }
-
-  switch (file.ext) {
-    // Plain HTML template, external
-    case '.html':
-      section = utils.getSection(file.base, 'markup', store);
-
-      if (section) {
-        return (0, _handleHTML.updateHTML)(filepath, section, store);
-      } else if (file.dir.includes('prototypes') && file.name.includes('prototype-')) {
-        return (0, _handleHTML.updatePrototype)(filepath, store);
-      }
-
-      console.log(_chalk2.default.red(`Failed to write file: ${file.name}`));
-      break;
-
-    // Handlebars template, external
-    case huron.get('templates').extension:
-    case '.json':
-      field = '.json' === file.ext ? 'data' : 'markup';
-      section = utils.getSection(file.base, field, store);
-
-      if (section) {
-        return (0, _handleTemplates.updateTemplate)(filepath, section, store);
-      }
-
-      console.log( // eslint-disable-line no-console
-      _chalk2.default.red(`Could not find associated KSS section for ${filepath}`));
-      break;
-
-    // KSS documentation (default extension is `.css`)
-    // Will also output a template if markup is inline
-    // Note: inline markup does _not_ support handlebars currently
-    case huron.get('kssExtension'):
-      return (0, _handleKSS.updateKSS)(filepath, store);
-
-    // This should never happen if Gaze is working properly
-    default:
-      return store;
-  }
-
-  return store;
-}
-
-/**
- * Logic for deleting file information and files based on file type (extension)
- *
- * @param {string} filepath - path to updated file. usually passed in from Gaze
- * @param {object} store - memory store
- * @return {object} newStore - map object of map object of entire data store
- */
-function deleteFile(filepath, store) {
-  const huron = store.get('config');
-  const file = _path2.default.parse(filepath);
-  let field = '';
-  let section = null;
-  let newStore = store;
-
-  switch (file.ext) {
-    // Plain HTML template, external
-    case '.html':
-      section = utils.getSection(file.base, 'markup', store);
-
-      if (section) {
-        newStore = (0, _handleHTML.deleteHTML)(filepath, section, store);
-      } else if (file.dir.includes('prototypes') && file.name.includes('prototype-')) {
-        newStore = (0, _handleHTML.deletePrototype)(filepath, store);
-      }
-      break;
-
-    case huron.get('templates').extension:
-    case '.json':
-      field = '.json' === file.ext ? 'data' : 'markup';
-      section = utils.getSection(file.base, field, store);
-
-      if (section) {
-        newStore = (0, _handleTemplates.deleteTemplate)(filepath, section, store);
-      }
-      break;
-
-    case huron.get('kssExtension'):
-      section = utils.getSection(filepath, false, store);
-
-      if (section) {
-        newStore = (0, _handleKSS.deleteKSS)(filepath, section, store);
-      }
-      break;
-
-    default:
-      console.warn( // eslint-disable-line no-console
-      _chalk2.default.red(`Could not delete: ${file.name}`));
-      break;
-  }
-
-  return newStore;
-}
-
-/**
- * Logic for updating localized classnames from CSS modules
- *
- * @param {string} filepath - path to updated file. usually passed in from Gaze
- * @param {object} store - memory store
- *
- * @return void
- */
-function updateClassNames(filepath, store) {
-  const classNamesPath = store.getIn(['config', 'classNames']);
-
-  if (filepath.includes(classNamesPath)) {
-    const oldClassnames = store.get('classNames');
-    const newClassnames = utils.mergeClassnameJSON(classNamesPath);
-
-    if (!(0, _isEqual2.default)(oldClassnames, newClassnames)) {
-      return store.set('classNames', newClassnames);
-    }
-  }
-
-  return store;
-}
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.initFiles = initFiles;\nexports.updateFile = updateFile;\nexports.deleteFile = deleteFile;\nexports.updateClassNames = updateClassNames;\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nvar _chalk = __webpack_require__(/*! chalk */ 2);\n\nvar _chalk2 = _interopRequireDefault(_chalk);\n\nvar _isEqual = __webpack_require__(/*! lodash/isEqual */ 26);\n\nvar _isEqual2 = _interopRequireDefault(_isEqual);\n\nvar _handleHTML = __webpack_require__(/*! ./handleHTML */ 14);\n\nvar _handleTemplates = __webpack_require__(/*! ./handleTemplates */ 7);\n\nvar _handleKSS = __webpack_require__(/*! ./handleKSS */ 15);\n\nvar _utils = __webpack_require__(/*! ./utils */ 1);\n\nvar utils = _interopRequireWildcard(_utils);\n\nfunction _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n/**\n * Recursively loop through initial watched files list from Gaze.\n *\n * @param {object} data - object containing directory and file paths\n * @param {object} store - memory store\n * @return {object} newStore - map object of entire data store\n */\nfunction initFiles(data, store, depth = 0) {\n  const type = Object.prototype.toString.call(data);\n  const huron = store.get('config');\n  let newStore = store;\n  let info;\n  let files;\n\n  switch (type) {\n    case '[object Object]':\n      files = Object.keys(data);\n      newStore = files.reduce((prevStore, file) => initFiles(data[file], prevStore, depth), newStore);\n      break;\n\n    case '[object Array]':\n      newStore = data.reduce((prevStore, file) => initFiles(file, prevStore, depth), newStore);\n      break;\n\n    case '[object String]':\n      info = _path2.default.parse(data);\n\n      // Only call update if data is a filepath and it's within the KSS source directory\n      if (info.ext && !data.includes(huron.get('classNames'))) {\n        newStore = updateFile(data, store);\n      }\n      break;\n\n    default:\n      break;\n  }\n\n  return newStore;\n}\n\n/**\n * Logic for updating and writing file information based on file type (extension)\n *\n * @param {string} filepath - path to updated file. usually passed in from Gaze\n * @param {object} store - memory store\n * @return {object} store - map object of map object of entire data store\n */\n/** @module cli/actions */\n\n// Imports\nfunction updateFile(filepath, store) {\n  const huron = store.get('config');\n  const file = _path2.default.parse(filepath);\n  let field;\n  let section;\n\n  if (filepath.includes(huron.get('sectionTemplate'))) {\n    return utils.writeSectionTemplate(filepath, store);\n  }\n\n  switch (file.ext) {\n    // Plain HTML template, external\n    case '.html':\n      section = utils.getSection(file.base, 'markup', store);\n\n      if (section) {\n        return (0, _handleHTML.updateHTML)(filepath, section, store);\n      } else if (file.dir.includes('prototypes') && file.name.includes('prototype-')) {\n        return (0, _handleHTML.updatePrototype)(filepath, store);\n      }\n\n      console.log(_chalk2.default.red(`Failed to write file: ${file.name}`));\n      break;\n\n    // Handlebars template, external\n    case huron.get('templates').extension:\n    case '.json':\n      field = '.json' === file.ext ? 'data' : 'markup';\n      section = utils.getSection(file.base, field, store);\n\n      if (section) {\n        return (0, _handleTemplates.updateTemplate)(filepath, section, store);\n      }\n\n      console.log( // eslint-disable-line no-console\n      _chalk2.default.red(`Could not find associated KSS section for ${filepath}`));\n      break;\n\n    // KSS documentation (default extension is `.css`)\n    // Will also output a template if markup is inline\n    // Note: inline markup does _not_ support handlebars currently\n    case huron.get('kssExtension'):\n      return (0, _handleKSS.updateKSS)(filepath, store);\n\n    // This should never happen if Gaze is working properly\n    default:\n      return store;\n  }\n\n  return store;\n}\n\n/**\n * Logic for deleting file information and files based on file type (extension)\n *\n * @param {string} filepath - path to updated file. usually passed in from Gaze\n * @param {object} store - memory store\n * @return {object} newStore - map object of map object of entire data store\n */\nfunction deleteFile(filepath, store) {\n  const huron = store.get('config');\n  const file = _path2.default.parse(filepath);\n  let field = '';\n  let section = null;\n  let newStore = store;\n\n  switch (file.ext) {\n    // Plain HTML template, external\n    case '.html':\n      section = utils.getSection(file.base, 'markup', store);\n\n      if (section) {\n        newStore = (0, _handleHTML.deleteHTML)(filepath, section, store);\n      } else if (file.dir.includes('prototypes') && file.name.includes('prototype-')) {\n        newStore = (0, _handleHTML.deletePrototype)(filepath, store);\n      }\n      break;\n\n    case huron.get('templates').extension:\n    case '.json':\n      field = '.json' === file.ext ? 'data' : 'markup';\n      section = utils.getSection(file.base, field, store);\n\n      if (section) {\n        newStore = (0, _handleTemplates.deleteTemplate)(filepath, section, store);\n      }\n      break;\n\n    case huron.get('kssExtension'):\n      section = utils.getSection(filepath, false, store);\n\n      if (section) {\n        newStore = (0, _handleKSS.deleteKSS)(filepath, section, store);\n      }\n      break;\n\n    default:\n      console.warn( // eslint-disable-line no-console\n      _chalk2.default.red(`Could not delete: ${file.name}`));\n      break;\n  }\n\n  return newStore;\n}\n\n/**\n * Logic for updating localized classnames from CSS modules\n *\n * @param {string} filepath - path to updated file. usually passed in from Gaze\n * @param {object} store - memory store\n *\n * @return void\n */\nfunction updateClassNames(filepath, store) {\n  const classNamesPath = store.getIn(['config', 'classNames']);\n\n  if (filepath.includes(classNamesPath)) {\n    const oldClassnames = store.get('classNames');\n    const newClassnames = utils.mergeClassnameJSON(classNamesPath);\n\n    if (!(0, _isEqual2.default)(oldClassnames, newClassnames)) {\n      return store.set('classNames', newClassnames);\n    }\n  }\n\n  return store;\n}//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTEuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vc3JjL2NsaS9hY3Rpb25zLmpzPzVlNWEiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqIEBtb2R1bGUgY2xpL2FjdGlvbnMgKi9cblxuLy8gSW1wb3J0c1xuaW1wb3J0IHBhdGggZnJvbSAncGF0aCc7XG5pbXBvcnQgY2hhbGsgZnJvbSAnY2hhbGsnO1xuaW1wb3J0IGlzRXF1YWwgZnJvbSAnbG9kYXNoL2lzRXF1YWwnO1xuXG5pbXBvcnQge1xuICB1cGRhdGVIVE1MLFxuICBkZWxldGVIVE1MLFxuICB1cGRhdGVQcm90b3R5cGUsXG4gIGRlbGV0ZVByb3RvdHlwZSxcbn0gZnJvbSAnLi9oYW5kbGVIVE1MJztcbmltcG9ydCB7IHVwZGF0ZVRlbXBsYXRlLCBkZWxldGVUZW1wbGF0ZSB9IGZyb20gJy4vaGFuZGxlVGVtcGxhdGVzJztcbmltcG9ydCB7IHVwZGF0ZUtTUywgZGVsZXRlS1NTIH0gZnJvbSAnLi9oYW5kbGVLU1MnO1xuaW1wb3J0ICogYXMgdXRpbHMgZnJvbSAnLi91dGlscyc7XG5cbi8qKlxuICogUmVjdXJzaXZlbHkgbG9vcCB0aHJvdWdoIGluaXRpYWwgd2F0Y2hlZCBmaWxlcyBsaXN0IGZyb20gR2F6ZS5cbiAqXG4gKiBAcGFyYW0ge29iamVjdH0gZGF0YSAtIG9iamVjdCBjb250YWluaW5nIGRpcmVjdG9yeSBhbmQgZmlsZSBwYXRoc1xuICogQHBhcmFtIHtvYmplY3R9IHN0b3JlIC0gbWVtb3J5IHN0b3JlXG4gKiBAcmV0dXJuIHtvYmplY3R9IG5ld1N0b3JlIC0gbWFwIG9iamVjdCBvZiBlbnRpcmUgZGF0YSBzdG9yZVxuICovXG5leHBvcnQgZnVuY3Rpb24gaW5pdEZpbGVzKGRhdGEsIHN0b3JlLCBkZXB0aCA9IDApIHtcbiAgY29uc3QgdHlwZSA9IE9iamVjdC5wcm90b3R5cGUudG9TdHJpbmcuY2FsbChkYXRhKTtcbiAgY29uc3QgaHVyb24gPSBzdG9yZS5nZXQoJ2NvbmZpZycpO1xuICBsZXQgbmV3U3RvcmUgPSBzdG9yZTtcbiAgbGV0IGluZm87XG4gIGxldCBmaWxlcztcblxuICBzd2l0Y2ggKHR5cGUpIHtcbiAgICBjYXNlICdbb2JqZWN0IE9iamVjdF0nOlxuICAgICAgZmlsZXMgPSBPYmplY3Qua2V5cyhkYXRhKTtcbiAgICAgIG5ld1N0b3JlID0gZmlsZXMucmVkdWNlKFxuICAgICAgICAocHJldlN0b3JlLCBmaWxlKSA9PiBpbml0RmlsZXMoZGF0YVtmaWxlXSwgcHJldlN0b3JlLCBkZXB0aCksXG4gICAgICAgIG5ld1N0b3JlXG4gICAgICApO1xuICAgICAgYnJlYWs7XG5cbiAgICBjYXNlICdbb2JqZWN0IEFycmF5XSc6XG4gICAgICBuZXdTdG9yZSA9IGRhdGEucmVkdWNlKFxuICAgICAgICAocHJldlN0b3JlLCBmaWxlKSA9PiBpbml0RmlsZXMoZmlsZSwgcHJldlN0b3JlLCBkZXB0aCksXG4gICAgICAgIG5ld1N0b3JlXG4gICAgICApO1xuICAgICAgYnJlYWs7XG5cbiAgICBjYXNlICdbb2JqZWN0IFN0cmluZ10nOlxuICAgICAgaW5mbyA9IHBhdGgucGFyc2UoZGF0YSk7XG5cbiAgICAgIC8vIE9ubHkgY2FsbCB1cGRhdGUgaWYgZGF0YSBpcyBhIGZpbGVwYXRoIGFuZCBpdCdzIHdpdGhpbiB0aGUgS1NTIHNvdXJjZSBkaXJlY3RvcnlcbiAgICAgIGlmIChpbmZvLmV4dCAmJiAhZGF0YS5pbmNsdWRlcyhodXJvbi5nZXQoJ2NsYXNzTmFtZXMnKSkpIHtcbiAgICAgICAgbmV3U3RvcmUgPSB1cGRhdGVGaWxlKGRhdGEsIHN0b3JlKTtcbiAgICAgIH1cbiAgICAgIGJyZWFrO1xuXG4gICAgZGVmYXVsdDpcbiAgICAgIGJyZWFrO1xuICB9XG5cbiAgcmV0dXJuIG5ld1N0b3JlO1xufVxuXG4vKipcbiAqIExvZ2ljIGZvciB1cGRhdGluZyBhbmQgd3JpdGluZyBmaWxlIGluZm9ybWF0aW9uIGJhc2VkIG9uIGZpbGUgdHlwZSAoZXh0ZW5zaW9uKVxuICpcbiAqIEBwYXJhbSB7c3RyaW5nfSBmaWxlcGF0aCAtIHBhdGggdG8gdXBkYXRlZCBmaWxlLiB1c3VhbGx5IHBhc3NlZCBpbiBmcm9tIEdhemVcbiAqIEBwYXJhbSB7b2JqZWN0fSBzdG9yZSAtIG1lbW9yeSBzdG9yZVxuICogQHJldHVybiB7b2JqZWN0fSBzdG9yZSAtIG1hcCBvYmplY3Qgb2YgbWFwIG9iamVjdCBvZiBlbnRpcmUgZGF0YSBzdG9yZVxuICovXG5leHBvcnQgZnVuY3Rpb24gdXBkYXRlRmlsZShmaWxlcGF0aCwgc3RvcmUpIHtcbiAgY29uc3QgaHVyb24gPSBzdG9yZS5nZXQoJ2NvbmZpZycpO1xuICBjb25zdCBmaWxlID0gcGF0aC5wYXJzZShmaWxlcGF0aCk7XG4gIGxldCBmaWVsZDtcbiAgbGV0IHNlY3Rpb247XG5cbiAgaWYgKGZpbGVwYXRoLmluY2x1ZGVzKGh1cm9uLmdldCgnc2VjdGlvblRlbXBsYXRlJykpKSB7XG4gICAgcmV0dXJuIHV0aWxzLndyaXRlU2VjdGlvblRlbXBsYXRlKGZpbGVwYXRoLCBzdG9yZSk7XG4gIH1cblxuICBzd2l0Y2ggKGZpbGUuZXh0KSB7XG4gICAgLy8gUGxhaW4gSFRNTCB0ZW1wbGF0ZSwgZXh0ZXJuYWxcbiAgICBjYXNlICcuaHRtbCc6XG4gICAgICBzZWN0aW9uID0gdXRpbHMuZ2V0U2VjdGlvbihmaWxlLmJhc2UsICdtYXJrdXAnLCBzdG9yZSk7XG5cbiAgICAgIGlmIChzZWN0aW9uKSB7XG4gICAgICAgIHJldHVybiB1cGRhdGVIVE1MKGZpbGVwYXRoLCBzZWN0aW9uLCBzdG9yZSk7XG4gICAgICB9IGVsc2UgaWYgKFxuICAgICAgICBmaWxlLmRpci5pbmNsdWRlcygncHJvdG90eXBlcycpICYmXG4gICAgICAgIGZpbGUubmFtZS5pbmNsdWRlcygncHJvdG90eXBlLScpXG4gICAgICApIHtcbiAgICAgICAgcmV0dXJuIHVwZGF0ZVByb3RvdHlwZShmaWxlcGF0aCwgc3RvcmUpO1xuICAgICAgfVxuXG4gICAgICBjb25zb2xlLmxvZyhjaGFsay5yZWQoYEZhaWxlZCB0byB3cml0ZSBmaWxlOiAke2ZpbGUubmFtZX1gKSk7XG4gICAgICBicmVhaztcblxuICAgIC8vIEhhbmRsZWJhcnMgdGVtcGxhdGUsIGV4dGVybmFsXG4gICAgY2FzZSBodXJvbi5nZXQoJ3RlbXBsYXRlcycpLmV4dGVuc2lvbjpcbiAgICBjYXNlICcuanNvbic6XG4gICAgICBmaWVsZCA9ICgnLmpzb24nID09PSBmaWxlLmV4dCkgPyAnZGF0YScgOiAnbWFya3VwJztcbiAgICAgIHNlY3Rpb24gPSB1dGlscy5nZXRTZWN0aW9uKGZpbGUuYmFzZSwgZmllbGQsIHN0b3JlKTtcblxuICAgICAgaWYgKHNlY3Rpb24pIHtcbiAgICAgICAgcmV0dXJuIHVwZGF0ZVRlbXBsYXRlKGZpbGVwYXRoLCBzZWN0aW9uLCBzdG9yZSk7XG4gICAgICB9XG5cbiAgICAgIGNvbnNvbGUubG9nKCAvLyBlc2xpbnQtZGlzYWJsZS1saW5lIG5vLWNvbnNvbGVcbiAgICAgICAgY2hhbGsucmVkKGBDb3VsZCBub3QgZmluZCBhc3NvY2lhdGVkIEtTUyBzZWN0aW9uIGZvciAke2ZpbGVwYXRofWApXG4gICAgICApO1xuICAgICAgYnJlYWs7XG5cbiAgICAvLyBLU1MgZG9jdW1lbnRhdGlvbiAoZGVmYXVsdCBleHRlbnNpb24gaXMgYC5jc3NgKVxuICAgIC8vIFdpbGwgYWxzbyBvdXRwdXQgYSB0ZW1wbGF0ZSBpZiBtYXJrdXAgaXMgaW5saW5lXG4gICAgLy8gTm90ZTogaW5saW5lIG1hcmt1cCBkb2VzIF9ub3RfIHN1cHBvcnQgaGFuZGxlYmFycyBjdXJyZW50bHlcbiAgICBjYXNlIGh1cm9uLmdldCgna3NzRXh0ZW5zaW9uJyk6XG4gICAgICByZXR1cm4gdXBkYXRlS1NTKGZpbGVwYXRoLCBzdG9yZSk7XG5cbiAgICAvLyBUaGlzIHNob3VsZCBuZXZlciBoYXBwZW4gaWYgR2F6ZSBpcyB3b3JraW5nIHByb3Blcmx5XG4gICAgZGVmYXVsdDpcbiAgICAgIHJldHVybiBzdG9yZTtcbiAgfVxuXG4gIHJldHVybiBzdG9yZTtcbn1cblxuLyoqXG4gKiBMb2dpYyBmb3IgZGVsZXRpbmcgZmlsZSBpbmZvcm1hdGlvbiBhbmQgZmlsZXMgYmFzZWQgb24gZmlsZSB0eXBlIChleHRlbnNpb24pXG4gKlxuICogQHBhcmFtIHtzdHJpbmd9IGZpbGVwYXRoIC0gcGF0aCB0byB1cGRhdGVkIGZpbGUuIHVzdWFsbHkgcGFzc2VkIGluIGZyb20gR2F6ZVxuICogQHBhcmFtIHtvYmplY3R9IHN0b3JlIC0gbWVtb3J5IHN0b3JlXG4gKiBAcmV0dXJuIHtvYmplY3R9IG5ld1N0b3JlIC0gbWFwIG9iamVjdCBvZiBtYXAgb2JqZWN0IG9mIGVudGlyZSBkYXRhIHN0b3JlXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBkZWxldGVGaWxlKGZpbGVwYXRoLCBzdG9yZSkge1xuICBjb25zdCBodXJvbiA9IHN0b3JlLmdldCgnY29uZmlnJyk7XG4gIGNvbnN0IGZpbGUgPSBwYXRoLnBhcnNlKGZpbGVwYXRoKTtcbiAgbGV0IGZpZWxkID0gJyc7XG4gIGxldCBzZWN0aW9uID0gbnVsbDtcbiAgbGV0IG5ld1N0b3JlID0gc3RvcmU7XG5cbiAgc3dpdGNoIChmaWxlLmV4dCkge1xuICAgIC8vIFBsYWluIEhUTUwgdGVtcGxhdGUsIGV4dGVybmFsXG4gICAgY2FzZSAnLmh0bWwnOlxuICAgICAgc2VjdGlvbiA9IHV0aWxzLmdldFNlY3Rpb24oZmlsZS5iYXNlLCAnbWFya3VwJywgc3RvcmUpO1xuXG4gICAgICBpZiAoc2VjdGlvbikge1xuICAgICAgICBuZXdTdG9yZSA9IGRlbGV0ZUhUTUwoZmlsZXBhdGgsIHNlY3Rpb24sIHN0b3JlKTtcbiAgICAgIH0gZWxzZSBpZiAoXG4gICAgICAgIGZpbGUuZGlyLmluY2x1ZGVzKCdwcm90b3R5cGVzJykgJiZcbiAgICAgICAgZmlsZS5uYW1lLmluY2x1ZGVzKCdwcm90b3R5cGUtJylcbiAgICAgICkge1xuICAgICAgICBuZXdTdG9yZSA9IGRlbGV0ZVByb3RvdHlwZShmaWxlcGF0aCwgc3RvcmUpO1xuICAgICAgfVxuICAgICAgYnJlYWs7XG5cbiAgICBjYXNlIGh1cm9uLmdldCgndGVtcGxhdGVzJykuZXh0ZW5zaW9uOlxuICAgIGNhc2UgJy5qc29uJzpcbiAgICAgIGZpZWxkID0gKCcuanNvbicgPT09IGZpbGUuZXh0KSA/ICdkYXRhJyA6ICdtYXJrdXAnO1xuICAgICAgc2VjdGlvbiA9IHV0aWxzLmdldFNlY3Rpb24oZmlsZS5iYXNlLCBmaWVsZCwgc3RvcmUpO1xuXG4gICAgICBpZiAoc2VjdGlvbikge1xuICAgICAgICBuZXdTdG9yZSA9IGRlbGV0ZVRlbXBsYXRlKGZpbGVwYXRoLCBzZWN0aW9uLCBzdG9yZSk7XG4gICAgICB9XG4gICAgICBicmVhaztcblxuICAgIGNhc2UgaHVyb24uZ2V0KCdrc3NFeHRlbnNpb24nKTpcbiAgICAgIHNlY3Rpb24gPSB1dGlscy5nZXRTZWN0aW9uKGZpbGVwYXRoLCBmYWxzZSwgc3RvcmUpO1xuXG4gICAgICBpZiAoc2VjdGlvbikge1xuICAgICAgICBuZXdTdG9yZSA9IGRlbGV0ZUtTUyhmaWxlcGF0aCwgc2VjdGlvbiwgc3RvcmUpO1xuICAgICAgfVxuICAgICAgYnJlYWs7XG5cbiAgICBkZWZhdWx0OlxuICAgICAgY29uc29sZS53YXJuKCAgLy8gZXNsaW50LWRpc2FibGUtbGluZSBuby1jb25zb2xlXG4gICAgICAgIGNoYWxrLnJlZChgQ291bGQgbm90IGRlbGV0ZTogJHtmaWxlLm5hbWV9YClcbiAgICAgICk7XG4gICAgICBicmVhaztcbiAgfVxuXG4gIHJldHVybiBuZXdTdG9yZTtcbn1cblxuLyoqXG4gKiBMb2dpYyBmb3IgdXBkYXRpbmcgbG9jYWxpemVkIGNsYXNzbmFtZXMgZnJvbSBDU1MgbW9kdWxlc1xuICpcbiAqIEBwYXJhbSB7c3RyaW5nfSBmaWxlcGF0aCAtIHBhdGggdG8gdXBkYXRlZCBmaWxlLiB1c3VhbGx5IHBhc3NlZCBpbiBmcm9tIEdhemVcbiAqIEBwYXJhbSB7b2JqZWN0fSBzdG9yZSAtIG1lbW9yeSBzdG9yZVxuICpcbiAqIEByZXR1cm4gdm9pZFxuICovXG5leHBvcnQgZnVuY3Rpb24gdXBkYXRlQ2xhc3NOYW1lcyhmaWxlcGF0aCwgc3RvcmUpIHtcbiAgY29uc3QgY2xhc3NOYW1lc1BhdGggPSBzdG9yZS5nZXRJbihbJ2NvbmZpZycsICdjbGFzc05hbWVzJ10pO1xuXG4gIGlmIChmaWxlcGF0aC5pbmNsdWRlcyhjbGFzc05hbWVzUGF0aCkpIHtcbiAgICBjb25zdCBvbGRDbGFzc25hbWVzID0gc3RvcmUuZ2V0KCdjbGFzc05hbWVzJyk7XG4gICAgY29uc3QgbmV3Q2xhc3NuYW1lcyA9IHV0aWxzLm1lcmdlQ2xhc3NuYW1lSlNPTihjbGFzc05hbWVzUGF0aCk7XG5cbiAgICBpZiAoIWlzRXF1YWwob2xkQ2xhc3NuYW1lcywgbmV3Q2xhc3NuYW1lcykpIHtcbiAgICAgIHJldHVybiBzdG9yZS5zZXQoJ2NsYXNzTmFtZXMnLCBuZXdDbGFzc25hbWVzKTtcbiAgICB9XG4gIH1cblxuICByZXR1cm4gc3RvcmU7XG59XG5cblxuXG4vLyBXRUJQQUNLIEZPT1RFUiAvL1xuLy8gc3JjL2NsaS9hY3Rpb25zLmpzIl0sIm1hcHBpbmdzIjoiOzs7OztBQXdCQTtBQThDQTtBQStEQTtBQTBEQTtBQUNBO0FBN0xBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUNBO0FBQ0E7QUFLQTtBQUNBO0FBQUE7QUFDQTtBQUFBO0FBQ0E7QUFEQTtBQUNBOzs7OztBQUNBOzs7Ozs7O0FBT0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUlBO0FBQ0E7QUFDQTtBQUNBO0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUExQkE7QUFDQTtBQTRCQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7OztBQS9EQTtBQUNBO0FBQ0E7QUFvRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQXhDQTtBQUNBO0FBMENBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7O0FBT0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQXJDQTtBQUNBO0FBdUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7OztBQVFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EiLCJzb3VyY2VSb290IjoiIn0=");
 
 /***/ }),
 /* 12 */
+/* no static exports found */
+/* all exports used */
+/*!********************************!*\
+  !*** ./src/cli/fileWatcher.js ***!
+  \********************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.watchedFiles = exports.extensions = undefined;
-
-var _gaze = __webpack_require__(22);
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-var _utils = __webpack_require__(1);
-
-var _defaultStore = __webpack_require__(6);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Huron configuration object
- *
- * @global
- */
-const huron = _defaultStore.defaultStore.get('config');
-
-/**
- * Available file extensions. Extensions should not include the leading '.'
- *
- * @global
- */
-const extensions = exports.extensions = [huron.get('kssExtension'), huron.get('templates').extension, 'html', 'json'].map(extension => extension.replace('.', ''));
-
-// Generate watch list for Gaze, start gaze
-const watchedFiles = exports.watchedFiles = [];
-
-// Watch section template
-watchedFiles.push(_path2.default.resolve(huron.get('sectionTemplate')));
-
-// Watch cssmodules classname files (if they exist)
-if (huron.get('classNames')) {
-  watchedFiles.push(`${_path2.default.resolve(huron.get('classNames'))}/*.json`);
-}
-
-// Watch all provided kss directories
-huron.get('kss').forEach(dir => {
-  watchedFiles.push(`${(0, _utils.removeTrailingSlash)(dir)}/**/*.+(${extensions.join('|')})`);
-});
-
-/**
- * Gaze instance for watching all files, including KSS, html, hbs/template, and JSON
- *
- * @global
- */
-const gaze = new _gaze.Gaze(watchedFiles);
-
-exports.default = gaze;
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.watchedFiles = exports.extensions = undefined;\n\nvar _gaze = __webpack_require__(/*! gaze */ 22);\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nvar _utils = __webpack_require__(/*! ./utils */ 1);\n\nvar _defaultStore = __webpack_require__(/*! ./defaultStore */ 6);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n/**\n * Huron configuration object\n *\n * @global\n */\nconst huron = _defaultStore.defaultStore.get('config');\n\n/**\n * Available file extensions. Extensions should not include the leading '.'\n *\n * @global\n */\nconst extensions = exports.extensions = [huron.get('kssExtension'), huron.get('templates').extension, 'html', 'json'].map(extension => extension.replace('.', ''));\n\n// Generate watch list for Gaze, start gaze\nconst watchedFiles = exports.watchedFiles = [];\n\n// Watch section template\nwatchedFiles.push(_path2.default.resolve(huron.get('sectionTemplate')));\n\n// Watch cssmodules classname files (if they exist)\nif (huron.get('classNames')) {\n  watchedFiles.push(`${_path2.default.resolve(huron.get('classNames'))}/*.json`);\n}\n\n// Watch all provided kss directories\nhuron.get('kss').forEach(dir => {\n  watchedFiles.push(`${(0, _utils.removeTrailingSlash)(dir)}/**/*.+(${extensions.join('|')})`);\n});\n\n/**\n * Gaze instance for watching all files, including KSS, html, hbs/template, and JSON\n *\n * @global\n */\nconst gaze = new _gaze.Gaze(watchedFiles);\n\nexports.default = gaze;//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTIuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vc3JjL2NsaS9maWxlV2F0Y2hlci5qcz80ZGI4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IEdhemUgfSBmcm9tICdnYXplJztcbmltcG9ydCBwYXRoIGZyb20gJ3BhdGgnO1xuXG5pbXBvcnQgeyByZW1vdmVUcmFpbGluZ1NsYXNoIH0gZnJvbSAnLi91dGlscyc7XG5pbXBvcnQgeyBkZWZhdWx0U3RvcmUgfSBmcm9tICcuL2RlZmF1bHRTdG9yZSc7XG5cbi8qKlxuICogSHVyb24gY29uZmlndXJhdGlvbiBvYmplY3RcbiAqXG4gKiBAZ2xvYmFsXG4gKi9cbmNvbnN0IGh1cm9uID0gZGVmYXVsdFN0b3JlLmdldCgnY29uZmlnJyk7XG5cbi8qKlxuICogQXZhaWxhYmxlIGZpbGUgZXh0ZW5zaW9ucy4gRXh0ZW5zaW9ucyBzaG91bGQgbm90IGluY2x1ZGUgdGhlIGxlYWRpbmcgJy4nXG4gKlxuICogQGdsb2JhbFxuICovXG5leHBvcnQgY29uc3QgZXh0ZW5zaW9ucyA9IFtcbiAgaHVyb24uZ2V0KCdrc3NFeHRlbnNpb24nKSxcbiAgaHVyb24uZ2V0KCd0ZW1wbGF0ZXMnKS5leHRlbnNpb24sXG4gICdodG1sJyxcbiAgJ2pzb24nLFxuXS5tYXAoKGV4dGVuc2lvbikgPT4gZXh0ZW5zaW9uLnJlcGxhY2UoJy4nLCAnJykpO1xuXG4vLyBHZW5lcmF0ZSB3YXRjaCBsaXN0IGZvciBHYXplLCBzdGFydCBnYXplXG5leHBvcnQgY29uc3Qgd2F0Y2hlZEZpbGVzID0gW107XG5cbi8vIFdhdGNoIHNlY3Rpb24gdGVtcGxhdGVcbndhdGNoZWRGaWxlcy5wdXNoKHBhdGgucmVzb2x2ZShodXJvbi5nZXQoJ3NlY3Rpb25UZW1wbGF0ZScpKSk7XG5cbi8vIFdhdGNoIGNzc21vZHVsZXMgY2xhc3NuYW1lIGZpbGVzIChpZiB0aGV5IGV4aXN0KVxuaWYgKGh1cm9uLmdldCgnY2xhc3NOYW1lcycpKSB7XG4gIHdhdGNoZWRGaWxlcy5wdXNoKFxuICAgIGAke3BhdGgucmVzb2x2ZShodXJvbi5nZXQoJ2NsYXNzTmFtZXMnKSl9LyouanNvbmBcbiAgKTtcbn1cblxuLy8gV2F0Y2ggYWxsIHByb3ZpZGVkIGtzcyBkaXJlY3Rvcmllc1xuaHVyb24uZ2V0KCdrc3MnKS5mb3JFYWNoKChkaXIpID0+IHtcbiAgd2F0Y2hlZEZpbGVzLnB1c2goXG4gICAgYCR7cmVtb3ZlVHJhaWxpbmdTbGFzaChkaXIpfS8qKi8qLisoJHtleHRlbnNpb25zLmpvaW4oJ3wnKX0pYFxuICApO1xufSk7XG5cbi8qKlxuICogR2F6ZSBpbnN0YW5jZSBmb3Igd2F0Y2hpbmcgYWxsIGZpbGVzLCBpbmNsdWRpbmcgS1NTLCBodG1sLCBoYnMvdGVtcGxhdGUsIGFuZCBKU09OXG4gKlxuICogQGdsb2JhbFxuICovXG5jb25zdCBnYXplID0gbmV3IEdhemUod2F0Y2hlZEZpbGVzKTtcblxuZXhwb3J0IGRlZmF1bHQgZ2F6ZTtcblxuXG5cbi8vIFdFQlBBQ0sgRk9PVEVSIC8vXG4vLyBzcmMvY2xpL2ZpbGVXYXRjaGVyLmpzIl0sIm1hcHBpbmdzIjoiOzs7Ozs7O0FBQUE7QUFDQTtBQUFBO0FBQ0E7OztBQUNBO0FBQ0E7QUFBQTtBQUNBOzs7QUFDQTs7Ozs7QUFLQTtBQUNBO0FBQ0E7Ozs7O0FBS0E7QUFDQTtBQU1BO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUdBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFHQTtBQUNBO0FBQ0E7Ozs7O0FBS0E7QUFDQTtBQUNBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 13 */
+/* no static exports found */
+/* all exports used */
+/*!***********************************!*\
+  !*** ./src/cli/generateConfig.js ***!
+  \***********************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = generateConfig;
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-var _url = __webpack_require__(28);
-
-var _url2 = _interopRequireDefault(_url);
-
-var _fsExtra = __webpack_require__(3);
-
-var _fsExtra2 = _interopRequireDefault(_fsExtra);
-
-var _webpack = __webpack_require__(5);
-
-var _webpack2 = _interopRequireDefault(_webpack);
-
-var _htmlWebpackPlugin = __webpack_require__(23);
-
-var _htmlWebpackPlugin2 = _interopRequireDefault(_htmlWebpackPlugin);
-
-var _parseArgs = __webpack_require__(4);
-
-var _parseArgs2 = _interopRequireDefault(_parseArgs);
-
-var _requireExternal = __webpack_require__(16);
-
-var _requireExternal2 = _interopRequireDefault(_requireExternal);
-
-var _webpack3 = __webpack_require__(19);
-
-var _webpack4 = _interopRequireDefault(_webpack3);
-
-var _huron = __webpack_require__(18);
-
-var _huron2 = _interopRequireDefault(_huron);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-const cwd = process.cwd();
-
-// Require configs passed in by user from CLI
-/** @module cli/generate-config */
-let defaultConfig = false;
-const localConfig = (0, _requireExternal2.default)(_path2.default.resolve(_parseArgs2.default.webpackConfig));
-const localHuron = (0, _requireExternal2.default)(_path2.default.resolve(_parseArgs2.default.huronConfig));
-
-/**
- * Generate a mutant hybrid of the huron default webpack config and your local webpack config
- *
- * @function generateConfig
- * @param {object} config - local webpack config
- * @return {object} newConfig - updated data store
- */
-function generateConfig() {
-  let newConfig = localConfig;
-  let newHuron = localHuron;
-
-  // Execute config function, if provided
-  if ('function' === typeof newConfig) {
-    newConfig = newConfig(_parseArgs2.default.env);
-  }
-
-  // Execute huron config function, if provided
-  if ('function' === typeof newHuron) {
-    newHuron = newHuron(_parseArgs2.default.env);
-  }
-
-  // Merge huron defaults with user settings
-  newHuron = Object.assign({}, _huron2.default, newHuron);
-  // Use user huron config to modify webpack defaults
-  defaultConfig = (0, _webpack4.default)(newHuron);
-
-  // Set ouput options
-  newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);
-  newConfig.output.path = defaultConfig.output.path;
-  newConfig.output.publicPath = defaultConfig.output.publicPath;
-
-  // configure entries
-  newConfig = configureEntries(newHuron, newConfig);
-
-  // configure plugins
-  newConfig = configurePlugins(newHuron, newConfig);
-
-  // configure loaders
-  newConfig = configureLoaders(newHuron, newConfig);
-
-  // Add HTMLWebpackPlugin for each configured prototype
-  newConfig = configurePrototypes(newHuron, newConfig);
-
-  // Remove existing devServer settings
-  delete newConfig.devServer;
-
-  return {
-    huron: newHuron,
-    webpack: newConfig
-  };
-}
-
-/**
- * Configure and manage webpack entry points
- *
- * @param {object} huron - huron configuration object
- * @param {object} config - webpack configuration object
- * @return {object} newConfig - updated data store
- */
-function configureEntries(huron, config) {
-  const entry = config.entry[huron.entry];
-  const newConfig = config;
-
-  newConfig.entry = {};
-  if (!_parseArgs2.default.production) {
-    newConfig.entry[huron.entry] = [`webpack-dev-server/client?http://localhost:${huron.port}`, 'webpack/hot/dev-server', _path2.default.join(cwd, huron.root, 'huron-assets/index')].concat(entry);
-  } else {
-    newConfig.entry[huron.entry] = [_path2.default.join(cwd, huron.root, 'huron-assets/index')].concat(entry);
-  }
-
-  return newConfig;
-}
-
-/**
- * Configure and manage webpack plugins
- *
- * @param {object} huron - huron configuration object
- * @param {object} config - webpack configuration object
- * @return {object} newConfig - updated data store
- */
-function configurePlugins(huron, config) {
-  const newConfig = config;
-
-  newConfig.plugins = config.plugins || [];
-
-  if (!_parseArgs2.default.production) {
-    if (newConfig.plugins && newConfig.plugins.length) {
-      newConfig.plugins = newConfig.plugins.filter(plugin => 'HotModuleReplacementPlugin' !== plugin.constructor.name && 'NamedModulesPlugin' !== plugin.constructor.name);
-    }
-    newConfig.plugins = newConfig.plugins.concat([new _webpack2.default.HotModuleReplacementPlugin(), new _webpack2.default.NamedModulesPlugin()]);
-  }
-
-  return newConfig;
-}
-
-/**
- * Configure and manage webpack loaders
- *
- * @param {object} huron - huron configuration object
- * @param {object} config - webpack configuration object
- * @return {object} newConfig - updated data store
- */
-function configureLoaders(huron, config) {
-  // Manage loaders
-  const templatesLoader = huron.templates.rule || {};
-  const newConfig = config;
-
-  // Make sure we're only using templates loader for files in huron root
-  templatesLoader.include = [_path2.default.join(cwd, huron.root, huron.output)];
-
-  // Normalize module and module.rules
-  newConfig.module = newConfig.module || {};
-  newConfig.module.rules = newConfig.module.rules || newConfig.module.loaders || [];
-
-  // Add default loaders
-  newConfig.module.rules = defaultConfig.module.rules.concat(newConfig.module.rules, templatesLoader);
-
-  return newConfig;
-}
-
-/**
- * Create an HTML webpack plugin for each configured prototype
- *
- * @param {object} huron - huron configuration object
- * @param {object} config - webpack configuration object
- * @return {object} newConfig - updated data store
- */
-function configurePrototypes(huron, config) {
-  const wrapperTemplate = _fsExtra2.default.readFileSync(_path2.default.join(__dirname, '../../templates/prototypeTemplate.hbs'), 'utf8');
-
-  const defaultHTMLPluginOptions = {
-    title: 'Huron',
-    window: huron.window,
-    js: [],
-    css: [],
-    filename: 'index.html',
-    template: _path2.default.join(cwd, huron.root, 'huron-assets/prototypeTemplate.hbs'),
-    inject: false,
-    chunks: [huron.entry]
-  };
-  const newConfig = config;
-
-  // Write prototype template file for HTML webpack plugin
-  _fsExtra2.default.outputFileSync(_path2.default.join(cwd, huron.root, 'huron-assets/prototypeTemplate.hbs'), wrapperTemplate);
-
-  huron.prototypes.forEach(prototype => {
-    const newPrototype = prototype;
-    let opts = {};
-
-    // Merge configured settings with default settings
-    if ('string' === typeof prototype) {
-      opts = Object.assign({}, defaultHTMLPluginOptions, {
-        title: prototype,
-        filename: `${prototype}.html`
-      });
-    } else if ('object' === typeof prototype && {}.hasOwnProperty.call(prototype, 'title')) {
-      // Create filename based on configured title if not provided
-      if (!prototype.filename) {
-        newPrototype.filename = `${prototype.title}.html`;
-      }
-
-      // Move css assets for this prototype,
-      // reset css option with new file paths
-      if (prototype.css) {
-        newPrototype.css = moveAdditionalAssets(prototype.css, 'css', huron);
-      }
-
-      // Move js assets for this prototype,
-      // reset js option with new file paths
-      if (prototype.js) {
-        newPrototype.js = moveAdditionalAssets(prototype.js, 'js', huron);
-      }
-
-      opts = Object.assign({}, defaultHTMLPluginOptions, newPrototype);
-    }
-
-    // Move global css assets,
-    // reset css option with new file paths
-    if (huron.css.length) {
-      opts.css = opts.css.concat(moveAdditionalAssets(huron.css, 'css', huron));
-    }
-
-    // Move global js assets,
-    // reset js option with new file paths
-    if (huron.js.length) {
-      opts.js = opts.js.concat(moveAdditionalAssets(huron.js, 'js', huron));
-    }
-
-    // Push a new plugin for each configured prototype
-    if (Object.keys(opts).length) {
-      newConfig.plugins.push(new _htmlWebpackPlugin2.default(opts));
-    }
-  });
-
-  return newConfig;
-}
-
-/**
- * Move relative (and local) js and css assets provided in huron options
- *
- * @param {array|string} assets - array of assets or single asset
- * @param {string} subdir - subdirectory in huron root from which to load additional asset
- * @param {object} huron - huron configuration object
- * @return {array} assetResults - paths to js and css assets
- */
-function moveAdditionalAssets(assets, subdir = '', huron) {
-  const currentAssets = [].concat(assets);
-  const assetResults = [];
-
-  currentAssets.forEach(asset => {
-    const assetInfo = _path2.default.parse(asset);
-    const assetURL = _url2.default.parse(asset);
-    const sourcePath = _path2.default.join(cwd, asset);
-    const outputPath = _path2.default.resolve(cwd, huron.root, subdir, assetInfo.base);
-    const loadPath = _parseArgs2.default.production ? _path2.default.join(subdir, assetInfo.base) : _path2.default.join('/', subdir, assetInfo.base); // Use absolute path in development
-    let contents = false;
-
-    if (!_path2.default.isAbsolute(asset) && !assetURL.protocol) {
-      try {
-        contents = _fsExtra2.default.readFileSync(sourcePath);
-      } catch (e) {
-        console.warn(`could not read ${sourcePath}`);
-      }
-
-      if (contents) {
-        _fsExtra2.default.outputFileSync(outputPath, contents);
-        assetResults.push(loadPath);
-      }
-    } else {
-      assetResults.push(asset);
-    }
-  });
-
-  return assetResults;
-}
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.default = generateConfig;\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nvar _url = __webpack_require__(/*! url */ 28);\n\nvar _url2 = _interopRequireDefault(_url);\n\nvar _fsExtra = __webpack_require__(/*! fs-extra */ 3);\n\nvar _fsExtra2 = _interopRequireDefault(_fsExtra);\n\nvar _webpack = __webpack_require__(/*! webpack */ 5);\n\nvar _webpack2 = _interopRequireDefault(_webpack);\n\nvar _htmlWebpackPlugin = __webpack_require__(/*! html-webpack-plugin */ 23);\n\nvar _htmlWebpackPlugin2 = _interopRequireDefault(_htmlWebpackPlugin);\n\nvar _parseArgs = __webpack_require__(/*! ./parseArgs */ 4);\n\nvar _parseArgs2 = _interopRequireDefault(_parseArgs);\n\nvar _requireExternal = __webpack_require__(/*! ./requireExternal */ 16);\n\nvar _requireExternal2 = _interopRequireDefault(_requireExternal);\n\nvar _webpack3 = __webpack_require__(/*! ../defaultConfig/webpack.config */ 19);\n\nvar _webpack4 = _interopRequireDefault(_webpack3);\n\nvar _huron = __webpack_require__(/*! ../defaultConfig/huron.config */ 18);\n\nvar _huron2 = _interopRequireDefault(_huron);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nconst cwd = process.cwd();\n\n// Require configs passed in by user from CLI\n/** @module cli/generate-config */\nlet defaultConfig = false;\nconst localConfig = (0, _requireExternal2.default)(_path2.default.resolve(_parseArgs2.default.webpackConfig));\nconst localHuron = (0, _requireExternal2.default)(_path2.default.resolve(_parseArgs2.default.huronConfig));\n\n/**\n * Generate a mutant hybrid of the huron default webpack config and your local webpack config\n *\n * @function generateConfig\n * @param {object} config - local webpack config\n * @return {object} newConfig - updated data store\n */\nfunction generateConfig() {\n  let newConfig = localConfig;\n  let newHuron = localHuron;\n\n  // Execute config function, if provided\n  if ('function' === typeof newConfig) {\n    newConfig = newConfig(_parseArgs2.default.env);\n  }\n\n  // Execute huron config function, if provided\n  if ('function' === typeof newHuron) {\n    newHuron = newHuron(_parseArgs2.default.env);\n  }\n\n  // Merge huron defaults with user settings\n  newHuron = Object.assign({}, _huron2.default, newHuron);\n  // Use user huron config to modify webpack defaults\n  defaultConfig = (0, _webpack4.default)(newHuron);\n\n  // Set ouput options\n  newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);\n  newConfig.output.path = defaultConfig.output.path;\n  newConfig.output.publicPath = defaultConfig.output.publicPath;\n\n  // configure entries\n  newConfig = configureEntries(newHuron, newConfig);\n\n  // configure plugins\n  newConfig = configurePlugins(newHuron, newConfig);\n\n  // configure loaders\n  newConfig = configureLoaders(newHuron, newConfig);\n\n  // Add HTMLWebpackPlugin for each configured prototype\n  newConfig = configurePrototypes(newHuron, newConfig);\n\n  // Remove existing devServer settings\n  delete newConfig.devServer;\n\n  return {\n    huron: newHuron,\n    webpack: newConfig\n  };\n}\n\n/**\n * Configure and manage webpack entry points\n *\n * @param {object} huron - huron configuration object\n * @param {object} config - webpack configuration object\n * @return {object} newConfig - updated data store\n */\nfunction configureEntries(huron, config) {\n  const entry = config.entry[huron.entry];\n  const newConfig = config;\n\n  newConfig.entry = {};\n  if (!_parseArgs2.default.production) {\n    newConfig.entry[huron.entry] = [`webpack-dev-server/client?http://localhost:${huron.port}`, 'webpack/hot/dev-server', _path2.default.join(cwd, huron.root, 'huron-assets/index')].concat(entry);\n  } else {\n    newConfig.entry[huron.entry] = [_path2.default.join(cwd, huron.root, 'huron-assets/index')].concat(entry);\n  }\n\n  return newConfig;\n}\n\n/**\n * Configure and manage webpack plugins\n *\n * @param {object} huron - huron configuration object\n * @param {object} config - webpack configuration object\n * @return {object} newConfig - updated data store\n */\nfunction configurePlugins(huron, config) {\n  const newConfig = config;\n\n  newConfig.plugins = config.plugins || [];\n\n  if (!_parseArgs2.default.production) {\n    if (newConfig.plugins && newConfig.plugins.length) {\n      newConfig.plugins = newConfig.plugins.filter(plugin => 'HotModuleReplacementPlugin' !== plugin.constructor.name && 'NamedModulesPlugin' !== plugin.constructor.name);\n    }\n    newConfig.plugins = newConfig.plugins.concat([new _webpack2.default.HotModuleReplacementPlugin(), new _webpack2.default.NamedModulesPlugin()]);\n  }\n\n  return newConfig;\n}\n\n/**\n * Configure and manage webpack loaders\n *\n * @param {object} huron - huron configuration object\n * @param {object} config - webpack configuration object\n * @return {object} newConfig - updated data store\n */\nfunction configureLoaders(huron, config) {\n  // Manage loaders\n  const templatesLoader = huron.templates.rule || {};\n  const newConfig = config;\n\n  // Make sure we're only using templates loader for files in huron root\n  templatesLoader.include = [_path2.default.join(cwd, huron.root, huron.output)];\n\n  // Normalize module and module.rules\n  newConfig.module = newConfig.module || {};\n  newConfig.module.rules = newConfig.module.rules || newConfig.module.loaders || [];\n\n  // Add default loaders\n  newConfig.module.rules = defaultConfig.module.rules.concat(newConfig.module.rules, templatesLoader);\n\n  return newConfig;\n}\n\n/**\n * Create an HTML webpack plugin for each configured prototype\n *\n * @param {object} huron - huron configuration object\n * @param {object} config - webpack configuration object\n * @return {object} newConfig - updated data store\n */\nfunction configurePrototypes(huron, config) {\n  const wrapperTemplate = _fsExtra2.default.readFileSync(_path2.default.join(__dirname, '../../templates/prototypeTemplate.hbs'), 'utf8');\n\n  const defaultHTMLPluginOptions = {\n    title: 'Huron',\n    window: huron.window,\n    js: [],\n    css: [],\n    filename: 'index.html',\n    template: _path2.default.join(cwd, huron.root, 'huron-assets/prototypeTemplate.hbs'),\n    inject: false,\n    chunks: [huron.entry]\n  };\n  const newConfig = config;\n\n  // Write prototype template file for HTML webpack plugin\n  _fsExtra2.default.outputFileSync(_path2.default.join(cwd, huron.root, 'huron-assets/prototypeTemplate.hbs'), wrapperTemplate);\n\n  huron.prototypes.forEach(prototype => {\n    const newPrototype = prototype;\n    let opts = {};\n\n    // Merge configured settings with default settings\n    if ('string' === typeof prototype) {\n      opts = Object.assign({}, defaultHTMLPluginOptions, {\n        title: prototype,\n        filename: `${prototype}.html`\n      });\n    } else if ('object' === typeof prototype && {}.hasOwnProperty.call(prototype, 'title')) {\n      // Create filename based on configured title if not provided\n      if (!prototype.filename) {\n        newPrototype.filename = `${prototype.title}.html`;\n      }\n\n      // Move css assets for this prototype,\n      // reset css option with new file paths\n      if (prototype.css) {\n        newPrototype.css = moveAdditionalAssets(prototype.css, 'css', huron);\n      }\n\n      // Move js assets for this prototype,\n      // reset js option with new file paths\n      if (prototype.js) {\n        newPrototype.js = moveAdditionalAssets(prototype.js, 'js', huron);\n      }\n\n      opts = Object.assign({}, defaultHTMLPluginOptions, newPrototype);\n    }\n\n    // Move global css assets,\n    // reset css option with new file paths\n    if (huron.css.length) {\n      opts.css = opts.css.concat(moveAdditionalAssets(huron.css, 'css', huron));\n    }\n\n    // Move global js assets,\n    // reset js option with new file paths\n    if (huron.js.length) {\n      opts.js = opts.js.concat(moveAdditionalAssets(huron.js, 'js', huron));\n    }\n\n    // Move other misc assets\n    // reset js option with new file paths\n    if (huron.assets.length) {\n      moveAdditionalAssets(huron.assets, null, huron);\n    }\n\n    // Push a new plugin for each configured prototype\n    if (Object.keys(opts).length) {\n      newConfig.plugins.push(new _htmlWebpackPlugin2.default(opts));\n    }\n  });\n\n  return newConfig;\n}\n\n/**\n * Move relative (and local) js and css assets provided in huron options\n *\n * @param {array|string} assets - array of assets or single asset\n * @param {string} subdir - subdirectory in huron root from which to load additional asset\n * @param {object} huron - huron configuration object\n * @return {array} assetResults - paths to js and css assets\n */\nfunction moveAdditionalAssets(assets, subdir = '', huron) {\n  const currentAssets = [].concat(assets);\n  const assetResults = [];\n\n  currentAssets.forEach(asset => {\n    const assetInfo = _path2.default.parse(asset);\n    const assetStats = _fsExtra2.default.statSync(asset);\n\n    if (assetStats.isDirectory()) {\n      const location = assetInfo.base || assetInfo.dir;\n      const files = _fsExtra2.default.readdirSync(_path2.default.join(cwd, asset));\n\n      files.forEach(file => {\n        assetResults.push(moveAsset(_path2.default.join(location, file), _path2.default.join(location, file), huron));\n      });\n    } else {\n      const outPath = _path2.default.join(subdir, assetInfo.base);\n      assetResults.push(moveAsset(asset, outPath, huron));\n    }\n  });\n\n  return assetResults;\n}\n\nfunction moveAsset(asset, outPath, huron) {\n  const assetURL = _url2.default.parse(asset);\n  const sourcePath = _path2.default.join(cwd, asset);\n  const outputLocation = _path2.default.resolve(cwd, huron.root, outPath);\n  const loadPath = _parseArgs2.default.production ? _path2.default.join(outPath) : _path2.default.join('/', outPath); // Use absolute path in development\n  let contents = false;\n\n  if (!_path2.default.isAbsolute(asset) && !assetURL.protocol) {\n    try {\n      contents = _fsExtra2.default.readFileSync(sourcePath);\n    } catch (e) {\n      console.warn(`could not read ${sourcePath}`);\n    }\n\n    if (contents) {\n      _fsExtra2.default.outputFileSync(outputLocation, contents);\n      return loadPath;\n    }\n  }\n\n  return asset;\n}//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTMuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vc3JjL2NsaS9nZW5lcmF0ZUNvbmZpZy5qcz9lZGUwIl0sInNvdXJjZXNDb250ZW50IjpbIi8qKiBAbW9kdWxlIGNsaS9nZW5lcmF0ZS1jb25maWcgKi9cbmltcG9ydCBwYXRoIGZyb20gJ3BhdGgnO1xuaW1wb3J0IHVybCBmcm9tICd1cmwnO1xuaW1wb3J0IGZzIGZyb20gJ2ZzLWV4dHJhJztcbmltcG9ydCB3ZWJwYWNrIGZyb20gJ3dlYnBhY2snO1xuaW1wb3J0IEhUTUxXZWJwYWNrUGx1Z2luIGZyb20gJ2h0bWwtd2VicGFjay1wbHVnaW4nO1xuXG5pbXBvcnQgcHJvZ3JhbSBmcm9tICcuL3BhcnNlQXJncyc7XG5pbXBvcnQgcmVxdWlyZUV4dGVybmFsIGZyb20gJy4vcmVxdWlyZUV4dGVybmFsJztcbmltcG9ydCBkZWZhdWx0V2VicGFjayBmcm9tICcuLi9kZWZhdWx0Q29uZmlnL3dlYnBhY2suY29uZmlnJztcbmltcG9ydCBkZWZhdWx0SHVyb24gZnJvbSAnLi4vZGVmYXVsdENvbmZpZy9odXJvbi5jb25maWcnO1xuXG5jb25zdCBjd2QgPSBwcm9jZXNzLmN3ZCgpO1xuXG4vLyBSZXF1aXJlIGNvbmZpZ3MgcGFzc2VkIGluIGJ5IHVzZXIgZnJvbSBDTElcbmxldCBkZWZhdWx0Q29uZmlnID0gZmFsc2U7XG5jb25zdCBsb2NhbENvbmZpZyA9IHJlcXVpcmVFeHRlcm5hbChcbiAgcGF0aC5yZXNvbHZlKHByb2dyYW0ud2VicGFja0NvbmZpZylcbik7XG5jb25zdCBsb2NhbEh1cm9uID0gcmVxdWlyZUV4dGVybmFsKFxuICBwYXRoLnJlc29sdmUocHJvZ3JhbS5odXJvbkNvbmZpZylcbik7XG5cbi8qKlxuICogR2VuZXJhdGUgYSBtdXRhbnQgaHlicmlkIG9mIHRoZSBodXJvbiBkZWZhdWx0IHdlYnBhY2sgY29uZmlnIGFuZCB5b3VyIGxvY2FsIHdlYnBhY2sgY29uZmlnXG4gKlxuICogQGZ1bmN0aW9uIGdlbmVyYXRlQ29uZmlnXG4gKiBAcGFyYW0ge29iamVjdH0gY29uZmlnIC0gbG9jYWwgd2VicGFjayBjb25maWdcbiAqIEByZXR1cm4ge29iamVjdH0gbmV3Q29uZmlnIC0gdXBkYXRlZCBkYXRhIHN0b3JlXG4gKi9cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIGdlbmVyYXRlQ29uZmlnKCkge1xuICBsZXQgbmV3Q29uZmlnID0gbG9jYWxDb25maWc7XG4gIGxldCBuZXdIdXJvbiA9IGxvY2FsSHVyb247XG5cbiAgLy8gRXhlY3V0ZSBjb25maWcgZnVuY3Rpb24sIGlmIHByb3ZpZGVkXG4gIGlmICgnZnVuY3Rpb24nID09PSB0eXBlb2YgbmV3Q29uZmlnKSB7XG4gICAgbmV3Q29uZmlnID0gbmV3Q29uZmlnKHByb2dyYW0uZW52KTtcbiAgfVxuXG4gIC8vIEV4ZWN1dGUgaHVyb24gY29uZmlnIGZ1bmN0aW9uLCBpZiBwcm92aWRlZFxuICBpZiAoJ2Z1bmN0aW9uJyA9PT0gdHlwZW9mIG5ld0h1cm9uKSB7XG4gICAgbmV3SHVyb24gPSBuZXdIdXJvbihwcm9ncmFtLmVudik7XG4gIH1cblxuICAvLyBNZXJnZSBodXJvbiBkZWZhdWx0cyB3aXRoIHVzZXIgc2V0dGluZ3NcbiAgbmV3SHVyb24gPSBPYmplY3QuYXNzaWduKHt9LCBkZWZhdWx0SHVyb24sIG5ld0h1cm9uKTtcbiAgLy8gVXNlIHVzZXIgaHVyb24gY29uZmlnIHRvIG1vZGlmeSB3ZWJwYWNrIGRlZmF1bHRzXG4gIGRlZmF1bHRDb25maWcgPSBkZWZhdWx0V2VicGFjayhuZXdIdXJvbik7XG5cbiAgLy8gU2V0IG91cHV0IG9wdGlvbnNcbiAgbmV3Q29uZmlnLm91dHB1dCA9IE9iamVjdC5hc3NpZ24oe30sIGRlZmF1bHRDb25maWcub3V0cHV0LCBuZXdDb25maWcub3V0cHV0KTtcbiAgbmV3Q29uZmlnLm91dHB1dC5wYXRoID0gZGVmYXVsdENvbmZpZy5vdXRwdXQucGF0aDtcbiAgbmV3Q29uZmlnLm91dHB1dC5wdWJsaWNQYXRoID0gZGVmYXVsdENvbmZpZy5vdXRwdXQucHVibGljUGF0aDtcblxuICAvLyBjb25maWd1cmUgZW50cmllc1xuICBuZXdDb25maWcgPSBjb25maWd1cmVFbnRyaWVzKG5ld0h1cm9uLCBuZXdDb25maWcpO1xuXG4gIC8vIGNvbmZpZ3VyZSBwbHVnaW5zXG4gIG5ld0NvbmZpZyA9IGNvbmZpZ3VyZVBsdWdpbnMobmV3SHVyb24sIG5ld0NvbmZpZyk7XG5cbiAgLy8gY29uZmlndXJlIGxvYWRlcnNcbiAgbmV3Q29uZmlnID0gY29uZmlndXJlTG9hZGVycyhuZXdIdXJvbiwgbmV3Q29uZmlnKTtcblxuICAvLyBBZGQgSFRNTFdlYnBhY2tQbHVnaW4gZm9yIGVhY2ggY29uZmlndXJlZCBwcm90b3R5cGVcbiAgbmV3Q29uZmlnID0gY29uZmlndXJlUHJvdG90eXBlcyhuZXdIdXJvbiwgbmV3Q29uZmlnKTtcblxuICAvLyBSZW1vdmUgZXhpc3RpbmcgZGV2U2VydmVyIHNldHRpbmdzXG4gIGRlbGV0ZSBuZXdDb25maWcuZGV2U2VydmVyO1xuXG4gIHJldHVybiB7XG4gICAgaHVyb246IG5ld0h1cm9uLFxuICAgIHdlYnBhY2s6IG5ld0NvbmZpZyxcbiAgfTtcbn1cblxuLyoqXG4gKiBDb25maWd1cmUgYW5kIG1hbmFnZSB3ZWJwYWNrIGVudHJ5IHBvaW50c1xuICpcbiAqIEBwYXJhbSB7b2JqZWN0fSBodXJvbiAtIGh1cm9uIGNvbmZpZ3VyYXRpb24gb2JqZWN0XG4gKiBAcGFyYW0ge29iamVjdH0gY29uZmlnIC0gd2VicGFjayBjb25maWd1cmF0aW9uIG9iamVjdFxuICogQHJldHVybiB7b2JqZWN0fSBuZXdDb25maWcgLSB1cGRhdGVkIGRhdGEgc3RvcmVcbiAqL1xuZnVuY3Rpb24gY29uZmlndXJlRW50cmllcyhodXJvbiwgY29uZmlnKSB7XG4gIGNvbnN0IGVudHJ5ID0gY29uZmlnLmVudHJ5W2h1cm9uLmVudHJ5XTtcbiAgY29uc3QgbmV3Q29uZmlnID0gY29uZmlnO1xuXG4gIG5ld0NvbmZpZy5lbnRyeSA9IHt9O1xuICBpZiAoIXByb2dyYW0ucHJvZHVjdGlvbikge1xuICAgIG5ld0NvbmZpZy5lbnRyeVtodXJvbi5lbnRyeV0gPSBbXG4gICAgICBgd2VicGFjay1kZXYtc2VydmVyL2NsaWVudD9odHRwOi8vbG9jYWxob3N0OiR7aHVyb24ucG9ydH1gLFxuICAgICAgJ3dlYnBhY2svaG90L2Rldi1zZXJ2ZXInLFxuICAgICAgcGF0aC5qb2luKGN3ZCwgaHVyb24ucm9vdCwgJ2h1cm9uLWFzc2V0cy9pbmRleCcpLFxuICAgIF0uY29uY2F0KGVudHJ5KTtcbiAgfSBlbHNlIHtcbiAgICBuZXdDb25maWcuZW50cnlbaHVyb24uZW50cnldID0gW1xuICAgICAgcGF0aC5qb2luKGN3ZCwgaHVyb24ucm9vdCwgJ2h1cm9uLWFzc2V0cy9pbmRleCcpLFxuICAgIF0uY29uY2F0KGVudHJ5KTtcbiAgfVxuXG4gIHJldHVybiBuZXdDb25maWc7XG59XG5cbi8qKlxuICogQ29uZmlndXJlIGFuZCBtYW5hZ2Ugd2VicGFjayBwbHVnaW5zXG4gKlxuICogQHBhcmFtIHtvYmplY3R9IGh1cm9uIC0gaHVyb24gY29uZmlndXJhdGlvbiBvYmplY3RcbiAqIEBwYXJhbSB7b2JqZWN0fSBjb25maWcgLSB3ZWJwYWNrIGNvbmZpZ3VyYXRpb24gb2JqZWN0XG4gKiBAcmV0dXJuIHtvYmplY3R9IG5ld0NvbmZpZyAtIHVwZGF0ZWQgZGF0YSBzdG9yZVxuICovXG5mdW5jdGlvbiBjb25maWd1cmVQbHVnaW5zKGh1cm9uLCBjb25maWcpIHtcbiAgY29uc3QgbmV3Q29uZmlnID0gY29uZmlnO1xuXG4gIG5ld0NvbmZpZy5wbHVnaW5zID0gY29uZmlnLnBsdWdpbnMgfHwgW107XG5cbiAgaWYgKCFwcm9ncmFtLnByb2R1Y3Rpb24pIHtcbiAgICBpZiAobmV3Q29uZmlnLnBsdWdpbnMgJiYgbmV3Q29uZmlnLnBsdWdpbnMubGVuZ3RoKSB7XG4gICAgICBuZXdDb25maWcucGx1Z2lucyA9IG5ld0NvbmZpZy5wbHVnaW5zLmZpbHRlcihcbiAgICAgICAgKHBsdWdpbikgPT4gJ0hvdE1vZHVsZVJlcGxhY2VtZW50UGx1Z2luJyAhPT0gcGx1Z2luLmNvbnN0cnVjdG9yLm5hbWUgJiZcbiAgICAgICAgICAnTmFtZWRNb2R1bGVzUGx1Z2luJyAhPT0gcGx1Z2luLmNvbnN0cnVjdG9yLm5hbWVcbiAgICAgICk7XG4gICAgfVxuICAgIG5ld0NvbmZpZy5wbHVnaW5zID0gbmV3Q29uZmlnLnBsdWdpbnNcbiAgICAgIC5jb25jYXQoW1xuICAgICAgICBuZXcgd2VicGFjay5Ib3RNb2R1bGVSZXBsYWNlbWVudFBsdWdpbigpLFxuICAgICAgICBuZXcgd2VicGFjay5OYW1lZE1vZHVsZXNQbHVnaW4oKSxcbiAgICAgIF0pO1xuICB9XG5cbiAgcmV0dXJuIG5ld0NvbmZpZztcbn1cblxuLyoqXG4gKiBDb25maWd1cmUgYW5kIG1hbmFnZSB3ZWJwYWNrIGxvYWRlcnNcbiAqXG4gKiBAcGFyYW0ge29iamVjdH0gaHVyb24gLSBodXJvbiBjb25maWd1cmF0aW9uIG9iamVjdFxuICogQHBhcmFtIHtvYmplY3R9IGNvbmZpZyAtIHdlYnBhY2sgY29uZmlndXJhdGlvbiBvYmplY3RcbiAqIEByZXR1cm4ge29iamVjdH0gbmV3Q29uZmlnIC0gdXBkYXRlZCBkYXRhIHN0b3JlXG4gKi9cbmZ1bmN0aW9uIGNvbmZpZ3VyZUxvYWRlcnMoaHVyb24sIGNvbmZpZykge1xuICAvLyBNYW5hZ2UgbG9hZGVyc1xuICBjb25zdCB0ZW1wbGF0ZXNMb2FkZXIgPSBodXJvbi50ZW1wbGF0ZXMucnVsZSB8fCB7fTtcbiAgY29uc3QgbmV3Q29uZmlnID0gY29uZmlnO1xuXG4gIC8vIE1ha2Ugc3VyZSB3ZSdyZSBvbmx5IHVzaW5nIHRlbXBsYXRlcyBsb2FkZXIgZm9yIGZpbGVzIGluIGh1cm9uIHJvb3RcbiAgdGVtcGxhdGVzTG9hZGVyLmluY2x1ZGUgPSBbcGF0aC5qb2luKGN3ZCwgaHVyb24ucm9vdCwgaHVyb24ub3V0cHV0KV07XG5cbiAgLy8gTm9ybWFsaXplIG1vZHVsZSBhbmQgbW9kdWxlLnJ1bGVzXG4gIG5ld0NvbmZpZy5tb2R1bGUgPSBuZXdDb25maWcubW9kdWxlIHx8IHt9O1xuICBuZXdDb25maWcubW9kdWxlLnJ1bGVzID0gbmV3Q29uZmlnLm1vZHVsZS5ydWxlcyB8fFxuICAgIG5ld0NvbmZpZy5tb2R1bGUubG9hZGVycyB8fFxuICAgIFtdO1xuXG4gIC8vIEFkZCBkZWZhdWx0IGxvYWRlcnNcbiAgbmV3Q29uZmlnLm1vZHVsZS5ydWxlcyA9IGRlZmF1bHRDb25maWcubW9kdWxlLnJ1bGVzXG4gICAgLmNvbmNhdChcbiAgICAgIG5ld0NvbmZpZy5tb2R1bGUucnVsZXMsXG4gICAgICB0ZW1wbGF0ZXNMb2FkZXJcbiAgICApO1xuXG4gIHJldHVybiBuZXdDb25maWc7XG59XG5cbi8qKlxuICogQ3JlYXRlIGFuIEhUTUwgd2VicGFjayBwbHVnaW4gZm9yIGVhY2ggY29uZmlndXJlZCBwcm90b3R5cGVcbiAqXG4gKiBAcGFyYW0ge29iamVjdH0gaHVyb24gLSBodXJvbiBjb25maWd1cmF0aW9uIG9iamVjdFxuICogQHBhcmFtIHtvYmplY3R9IGNvbmZpZyAtIHdlYnBhY2sgY29uZmlndXJhdGlvbiBvYmplY3RcbiAqIEByZXR1cm4ge29iamVjdH0gbmV3Q29uZmlnIC0gdXBkYXRlZCBkYXRhIHN0b3JlXG4gKi9cbmZ1bmN0aW9uIGNvbmZpZ3VyZVByb3RvdHlwZXMoaHVyb24sIGNvbmZpZykge1xuICBjb25zdCB3cmFwcGVyVGVtcGxhdGUgPSBmcy5yZWFkRmlsZVN5bmMoXG4gICAgcGF0aC5qb2luKF9fZGlybmFtZSwgJy4uLy4uL3RlbXBsYXRlcy9wcm90b3R5cGVUZW1wbGF0ZS5oYnMnKSxcbiAgICAndXRmOCdcbiAgKTtcblxuICBjb25zdCBkZWZhdWx0SFRNTFBsdWdpbk9wdGlvbnMgPSB7XG4gICAgdGl0bGU6ICdIdXJvbicsXG4gICAgd2luZG93OiBodXJvbi53aW5kb3csXG4gICAganM6IFtdLFxuICAgIGNzczogW10sXG4gICAgZmlsZW5hbWU6ICdpbmRleC5odG1sJyxcbiAgICB0ZW1wbGF0ZTogcGF0aC5qb2luKFxuICAgICAgY3dkLFxuICAgICAgaHVyb24ucm9vdCxcbiAgICAgICdodXJvbi1hc3NldHMvcHJvdG90eXBlVGVtcGxhdGUuaGJzJ1xuICAgICksXG4gICAgaW5qZWN0OiBmYWxzZSxcbiAgICBjaHVua3M6IFtodXJvbi5lbnRyeV0sXG4gIH07XG4gIGNvbnN0IG5ld0NvbmZpZyA9IGNvbmZpZztcblxuICAvLyBXcml0ZSBwcm90b3R5cGUgdGVtcGxhdGUgZmlsZSBmb3IgSFRNTCB3ZWJwYWNrIHBsdWdpblxuICBmcy5vdXRwdXRGaWxlU3luYyhcbiAgICBwYXRoLmpvaW4oY3dkLCBodXJvbi5yb290LCAnaHVyb24tYXNzZXRzL3Byb3RvdHlwZVRlbXBsYXRlLmhicycpLFxuICAgIHdyYXBwZXJUZW1wbGF0ZVxuICApO1xuXG4gIGh1cm9uLnByb3RvdHlwZXMuZm9yRWFjaCgocHJvdG90eXBlKSA9PiB7XG4gICAgY29uc3QgbmV3UHJvdG90eXBlID0gcHJvdG90eXBlO1xuICAgIGxldCBvcHRzID0ge307XG5cbiAgICAvLyBNZXJnZSBjb25maWd1cmVkIHNldHRpbmdzIHdpdGggZGVmYXVsdCBzZXR0aW5nc1xuICAgIGlmICgnc3RyaW5nJyA9PT0gdHlwZW9mIHByb3RvdHlwZSkge1xuICAgICAgb3B0cyA9IE9iamVjdC5hc3NpZ24oe30sIGRlZmF1bHRIVE1MUGx1Z2luT3B0aW9ucywge1xuICAgICAgICB0aXRsZTogcHJvdG90eXBlLFxuICAgICAgICBmaWxlbmFtZTogYCR7cHJvdG90eXBlfS5odG1sYCxcbiAgICAgIH0pO1xuICAgIH0gZWxzZSBpZiAoXG4gICAgICAnb2JqZWN0JyA9PT0gdHlwZW9mIHByb3RvdHlwZSAmJlxuICAgICAge30uaGFzT3duUHJvcGVydHkuY2FsbChwcm90b3R5cGUsICd0aXRsZScpXG4gICAgKSB7XG4gICAgICAvLyBDcmVhdGUgZmlsZW5hbWUgYmFzZWQgb24gY29uZmlndXJlZCB0aXRsZSBpZiBub3QgcHJvdmlkZWRcbiAgICAgIGlmICghcHJvdG90eXBlLmZpbGVuYW1lKSB7XG4gICAgICAgIG5ld1Byb3RvdHlwZS5maWxlbmFtZSA9IGAke3Byb3RvdHlwZS50aXRsZX0uaHRtbGA7XG4gICAgICB9XG5cbiAgICAgIC8vIE1vdmUgY3NzIGFzc2V0cyBmb3IgdGhpcyBwcm90b3R5cGUsXG4gICAgICAvLyByZXNldCBjc3Mgb3B0aW9uIHdpdGggbmV3IGZpbGUgcGF0aHNcbiAgICAgIGlmIChwcm90b3R5cGUuY3NzKSB7XG4gICAgICAgIG5ld1Byb3RvdHlwZS5jc3MgPSBtb3ZlQWRkaXRpb25hbEFzc2V0cyhwcm90b3R5cGUuY3NzLCAnY3NzJywgaHVyb24pO1xuICAgICAgfVxuXG4gICAgICAvLyBNb3ZlIGpzIGFzc2V0cyBmb3IgdGhpcyBwcm90b3R5cGUsXG4gICAgICAvLyByZXNldCBqcyBvcHRpb24gd2l0aCBuZXcgZmlsZSBwYXRoc1xuICAgICAgaWYgKHByb3RvdHlwZS5qcykge1xuICAgICAgICBuZXdQcm90b3R5cGUuanMgPSBtb3ZlQWRkaXRpb25hbEFzc2V0cyhwcm90b3R5cGUuanMsICdqcycsIGh1cm9uKTtcbiAgICAgIH1cblxuICAgICAgb3B0cyA9IE9iamVjdC5hc3NpZ24oe30sIGRlZmF1bHRIVE1MUGx1Z2luT3B0aW9ucywgbmV3UHJvdG90eXBlKTtcbiAgICB9XG5cbiAgICAvLyBNb3ZlIGdsb2JhbCBjc3MgYXNzZXRzLFxuICAgIC8vIHJlc2V0IGNzcyBvcHRpb24gd2l0aCBuZXcgZmlsZSBwYXRoc1xuICAgIGlmIChodXJvbi5jc3MubGVuZ3RoKSB7XG4gICAgICBvcHRzLmNzcyA9IG9wdHMuY3NzLmNvbmNhdChcbiAgICAgICAgbW92ZUFkZGl0aW9uYWxBc3NldHMoaHVyb24uY3NzLCAnY3NzJywgaHVyb24pXG4gICAgICApO1xuICAgIH1cblxuICAgIC8vIE1vdmUgZ2xvYmFsIGpzIGFzc2V0cyxcbiAgICAvLyByZXNldCBqcyBvcHRpb24gd2l0aCBuZXcgZmlsZSBwYXRoc1xuICAgIGlmIChodXJvbi5qcy5sZW5ndGgpIHtcbiAgICAgIG9wdHMuanMgPSBvcHRzLmpzLmNvbmNhdChcbiAgICAgICAgbW92ZUFkZGl0aW9uYWxBc3NldHMoaHVyb24uanMsICdqcycsIGh1cm9uKVxuICAgICAgKTtcbiAgICB9XG5cbiAgICAvLyBNb3ZlIG90aGVyIG1pc2MgYXNzZXRzXG4gICAgLy8gcmVzZXQganMgb3B0aW9uIHdpdGggbmV3IGZpbGUgcGF0aHNcbiAgICBpZiAoaHVyb24uYXNzZXRzLmxlbmd0aCkge1xuICAgICAgbW92ZUFkZGl0aW9uYWxBc3NldHMoaHVyb24uYXNzZXRzLCBudWxsLCBodXJvbik7XG4gICAgfVxuXG4gICAgLy8gUHVzaCBhIG5ldyBwbHVnaW4gZm9yIGVhY2ggY29uZmlndXJlZCBwcm90b3R5cGVcbiAgICBpZiAoT2JqZWN0LmtleXMob3B0cykubGVuZ3RoKSB7XG4gICAgICBuZXdDb25maWcucGx1Z2lucy5wdXNoKFxuICAgICAgICBuZXcgSFRNTFdlYnBhY2tQbHVnaW4ob3B0cylcbiAgICAgICk7XG4gICAgfVxuICB9KTtcblxuICByZXR1cm4gbmV3Q29uZmlnO1xufVxuXG4vKipcbiAqIE1vdmUgcmVsYXRpdmUgKGFuZCBsb2NhbCkganMgYW5kIGNzcyBhc3NldHMgcHJvdmlkZWQgaW4gaHVyb24gb3B0aW9uc1xuICpcbiAqIEBwYXJhbSB7YXJyYXl8c3RyaW5nfSBhc3NldHMgLSBhcnJheSBvZiBhc3NldHMgb3Igc2luZ2xlIGFzc2V0XG4gKiBAcGFyYW0ge3N0cmluZ30gc3ViZGlyIC0gc3ViZGlyZWN0b3J5IGluIGh1cm9uIHJvb3QgZnJvbSB3aGljaCB0byBsb2FkIGFkZGl0aW9uYWwgYXNzZXRcbiAqIEBwYXJhbSB7b2JqZWN0fSBodXJvbiAtIGh1cm9uIGNvbmZpZ3VyYXRpb24gb2JqZWN0XG4gKiBAcmV0dXJuIHthcnJheX0gYXNzZXRSZXN1bHRzIC0gcGF0aHMgdG8ganMgYW5kIGNzcyBhc3NldHNcbiAqL1xuZnVuY3Rpb24gbW92ZUFkZGl0aW9uYWxBc3NldHMoYXNzZXRzLCBzdWJkaXIgPSAnJywgaHVyb24pIHtcbiAgY29uc3QgY3VycmVudEFzc2V0cyA9IFtdLmNvbmNhdChhc3NldHMpO1xuICBjb25zdCBhc3NldFJlc3VsdHMgPSBbXTtcblxuICBjdXJyZW50QXNzZXRzLmZvckVhY2goKGFzc2V0KSA9PiB7XG4gICAgY29uc3QgYXNzZXRJbmZvID0gcGF0aC5wYXJzZShhc3NldCk7XG4gICAgY29uc3QgYXNzZXRTdGF0cyA9IGZzLnN0YXRTeW5jKGFzc2V0KTtcblxuICAgIGlmIChhc3NldFN0YXRzLmlzRGlyZWN0b3J5KCkpIHtcbiAgICAgIGNvbnN0IGxvY2F0aW9uID0gYXNzZXRJbmZvLmJhc2UgfHwgYXNzZXRJbmZvLmRpcjtcbiAgICAgIGNvbnN0IGZpbGVzID0gZnMucmVhZGRpclN5bmMocGF0aC5qb2luKGN3ZCwgYXNzZXQpKTtcblxuICAgICAgZmlsZXMuZm9yRWFjaCgoZmlsZSkgPT4ge1xuICAgICAgICBhc3NldFJlc3VsdHMucHVzaChtb3ZlQXNzZXQoXG4gICAgICAgICAgcGF0aC5qb2luKGxvY2F0aW9uLCBmaWxlKSxcbiAgICAgICAgICBwYXRoLmpvaW4obG9jYXRpb24sIGZpbGUpLFxuICAgICAgICAgIGh1cm9uXG4gICAgICAgICkpO1xuICAgICAgfSk7XG4gICAgfSBlbHNlIHtcbiAgICAgIGNvbnN0IG91dFBhdGggPSBwYXRoLmpvaW4oc3ViZGlyLCBhc3NldEluZm8uYmFzZSk7XG4gICAgICBhc3NldFJlc3VsdHMucHVzaChtb3ZlQXNzZXQoYXNzZXQsIG91dFBhdGgsIGh1cm9uKSk7XG4gICAgfVxuICB9KTtcblxuICByZXR1cm4gYXNzZXRSZXN1bHRzO1xufVxuXG5mdW5jdGlvbiBtb3ZlQXNzZXQoYXNzZXQsIG91dFBhdGgsIGh1cm9uKSB7XG4gIGNvbnN0IGFzc2V0VVJMID0gdXJsLnBhcnNlKGFzc2V0KTtcbiAgY29uc3Qgc291cmNlUGF0aCA9IHBhdGguam9pbihjd2QsIGFzc2V0KTtcbiAgY29uc3Qgb3V0cHV0TG9jYXRpb24gPSBwYXRoLnJlc29sdmUoY3dkLCBodXJvbi5yb290LCBvdXRQYXRoKTtcbiAgY29uc3QgbG9hZFBhdGggPSBwcm9ncmFtLnByb2R1Y3Rpb24gP1xuICAgIHBhdGguam9pbihvdXRQYXRoKSA6XG4gICAgcGF0aC5qb2luKCcvJywgb3V0UGF0aCk7IC8vIFVzZSBhYnNvbHV0ZSBwYXRoIGluIGRldmVsb3BtZW50XG4gIGxldCBjb250ZW50cyA9IGZhbHNlO1xuXG4gIGlmIChcbiAgICAhcGF0aC5pc0Fic29sdXRlKGFzc2V0KSAmJlxuICAgICFhc3NldFVSTC5wcm90b2NvbFxuICApIHtcbiAgICB0cnkge1xuICAgICAgY29udGVudHMgPSBmcy5yZWFkRmlsZVN5bmMoc291cmNlUGF0aCk7XG4gICAgfSBjYXRjaCAoZSkge1xuICAgICAgY29uc29sZS53YXJuKGBjb3VsZCBub3QgcmVhZCAke3NvdXJjZVBhdGh9YCk7XG4gICAgfVxuXG4gICAgaWYgKGNvbnRlbnRzKSB7XG4gICAgICBmcy5vdXRwdXRGaWxlU3luYyhvdXRwdXRMb2NhdGlvbiwgY29udGVudHMpO1xuICAgICAgcmV0dXJuIGxvYWRQYXRoO1xuICAgIH1cbiAgfVxuXG4gIHJldHVybiBhc3NldDtcbn1cblxuXG5cbi8vIFdFQlBBQ0sgRk9PVEVSIC8vXG4vLyBzcmMvY2xpL2dlbmVyYXRlQ29uZmlnLmpzIl0sIm1hcHBpbmdzIjoiOzs7OztBQThCQTtBQUNBO0FBOUJBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUNBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUFBO0FBQ0E7OztBQUFBO0FBQ0E7Ozs7O0FBQ0E7QUFDQTtBQUNBO0FBZEE7QUFlQTtBQUNBO0FBR0E7QUFDQTtBQUdBOzs7Ozs7O0FBT0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRkE7QUFJQTtBQUNBO0FBQ0E7Ozs7Ozs7QUFPQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUtBO0FBQ0E7QUFHQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7Ozs7Ozs7QUFPQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSUE7QUFDQTtBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7OztBQU9BO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUdBO0FBQ0E7QUFDQTtBQUtBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7O0FBT0E7QUFDQTtBQUNBO0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFLQTtBQUNBO0FBWkE7QUFjQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRkE7QUFJQTtBQUlBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUdBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUdBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFHQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7Ozs7QUFRQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBS0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBR0E7QUFDQTtBQUNBO0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 14 */
+/* no static exports found */
+/* all exports used */
+/*!*******************************!*\
+  !*** ./src/cli/handleHTML.js ***!
+  \*******************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.updateHTML = updateHTML;
-exports.deleteHTML = deleteHTML;
-exports.updatePrototype = updatePrototype;
-exports.deletePrototype = deletePrototype;
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-var _fsExtra = __webpack_require__(3);
-
-var _fsExtra2 = _interopRequireDefault(_fsExtra);
-
-var _utils = __webpack_require__(1);
-
-var utils = _interopRequireWildcard(_utils);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Handle update of an HMTL template
- *
- * @function updateHTML
- * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} section - contains KSS section data
- * @param {object} store - memory store
- * @return {object} updated data store
- */
-function updateHTML(filepath, section, store) {
-  const file = _path2.default.parse(filepath);
-  const content = _fsExtra2.default.readFileSync(filepath, 'utf8');
-  const newSection = section;
-
-  if (content) {
-    newSection.templatePath = utils.writeFile(section.referenceURI, 'template', filepath, content, store);
-    newSection.templateContent = content;
-
-    // Rewrite section data with template content
-    newSection.sectionPath = utils.writeSectionData(store, newSection);
-
-    return store.setIn(['sections', 'sectionsByPath', section.kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
-  }
-
-  console.log(`File ${file.base} could not be read`);
-  return store;
-}
-
-/**
- * Handle removal of an HMTL template
- *
- * @function deleteHTML
- * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} section - contains KSS section data
- * @param {object} store - memory store
- * @return {object} updated data store
- */
-/** @module cli/html-handler */
-function deleteHTML(filepath, section, store) {
-  const newSection = section;
-
-  utils.removeFile(newSection.referenceURI, 'template', filepath, store);
-
-  delete newSection.templatePath;
-
-  return store.setIn(['sections', 'sectionsByPath', section.kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
-}
-
-/**
- * Handle update for a prototype file
- *
- * @function updatePrototype
- * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} store - memory store
- * @return {object} updated data store
- */
-function updatePrototype(filepath, store) {
-  const file = _path2.default.parse(filepath);
-  const content = _fsExtra2.default.readFileSync(filepath, 'utf8');
-
-  if (content) {
-    const requirePath = utils.writeFile(file.name, 'prototype', filepath, content, store);
-
-    return store.setIn(['prototypes', file.name], requirePath);
-  }
-
-  console.log(`File ${file.base} could not be read`);
-  return store;
-}
-
-/**
- * Handle removal of a prototype file
- *
- * @function deletePrototype
- * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} store - memory store
- * @return {object} updated data store
- */
-function deletePrototype(filepath, store) {
-  const file = _path2.default.parse(filepath);
-  const requirePath = utils.removeFile(file.name, 'prototype', filepath, store);
-
-  return store.setIn(['prototypes', file.name], requirePath);
-}
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.updateHTML = updateHTML;\nexports.deleteHTML = deleteHTML;\nexports.updatePrototype = updatePrototype;\nexports.deletePrototype = deletePrototype;\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nvar _fsExtra = __webpack_require__(/*! fs-extra */ 3);\n\nvar _fsExtra2 = _interopRequireDefault(_fsExtra);\n\nvar _utils = __webpack_require__(/*! ./utils */ 1);\n\nvar utils = _interopRequireWildcard(_utils);\n\nfunction _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n/**\n * Handle update of an HMTL template\n *\n * @function updateHTML\n * @param {string} filepath - filepath of changed file (comes from gaze)\n * @param {object} section - contains KSS section data\n * @param {object} store - memory store\n * @return {object} updated data store\n */\nfunction updateHTML(filepath, section, store) {\n  const file = _path2.default.parse(filepath);\n  const content = _fsExtra2.default.readFileSync(filepath, 'utf8');\n  const newSection = section;\n\n  if (content) {\n    newSection.templatePath = utils.writeFile(section.referenceURI, 'template', filepath, content, store);\n    newSection.templateContent = content;\n\n    // Rewrite section data with template content\n    newSection.sectionPath = utils.writeSectionData(store, newSection);\n\n    return store.setIn(['sections', 'sectionsByPath', section.kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);\n  }\n\n  console.log(`File ${file.base} could not be read`);\n  return store;\n}\n\n/**\n * Handle removal of an HMTL template\n *\n * @function deleteHTML\n * @param {string} filepath - filepath of changed file (comes from gaze)\n * @param {object} section - contains KSS section data\n * @param {object} store - memory store\n * @return {object} updated data store\n */\n/** @module cli/html-handler */\nfunction deleteHTML(filepath, section, store) {\n  const newSection = section;\n\n  utils.removeFile(newSection.referenceURI, 'template', filepath, store);\n\n  delete newSection.templatePath;\n\n  return store.setIn(['sections', 'sectionsByPath', section.kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);\n}\n\n/**\n * Handle update for a prototype file\n *\n * @function updatePrototype\n * @param {string} filepath - filepath of changed file (comes from gaze)\n * @param {object} store - memory store\n * @return {object} updated data store\n */\nfunction updatePrototype(filepath, store) {\n  const file = _path2.default.parse(filepath);\n  const content = _fsExtra2.default.readFileSync(filepath, 'utf8');\n\n  if (content) {\n    const requirePath = utils.writeFile(file.name, 'prototype', filepath, content, store);\n\n    return store.setIn(['prototypes', file.name], requirePath);\n  }\n\n  console.log(`File ${file.base} could not be read`);\n  return store;\n}\n\n/**\n * Handle removal of a prototype file\n *\n * @function deletePrototype\n * @param {string} filepath - filepath of changed file (comes from gaze)\n * @param {object} store - memory store\n * @return {object} updated data store\n */\nfunction deletePrototype(filepath, store) {\n  const file = _path2.default.parse(filepath);\n  const requirePath = utils.removeFile(file.name, 'prototype', filepath, store);\n\n  return store.setIn(['prototypes', file.name], requirePath);\n}//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTQuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vc3JjL2NsaS9oYW5kbGVIVE1MLmpzP2VhMjIiXSwic291cmNlc0NvbnRlbnQiOlsiLyoqIEBtb2R1bGUgY2xpL2h0bWwtaGFuZGxlciAqL1xuaW1wb3J0IHBhdGggZnJvbSAncGF0aCc7XG5pbXBvcnQgZnMgZnJvbSAnZnMtZXh0cmEnO1xuXG5pbXBvcnQgKiBhcyB1dGlscyBmcm9tICcuL3V0aWxzJztcblxuLyoqXG4gKiBIYW5kbGUgdXBkYXRlIG9mIGFuIEhNVEwgdGVtcGxhdGVcbiAqXG4gKiBAZnVuY3Rpb24gdXBkYXRlSFRNTFxuICogQHBhcmFtIHtzdHJpbmd9IGZpbGVwYXRoIC0gZmlsZXBhdGggb2YgY2hhbmdlZCBmaWxlIChjb21lcyBmcm9tIGdhemUpXG4gKiBAcGFyYW0ge29iamVjdH0gc2VjdGlvbiAtIGNvbnRhaW5zIEtTUyBzZWN0aW9uIGRhdGFcbiAqIEBwYXJhbSB7b2JqZWN0fSBzdG9yZSAtIG1lbW9yeSBzdG9yZVxuICogQHJldHVybiB7b2JqZWN0fSB1cGRhdGVkIGRhdGEgc3RvcmVcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHVwZGF0ZUhUTUwoZmlsZXBhdGgsIHNlY3Rpb24sIHN0b3JlKSB7XG4gIGNvbnN0IGZpbGUgPSBwYXRoLnBhcnNlKGZpbGVwYXRoKTtcbiAgY29uc3QgY29udGVudCA9IGZzLnJlYWRGaWxlU3luYyhmaWxlcGF0aCwgJ3V0ZjgnKTtcbiAgY29uc3QgbmV3U2VjdGlvbiA9IHNlY3Rpb247XG5cbiAgaWYgKGNvbnRlbnQpIHtcbiAgICBuZXdTZWN0aW9uLnRlbXBsYXRlUGF0aCA9IHV0aWxzLndyaXRlRmlsZShcbiAgICAgIHNlY3Rpb24ucmVmZXJlbmNlVVJJLFxuICAgICAgJ3RlbXBsYXRlJyxcbiAgICAgIGZpbGVwYXRoLFxuICAgICAgY29udGVudCxcbiAgICAgIHN0b3JlXG4gICAgKTtcbiAgICBuZXdTZWN0aW9uLnRlbXBsYXRlQ29udGVudCA9IGNvbnRlbnQ7XG5cbiAgICAvLyBSZXdyaXRlIHNlY3Rpb24gZGF0YSB3aXRoIHRlbXBsYXRlIGNvbnRlbnRcbiAgICBuZXdTZWN0aW9uLnNlY3Rpb25QYXRoID0gdXRpbHMud3JpdGVTZWN0aW9uRGF0YShzdG9yZSwgbmV3U2VjdGlvbik7XG5cbiAgICByZXR1cm4gc3RvcmVcbiAgICAgIC5zZXRJbihcbiAgICAgICAgWydzZWN0aW9ucycsICdzZWN0aW9uc0J5UGF0aCcsIHNlY3Rpb24ua3NzUGF0aF0sXG4gICAgICAgIG5ld1NlY3Rpb25cbiAgICAgIClcbiAgICAgIC5zZXRJbihcbiAgICAgICAgWydzZWN0aW9ucycsICdzZWN0aW9uc0J5VVJJJywgc2VjdGlvbi5yZWZlcmVuY2VVUkldLFxuICAgICAgICBuZXdTZWN0aW9uXG4gICAgICApO1xuICB9XG5cbiAgY29uc29sZS5sb2coYEZpbGUgJHtmaWxlLmJhc2V9IGNvdWxkIG5vdCBiZSByZWFkYCk7XG4gIHJldHVybiBzdG9yZTtcbn1cblxuLyoqXG4gKiBIYW5kbGUgcmVtb3ZhbCBvZiBhbiBITVRMIHRlbXBsYXRlXG4gKlxuICogQGZ1bmN0aW9uIGRlbGV0ZUhUTUxcbiAqIEBwYXJhbSB7c3RyaW5nfSBmaWxlcGF0aCAtIGZpbGVwYXRoIG9mIGNoYW5nZWQgZmlsZSAoY29tZXMgZnJvbSBnYXplKVxuICogQHBhcmFtIHtvYmplY3R9IHNlY3Rpb24gLSBjb250YWlucyBLU1Mgc2VjdGlvbiBkYXRhXG4gKiBAcGFyYW0ge29iamVjdH0gc3RvcmUgLSBtZW1vcnkgc3RvcmVcbiAqIEByZXR1cm4ge29iamVjdH0gdXBkYXRlZCBkYXRhIHN0b3JlXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBkZWxldGVIVE1MKGZpbGVwYXRoLCBzZWN0aW9uLCBzdG9yZSkge1xuICBjb25zdCBuZXdTZWN0aW9uID0gc2VjdGlvbjtcblxuICB1dGlscy5yZW1vdmVGaWxlKFxuICAgIG5ld1NlY3Rpb24ucmVmZXJlbmNlVVJJLFxuICAgICd0ZW1wbGF0ZScsXG4gICAgZmlsZXBhdGgsXG4gICAgc3RvcmVcbiAgKTtcblxuICBkZWxldGUgbmV3U2VjdGlvbi50ZW1wbGF0ZVBhdGg7XG5cbiAgcmV0dXJuIHN0b3JlXG4gICAgLnNldEluKFxuICAgICAgWydzZWN0aW9ucycsICdzZWN0aW9uc0J5UGF0aCcsIHNlY3Rpb24ua3NzUGF0aF0sXG4gICAgICBuZXdTZWN0aW9uXG4gICAgKVxuICAgIC5zZXRJbihcbiAgICAgIFsnc2VjdGlvbnMnLCAnc2VjdGlvbnNCeVVSSScsIHNlY3Rpb24ucmVmZXJlbmNlVVJJXSxcbiAgICAgIG5ld1NlY3Rpb25cbiAgICApO1xufVxuXG4vKipcbiAqIEhhbmRsZSB1cGRhdGUgZm9yIGEgcHJvdG90eXBlIGZpbGVcbiAqXG4gKiBAZnVuY3Rpb24gdXBkYXRlUHJvdG90eXBlXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZXBhdGggLSBmaWxlcGF0aCBvZiBjaGFuZ2VkIGZpbGUgKGNvbWVzIGZyb20gZ2F6ZSlcbiAqIEBwYXJhbSB7b2JqZWN0fSBzdG9yZSAtIG1lbW9yeSBzdG9yZVxuICogQHJldHVybiB7b2JqZWN0fSB1cGRhdGVkIGRhdGEgc3RvcmVcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHVwZGF0ZVByb3RvdHlwZShmaWxlcGF0aCwgc3RvcmUpIHtcbiAgY29uc3QgZmlsZSA9IHBhdGgucGFyc2UoZmlsZXBhdGgpO1xuICBjb25zdCBjb250ZW50ID0gZnMucmVhZEZpbGVTeW5jKGZpbGVwYXRoLCAndXRmOCcpO1xuXG4gIGlmIChjb250ZW50KSB7XG4gICAgY29uc3QgcmVxdWlyZVBhdGggPSB1dGlscy53cml0ZUZpbGUoXG4gICAgICBmaWxlLm5hbWUsXG4gICAgICAncHJvdG90eXBlJyxcbiAgICAgIGZpbGVwYXRoLFxuICAgICAgY29udGVudCxcbiAgICAgIHN0b3JlXG4gICAgKTtcblxuICAgIHJldHVybiBzdG9yZS5zZXRJbihcbiAgICAgICAgWydwcm90b3R5cGVzJywgZmlsZS5uYW1lXSxcbiAgICAgICAgcmVxdWlyZVBhdGhcbiAgICAgICk7XG4gIH1cblxuICBjb25zb2xlLmxvZyhgRmlsZSAke2ZpbGUuYmFzZX0gY291bGQgbm90IGJlIHJlYWRgKTtcbiAgcmV0dXJuIHN0b3JlO1xufVxuXG4vKipcbiAqIEhhbmRsZSByZW1vdmFsIG9mIGEgcHJvdG90eXBlIGZpbGVcbiAqXG4gKiBAZnVuY3Rpb24gZGVsZXRlUHJvdG90eXBlXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZXBhdGggLSBmaWxlcGF0aCBvZiBjaGFuZ2VkIGZpbGUgKGNvbWVzIGZyb20gZ2F6ZSlcbiAqIEBwYXJhbSB7b2JqZWN0fSBzdG9yZSAtIG1lbW9yeSBzdG9yZVxuICogQHJldHVybiB7b2JqZWN0fSB1cGRhdGVkIGRhdGEgc3RvcmVcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIGRlbGV0ZVByb3RvdHlwZShmaWxlcGF0aCwgc3RvcmUpIHtcbiAgY29uc3QgZmlsZSA9IHBhdGgucGFyc2UoZmlsZXBhdGgpO1xuICBjb25zdCByZXF1aXJlUGF0aCA9IHV0aWxzLnJlbW92ZUZpbGUoXG4gICAgZmlsZS5uYW1lLFxuICAgICdwcm90b3R5cGUnLFxuICAgIGZpbGVwYXRoLFxuICAgIHN0b3JlXG4gICk7XG5cbiAgcmV0dXJuIHN0b3JlLnNldEluKFxuICAgICAgWydwcm90b3R5cGVzJywgZmlsZS5uYW1lXSxcbiAgICAgIHJlcXVpcmVQYXRoXG4gICAgKTtcbn1cblxuXG5cbi8vIFdFQlBBQ0sgRk9PVEVSIC8vXG4vLyBzcmMvY2xpL2hhbmRsZUhUTUwuanMiXSwibWFwcGluZ3MiOiI7Ozs7O0FBZUE7QUEwQ0E7QUErQkE7QUErQkE7QUFDQTtBQXZIQTtBQUNBOzs7QUFBQTtBQUNBOzs7QUFDQTtBQUNBO0FBREE7QUFDQTs7Ozs7QUFDQTs7Ozs7Ozs7O0FBU0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFPQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFTQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7Ozs7O0FBaERBO0FBeURBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFNQTtBQUNBO0FBQ0E7QUFTQTtBQUNBO0FBQ0E7Ozs7Ozs7O0FBUUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFPQTtBQUlBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7OztBQVFBO0FBQ0E7QUFDQTtBQUNBO0FBTUE7QUFJQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 15 */
+/* no static exports found */
+/* all exports used */
+/*!******************************!*\
+  !*** ./src/cli/handleKSS.js ***!
+  \******************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.updateKSS = updateKSS;
-exports.deleteKSS = deleteKSS;
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-var _fsExtra = __webpack_require__(3);
-
-var _fsExtra2 = _interopRequireDefault(_fsExtra);
-
-var _kss = __webpack_require__(25);
-
-var _chalk = __webpack_require__(2);
-
-var _chalk2 = _interopRequireDefault(_chalk);
-
-var _utils = __webpack_require__(1);
-
-var utils = _interopRequireWildcard(_utils);
-
-var _handleTemplates = __webpack_require__(7);
-
-var _requireTemplates = __webpack_require__(8);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Handle update of a KSS section
- *
- * @function updateKSS
- * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} store - memory store
- * @return {object} updated data store
- */
-function updateKSS(filepath, store) {
-  const kssSource = _fsExtra2.default.readFileSync(filepath, 'utf8');
-  const huron = store.get('config');
-  const oldSection = utils.getSection(filepath, false, store) || {};
-  const file = _path2.default.parse(filepath);
-  let newStore = store;
-
-  if (kssSource) {
-    const styleguide = (0, _kss.parse)(kssSource, huron.get('kssOptions'));
-
-    if (styleguide.data.sections.length) {
-      const section = utils.normalizeSectionData(styleguide.data.sections[0]);
-
-      if (section.reference && section.referenceURI) {
-        // Update or add section data
-        newStore = updateSectionData(filepath, section, oldSection, newStore);
-
-        // Remove old section data if reference URI has changed
-        if (oldSection && oldSection.referenceURI && oldSection.referenceURI !== section.referenceURI) {
-          newStore = unsetSection(oldSection, file, newStore, false);
-        }
-
-        (0, _requireTemplates.writeStore)(newStore);
-        console.log(_chalk2.default.green(`KSS source in ${filepath} changed or added`));
-        return newStore;
-      }
-
-      console.log(_chalk2.default.magenta(`KSS section in ${filepath} is missing a section reference`));
-      return newStore;
-    }
-
-    console.log(_chalk2.default.magenta(`No KSS found in ${filepath}`));
-    return newStore;
-  }
-
-  if (oldSection) {
-    newStore = deleteKSS(filepath, oldSection, newStore);
-  }
-
-  console.log(_chalk2.default.red(`${filepath} not found or empty`)); // eslint-disable-line no-console
-  return newStore;
-}
-
-/**
- * Handle removal of a KSS section
- *
- * @function deleteKSS
- * @param {string} filepath - filepath of changed file (comes from gaze)
- * @param {object} section - KSS section data
- * @param {object} store - memory store
- * @return {object} updated data store
- */
-/** @module cli/kss-handler */
-
-function deleteKSS(filepath, section, store) {
-  const file = _path2.default.parse(filepath);
-
-  if (section.reference && section.referenceURI) {
-    // Remove section data from memory store
-    return unsetSection(section, file, store, true);
-  }
-
-  return store;
-}
-
-/**
- * Update the sections store with new data for a specific section
- *
- * @function updateSectionData
- * @param {object} section - contains updated section data
- * @param {string} kssPath - path to KSS section
- * @param {object} store - memory store
- * @return {object} updated data store
- */
-function updateSectionData(kssPath, section, oldSection, store) {
-  const sectionFileInfo = _path2.default.parse(kssPath);
-  const dataFilepath = _path2.default.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);
-  const isInline = null !== section.markup.match(/<\/[^>]*>/);
-  const newSort = sortSection(store.getIn(['sections', 'sorted']), section.reference, store.get('referenceDelimiter'));
-  const newSection = Object.assign({}, oldSection, section);
-  let newStore = store;
-
-  // Required for reference from templates and data
-  newSection.kssPath = kssPath;
-
-  if (isInline) {
-    // Set section value if inlineTempalte() returned a path
-    newStore = updateInlineTemplate(kssPath, oldSection, newSection, newStore);
-  } else {
-    // Remove inline template, if it exists
-    utils.removeFile(newSection.referenceURI, 'template', kssPath, store);
-    // Update markup and data fields
-    newStore = updateTemplateFields(sectionFileInfo, oldSection, newSection, newStore);
-  }
-
-  // Output section description
-  newStore = updateDescription(kssPath, oldSection, newSection, newStore);
-
-  // Output section data to a JSON file
-  newSection.sectionPath = utils.writeSectionData(newStore, newSection, dataFilepath);
-
-  // Update section sorting
-  return newStore.setIn(['sections', 'sorted'], newSort).setIn(['sections', 'sectionsByPath', kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
-}
-
-/**
- * Handle detection and output of inline templates, which is markup written
- * in the KSS documentation itself as opposed to an external file
- *
- * @function updateInlineTemplate
- * @param {string} oldSection - previous iteration of KSS data, if updated
- * @param {object} section - KSS section data
- * @return {object} updated data store with new template path info
- */
-function updateInlineTemplate(filepath, oldSection, section, store) {
-  const newSection = section;
-  const newStore = store;
-
-  // If we have inline markup
-  if (fieldShouldOutput(oldSection, section, 'markup')) {
-    newSection.templatePath = utils.writeFile(section.referenceURI, 'template', filepath, section.markup, store);
-    newSection.templateContent = section.markup;
-
-    return newStore.setIn(['sections', 'sectionsByPath', filepath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
-  }
-
-  return newStore;
-}
-
-/**
- * Handle output of section description
- *
- * @function updateDescription
- * @param {string} oldSection - previous iteration of KSS data, if updated
- * @param {object} section - KSS section data
- * @return {object} updated data store with new descripton path info
- */
-function updateDescription(filepath, oldSection, section, store) {
-  const newSection = section;
-  const newStore = store;
-
-  // If we don't have previous KSS or the KSS has been updated
-  if (fieldShouldOutput(oldSection, section, 'description')) {
-    // Write new description
-    newSection.descriptionPath = utils.writeFile(section.referenceURI, 'description', filepath, section.description, store);
-
-    return newStore.setIn(['sections', 'sectionsByPath', filepath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);
-  }
-
-  return newStore;
-}
-
-/**
- * Handle Data and Markup fields
- *
- * @function updateTemplateFields
- * @param {string} file - File data for KSS file from path.parse()
- * @param {object} oldSection - outdated KSS data
- * @param {object} section - KSS section data
- * @param {object} store - memory store
- * @return {object} KSS section data with updated asset paths
- */
-function updateTemplateFields(file, oldSection, section, store) {
-  const kssPath = _path2.default.format(file);
-  const newSection = section;
-  let filepath = '';
-  let oldFilepath = '';
-  let newStore = store;
-
-  ['data', 'markup'].forEach(field => {
-    if (newSection[field]) {
-      if (oldSection[field]) {
-        oldFilepath = _path2.default.join(file.dir, oldSection[field]);
-        newStore = (0, _handleTemplates.deleteTemplate)(oldFilepath, oldSection, newStore);
-      }
-
-      filepath = _path2.default.join(file.dir, newSection[field]);
-      newStore = (0, _handleTemplates.updateTemplate)(filepath, newSection, newStore);
-    } else {
-      delete newSection[field];
-      newStore = newStore.setIn(['sections', 'sectionsByPath', kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);
-    }
-  });
-
-  return newStore;
-}
-
-/**
- * Remove a section from the memory store
- *
- * @function unsetSection
- * @param {object} section - contains updated section data
- * @param {string} file - file object from path.parse()
- * @param {object} store - memory store
- * @param {bool} removed - has the file been removed or just the section information changed?
- * @return {object} updated data store with new descripton path info
- */
-function unsetSection(section, file, store, removed) {
-  const sorted = store.getIn(['sections', 'sorted']);
-  const kssPath = _path2.default.format(file);
-  const dataFilepath = _path2.default.join(file.dir, `${file.name}.json`);
-  const isInline = section.markup && null !== section.markup.match(/<\/[^>]*>/);
-  const newSort = unsortSection(sorted, section.reference, store.get('referenceDelimiter'));
-  let newStore = store;
-
-  // Remove old section data
-  utils.removeFile(section.referenceURI, 'section', dataFilepath, newStore);
-
-  // Remove associated inline template
-  if (isInline) {
-    utils.removeFile(section.referenceURI, 'template', kssPath, newStore);
-  }
-
-  // Remove description template
-  utils.removeFile(section.referenceURI, 'description', kssPath, newStore);
-
-  // Remove data from sectionsByPath if file has been removed
-  if (removed) {
-    newStore = newStore.deleteIn(['sections', 'sectionsByPath', kssPath]);
-  }
-
-  return newStore.deleteIn(['sections', 'sectionsByURI', section.referenceURI]).setIn(['sections', 'sorted'], newSort);
-}
-
-/**
- * Sort sections and subsections
- *
- * @function sortSection
- * @param {object} sorted - currently sorted sections
- * @param {string} reference - reference URI of section to sort
- * @return {object} updated data store with new descripton path info
- */
-function sortSection(sorted, reference, delimiter) {
-  const parts = reference.split(delimiter);
-  const newSort = sorted[parts[0]] || {};
-  const newSorted = sorted;
-
-  if (1 < parts.length) {
-    const newParts = parts.filter((part, idx) => 0 !== idx);
-    newSorted[parts[0]] = sortSection(newSort, newParts.join(delimiter), delimiter);
-  } else {
-    newSorted[parts[0]] = newSort;
-  }
-
-  return newSorted;
-}
-
-/**
- * Remove a section from the sorted sections
- *
- * @function unsortSection
- * @param {object} sorted - currently sorted sections
- * @param {string} reference - reference URI of section to sort
- * @return {object} updated data store with new descripton path info
- */
-function unsortSection(sorted, reference, delimiter) {
-  const parts = reference.split(delimiter);
-  const subsections = Object.keys(sorted[parts[0]]);
-  const newSorted = sorted;
-
-  if (subsections.length) {
-    if (1 < parts.length) {
-      const newParts = parts.filter((part, idx) => 0 !== idx);
-      newSorted[parts[0]] = unsortSection(newSorted[parts[0]], newParts.join(delimiter), delimiter);
-    }
-  } else {
-    delete newSorted[parts[0]];
-  }
-
-  return newSorted;
-}
-
-/**
- * Compare a KSS field between old and new KSS data to see if we need to output
- * a new module for that field
- *
- * @function fieldShouldOutput
- * @param {object} oldSection - currently sorted sections
- * @param {object} newSection - reference URI of section to sort
- * @param {string} field - KSS field to check
- * @return {bool} output a new module for the KSS field
- */
-function fieldShouldOutput(oldSection, newSection, field) {
-  return oldSection && (oldSection[field] !== newSection[field] || oldSection.referenceURI !== newSection.referenceURI) || !oldSection;
-}
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.updateKSS = updateKSS;\nexports.deleteKSS = deleteKSS;\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nvar _fsExtra = __webpack_require__(/*! fs-extra */ 3);\n\nvar _fsExtra2 = _interopRequireDefault(_fsExtra);\n\nvar _kss = __webpack_require__(/*! kss */ 25);\n\nvar _chalk = __webpack_require__(/*! chalk */ 2);\n\nvar _chalk2 = _interopRequireDefault(_chalk);\n\nvar _utils = __webpack_require__(/*! ./utils */ 1);\n\nvar utils = _interopRequireWildcard(_utils);\n\nvar _handleTemplates = __webpack_require__(/*! ./handleTemplates */ 7);\n\nvar _requireTemplates = __webpack_require__(/*! ./requireTemplates */ 8);\n\nfunction _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n/**\n * Handle update of a KSS section\n *\n * @function updateKSS\n * @param {string} filepath - filepath of changed file (comes from gaze)\n * @param {object} store - memory store\n * @return {object} updated data store\n */\nfunction updateKSS(filepath, store) {\n  const kssSource = _fsExtra2.default.readFileSync(filepath, 'utf8');\n  const huron = store.get('config');\n  const oldSection = utils.getSection(filepath, false, store) || {};\n  const file = _path2.default.parse(filepath);\n  let newStore = store;\n\n  if (kssSource) {\n    const styleguide = (0, _kss.parse)(kssSource, huron.get('kssOptions'));\n\n    if (styleguide.data.sections.length) {\n      const section = utils.normalizeSectionData(styleguide.data.sections[0]);\n\n      if (section.reference && section.referenceURI) {\n        // Update or add section data\n        newStore = updateSectionData(filepath, section, oldSection, newStore);\n\n        // Remove old section data if reference URI has changed\n        if (oldSection && oldSection.referenceURI && oldSection.referenceURI !== section.referenceURI) {\n          newStore = unsetSection(oldSection, file, newStore, false);\n        }\n\n        (0, _requireTemplates.writeStore)(newStore);\n        console.log(_chalk2.default.green(`KSS source in ${filepath} changed or added`));\n        return newStore;\n      }\n\n      console.log(_chalk2.default.magenta(`KSS section in ${filepath} is missing a section reference`));\n      return newStore;\n    }\n\n    console.log(_chalk2.default.magenta(`No KSS found in ${filepath}`));\n    return newStore;\n  }\n\n  if (oldSection) {\n    newStore = deleteKSS(filepath, oldSection, newStore);\n  }\n\n  console.log(_chalk2.default.red(`${filepath} not found or empty`)); // eslint-disable-line no-console\n  return newStore;\n}\n\n/**\n * Handle removal of a KSS section\n *\n * @function deleteKSS\n * @param {string} filepath - filepath of changed file (comes from gaze)\n * @param {object} section - KSS section data\n * @param {object} store - memory store\n * @return {object} updated data store\n */\n/** @module cli/kss-handler */\n\nfunction deleteKSS(filepath, section, store) {\n  const file = _path2.default.parse(filepath);\n\n  if (section.reference && section.referenceURI) {\n    // Remove section data from memory store\n    return unsetSection(section, file, store, true);\n  }\n\n  return store;\n}\n\n/**\n * Update the sections store with new data for a specific section\n *\n * @function updateSectionData\n * @param {object} section - contains updated section data\n * @param {string} kssPath - path to KSS section\n * @param {object} store - memory store\n * @return {object} updated data store\n */\nfunction updateSectionData(kssPath, section, oldSection, store) {\n  const sectionFileInfo = _path2.default.parse(kssPath);\n  const dataFilepath = _path2.default.join(sectionFileInfo.dir, `${sectionFileInfo.name}.json`);\n  const isInline = null !== section.markup.match(/<\\/[^>]*>/);\n  const newSort = sortSection(store.getIn(['sections', 'sorted']), section.reference, store.get('referenceDelimiter'));\n  const newSection = Object.assign({}, oldSection, section);\n  let newStore = store;\n\n  // Required for reference from templates and data\n  newSection.kssPath = kssPath;\n\n  if (isInline) {\n    // Set section value if inlineTempalte() returned a path\n    newStore = updateInlineTemplate(kssPath, oldSection, newSection, newStore);\n  } else {\n    // Remove inline template, if it exists\n    utils.removeFile(newSection.referenceURI, 'template', kssPath, store);\n    // Update markup and data fields\n    newStore = updateTemplateFields(sectionFileInfo, oldSection, newSection, newStore);\n  }\n\n  // Output section description\n  newStore = updateDescription(kssPath, oldSection, newSection, newStore);\n\n  // Output section data to a JSON file\n  newSection.sectionPath = utils.writeSectionData(newStore, newSection, dataFilepath);\n\n  // Update section sorting\n  return newStore.setIn(['sections', 'sorted'], newSort).setIn(['sections', 'sectionsByPath', kssPath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);\n}\n\n/**\n * Handle detection and output of inline templates, which is markup written\n * in the KSS documentation itself as opposed to an external file\n *\n * @function updateInlineTemplate\n * @param {string} oldSection - previous iteration of KSS data, if updated\n * @param {object} section - KSS section data\n * @return {object} updated data store with new template path info\n */\nfunction updateInlineTemplate(filepath, oldSection, section, store) {\n  const newSection = section;\n  const newStore = store;\n\n  // If we have inline markup\n  if (fieldShouldOutput(oldSection, section, 'markup')) {\n    newSection.templatePath = utils.writeFile(section.referenceURI, 'template', filepath, section.markup, store);\n    newSection.templateContent = section.markup;\n\n    return newStore.setIn(['sections', 'sectionsByPath', filepath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);\n  }\n\n  return newStore;\n}\n\n/**\n * Handle output of section description\n *\n * @function updateDescription\n * @param {string} oldSection - previous iteration of KSS data, if updated\n * @param {object} section - KSS section data\n * @return {object} updated data store with new descripton path info\n */\nfunction updateDescription(filepath, oldSection, section, store) {\n  const newSection = section;\n  const newStore = store;\n\n  // If we don't have previous KSS or the KSS has been updated\n  if (fieldShouldOutput(oldSection, section, 'description')) {\n    // Write new description\n    newSection.descriptionPath = utils.writeFile(section.referenceURI, 'description', filepath, section.description, store);\n\n    return newStore.setIn(['sections', 'sectionsByPath', filepath], newSection).setIn(['sections', 'sectionsByURI', section.referenceURI], newSection);\n  }\n\n  return newStore;\n}\n\n/**\n * Handle Data and Markup fields\n *\n * @function updateTemplateFields\n * @param {string} file - File data for KSS file from path.parse()\n * @param {object} oldSection - outdated KSS data\n * @param {object} section - KSS section data\n * @param {object} store - memory store\n * @return {object} KSS section data with updated asset paths\n */\nfunction updateTemplateFields(file, oldSection, section, store) {\n  const kssPath = _path2.default.format(file);\n  const newSection = section;\n  let filepath = '';\n  let oldFilepath = '';\n  let newStore = store;\n\n  ['data', 'markup'].forEach(field => {\n    if (newSection[field]) {\n      if (oldSection[field]) {\n        oldFilepath = _path2.default.join(file.dir, oldSection[field]);\n        newStore = (0, _handleTemplates.deleteTemplate)(oldFilepath, oldSection, newStore);\n      }\n\n      filepath = _path2.default.join(file.dir, newSection[field]);\n      newStore = (0, _handleTemplates.updateTemplate)(filepath, newSection, newStore);\n    } else {\n      delete newSection[field];\n      newStore = newStore.setIn(['sections', 'sectionsByPath', kssPath], newSection).setIn(['sections', 'sectionsByURI', newSection.referenceURI], newSection);\n    }\n  });\n\n  return newStore;\n}\n\n/**\n * Remove a section from the memory store\n *\n * @function unsetSection\n * @param {object} section - contains updated section data\n * @param {string} file - file object from path.parse()\n * @param {object} store - memory store\n * @param {bool} removed - has the file been removed or just the section information changed?\n * @return {object} updated data store with new descripton path info\n */\nfunction unsetSection(section, file, store, removed) {\n  const sorted = store.getIn(['sections', 'sorted']);\n  const kssPath = _path2.default.format(file);\n  const dataFilepath = _path2.default.join(file.dir, `${file.name}.json`);\n  const isInline = section.markup && null !== section.markup.match(/<\\/[^>]*>/);\n  const newSort = unsortSection(sorted, section.reference, store.get('referenceDelimiter'));\n  let newStore = store;\n\n  // Remove old section data\n  utils.removeFile(section.referenceURI, 'section', dataFilepath, newStore);\n\n  // Remove associated inline template\n  if (isInline) {\n    utils.removeFile(section.referenceURI, 'template', kssPath, newStore);\n  }\n\n  // Remove description template\n  utils.removeFile(section.referenceURI, 'description', kssPath, newStore);\n\n  // Remove data from sectionsByPath if file has been removed\n  if (removed) {\n    newStore = newStore.deleteIn(['sections', 'sectionsByPath', kssPath]);\n  }\n\n  return newStore.deleteIn(['sections', 'sectionsByURI', section.referenceURI]).setIn(['sections', 'sorted'], newSort);\n}\n\n/**\n * Sort sections and subsections\n *\n * @function sortSection\n * @param {object} sorted - currently sorted sections\n * @param {string} reference - reference URI of section to sort\n * @return {object} updated data store with new descripton path info\n */\nfunction sortSection(sorted, reference, delimiter) {\n  const parts = reference.split(delimiter);\n  const newSort = sorted[parts[0]] || {};\n  const newSorted = sorted;\n\n  if (1 < parts.length) {\n    const newParts = parts.filter((part, idx) => 0 !== idx);\n    newSorted[parts[0]] = sortSection(newSort, newParts.join(delimiter), delimiter);\n  } else {\n    newSorted[parts[0]] = newSort;\n  }\n\n  return newSorted;\n}\n\n/**\n * Remove a section from the sorted sections\n *\n * @function unsortSection\n * @param {object} sorted - currently sorted sections\n * @param {string} reference - reference URI of section to sort\n * @return {object} updated data store with new descripton path info\n */\nfunction unsortSection(sorted, reference, delimiter) {\n  const parts = reference.split(delimiter);\n  const subsections = Object.keys(sorted[parts[0]]);\n  const newSorted = sorted;\n\n  if (subsections.length) {\n    if (1 < parts.length) {\n      const newParts = parts.filter((part, idx) => 0 !== idx);\n      newSorted[parts[0]] = unsortSection(newSorted[parts[0]], newParts.join(delimiter), delimiter);\n    }\n  } else {\n    delete newSorted[parts[0]];\n  }\n\n  return newSorted;\n}\n\n/**\n * Compare a KSS field between old and new KSS data to see if we need to output\n * a new module for that field\n *\n * @function fieldShouldOutput\n * @param {object} oldSection - currently sorted sections\n * @param {object} newSection - reference URI of section to sort\n * @param {string} field - KSS field to check\n * @return {bool} output a new module for the KSS field\n */\nfunction fieldShouldOutput(oldSection, newSection, field) {\n  return oldSection && (oldSection[field] !== newSection[field] || oldSection.referenceURI !== newSection.referenceURI) || !oldSection;\n}//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTUuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vc3JjL2NsaS9oYW5kbGVLU1MuanM/MzJmZCJdLCJzb3VyY2VzQ29udGVudCI6WyIvKiogQG1vZHVsZSBjbGkva3NzLWhhbmRsZXIgKi9cblxuaW1wb3J0IHBhdGggZnJvbSAncGF0aCc7XG5pbXBvcnQgZnMgZnJvbSAnZnMtZXh0cmEnO1xuaW1wb3J0IHsgcGFyc2UgfSBmcm9tICdrc3MnO1xuaW1wb3J0IGNoYWxrIGZyb20gJ2NoYWxrJztcblxuaW1wb3J0ICogYXMgdXRpbHMgZnJvbSAnLi91dGlscyc7XG5pbXBvcnQgeyB1cGRhdGVUZW1wbGF0ZSwgZGVsZXRlVGVtcGxhdGUgfSBmcm9tICcuL2hhbmRsZVRlbXBsYXRlcyc7XG5pbXBvcnQgeyB3cml0ZVN0b3JlIH0gZnJvbSAnLi9yZXF1aXJlVGVtcGxhdGVzJztcblxuLyoqXG4gKiBIYW5kbGUgdXBkYXRlIG9mIGEgS1NTIHNlY3Rpb25cbiAqXG4gKiBAZnVuY3Rpb24gdXBkYXRlS1NTXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZXBhdGggLSBmaWxlcGF0aCBvZiBjaGFuZ2VkIGZpbGUgKGNvbWVzIGZyb20gZ2F6ZSlcbiAqIEBwYXJhbSB7b2JqZWN0fSBzdG9yZSAtIG1lbW9yeSBzdG9yZVxuICogQHJldHVybiB7b2JqZWN0fSB1cGRhdGVkIGRhdGEgc3RvcmVcbiAqL1xuZXhwb3J0IGZ1bmN0aW9uIHVwZGF0ZUtTUyhmaWxlcGF0aCwgc3RvcmUpIHtcbiAgY29uc3Qga3NzU291cmNlID0gZnMucmVhZEZpbGVTeW5jKGZpbGVwYXRoLCAndXRmOCcpO1xuICBjb25zdCBodXJvbiA9IHN0b3JlLmdldCgnY29uZmlnJyk7XG4gIGNvbnN0IG9sZFNlY3Rpb24gPSB1dGlscy5nZXRTZWN0aW9uKGZpbGVwYXRoLCBmYWxzZSwgc3RvcmUpIHx8IHt9O1xuICBjb25zdCBmaWxlID0gcGF0aC5wYXJzZShmaWxlcGF0aCk7XG4gIGxldCBuZXdTdG9yZSA9IHN0b3JlO1xuXG4gIGlmIChrc3NTb3VyY2UpIHtcbiAgICBjb25zdCBzdHlsZWd1aWRlID0gcGFyc2Uoa3NzU291cmNlLCBodXJvbi5nZXQoJ2tzc09wdGlvbnMnKSk7XG5cbiAgICBpZiAoc3R5bGVndWlkZS5kYXRhLnNlY3Rpb25zLmxlbmd0aCkge1xuICAgICAgY29uc3Qgc2VjdGlvbiA9IHV0aWxzLm5vcm1hbGl6ZVNlY3Rpb25EYXRhKFxuICAgICAgICBzdHlsZWd1aWRlLmRhdGEuc2VjdGlvbnNbMF1cbiAgICAgICk7XG5cbiAgICAgIGlmIChzZWN0aW9uLnJlZmVyZW5jZSAmJiBzZWN0aW9uLnJlZmVyZW5jZVVSSSkge1xuICAgICAgICAvLyBVcGRhdGUgb3IgYWRkIHNlY3Rpb24gZGF0YVxuICAgICAgICBuZXdTdG9yZSA9IHVwZGF0ZVNlY3Rpb25EYXRhKFxuICAgICAgICAgIGZpbGVwYXRoLFxuICAgICAgICAgIHNlY3Rpb24sXG4gICAgICAgICAgb2xkU2VjdGlvbixcbiAgICAgICAgICBuZXdTdG9yZVxuICAgICAgICApO1xuXG4gICAgICAgIC8vIFJlbW92ZSBvbGQgc2VjdGlvbiBkYXRhIGlmIHJlZmVyZW5jZSBVUkkgaGFzIGNoYW5nZWRcbiAgICAgICAgaWYgKG9sZFNlY3Rpb24gJiZcbiAgICAgICAgICBvbGRTZWN0aW9uLnJlZmVyZW5jZVVSSSAmJlxuICAgICAgICAgIG9sZFNlY3Rpb24ucmVmZXJlbmNlVVJJICE9PSBzZWN0aW9uLnJlZmVyZW5jZVVSSVxuICAgICAgICApIHtcbiAgICAgICAgICBuZXdTdG9yZSA9IHVuc2V0U2VjdGlvbihvbGRTZWN0aW9uLCBmaWxlLCBuZXdTdG9yZSwgZmFsc2UpO1xuICAgICAgICB9XG5cbiAgICAgICAgd3JpdGVTdG9yZShuZXdTdG9yZSk7XG4gICAgICAgIGNvbnNvbGUubG9nKFxuICAgICAgICAgIGNoYWxrLmdyZWVuKFxuICAgICAgICAgICAgYEtTUyBzb3VyY2UgaW4gJHtmaWxlcGF0aH0gY2hhbmdlZCBvciBhZGRlZGBcbiAgICAgICAgICApXG4gICAgICAgICk7XG4gICAgICAgIHJldHVybiBuZXdTdG9yZTtcbiAgICAgIH1cblxuICAgICAgY29uc29sZS5sb2coXG4gICAgICAgIGNoYWxrLm1hZ2VudGEoXG4gICAgICAgICAgYEtTUyBzZWN0aW9uIGluICR7ZmlsZXBhdGh9IGlzIG1pc3NpbmcgYSBzZWN0aW9uIHJlZmVyZW5jZWBcbiAgICAgICAgKVxuICAgICAgKTtcbiAgICAgIHJldHVybiBuZXdTdG9yZTtcbiAgICB9XG5cbiAgICBjb25zb2xlLmxvZyhjaGFsay5tYWdlbnRhKGBObyBLU1MgZm91bmQgaW4gJHtmaWxlcGF0aH1gKSk7XG4gICAgcmV0dXJuIG5ld1N0b3JlO1xuICB9XG5cbiAgaWYgKG9sZFNlY3Rpb24pIHtcbiAgICBuZXdTdG9yZSA9IGRlbGV0ZUtTUyhmaWxlcGF0aCwgb2xkU2VjdGlvbiwgbmV3U3RvcmUpO1xuICB9XG5cbiAgY29uc29sZS5sb2coY2hhbGsucmVkKGAke2ZpbGVwYXRofSBub3QgZm91bmQgb3IgZW1wdHlgKSk7IC8vIGVzbGludC1kaXNhYmxlLWxpbmUgbm8tY29uc29sZVxuICByZXR1cm4gbmV3U3RvcmU7XG59XG5cbi8qKlxuICogSGFuZGxlIHJlbW92YWwgb2YgYSBLU1Mgc2VjdGlvblxuICpcbiAqIEBmdW5jdGlvbiBkZWxldGVLU1NcbiAqIEBwYXJhbSB7c3RyaW5nfSBmaWxlcGF0aCAtIGZpbGVwYXRoIG9mIGNoYW5nZWQgZmlsZSAoY29tZXMgZnJvbSBnYXplKVxuICogQHBhcmFtIHtvYmplY3R9IHNlY3Rpb24gLSBLU1Mgc2VjdGlvbiBkYXRhXG4gKiBAcGFyYW0ge29iamVjdH0gc3RvcmUgLSBtZW1vcnkgc3RvcmVcbiAqIEByZXR1cm4ge29iamVjdH0gdXBkYXRlZCBkYXRhIHN0b3JlXG4gKi9cbmV4cG9ydCBmdW5jdGlvbiBkZWxldGVLU1MoZmlsZXBhdGgsIHNlY3Rpb24sIHN0b3JlKSB7XG4gIGNvbnN0IGZpbGUgPSBwYXRoLnBhcnNlKGZpbGVwYXRoKTtcblxuICBpZiAoc2VjdGlvbi5yZWZlcmVuY2UgJiYgc2VjdGlvbi5yZWZlcmVuY2VVUkkpIHtcbiAgICAvLyBSZW1vdmUgc2VjdGlvbiBkYXRhIGZyb20gbWVtb3J5IHN0b3JlXG4gICAgcmV0dXJuIHVuc2V0U2VjdGlvbihzZWN0aW9uLCBmaWxlLCBzdG9yZSwgdHJ1ZSk7XG4gIH1cblxuICByZXR1cm4gc3RvcmU7XG59XG5cbi8qKlxuICogVXBkYXRlIHRoZSBzZWN0aW9ucyBzdG9yZSB3aXRoIG5ldyBkYXRhIGZvciBhIHNwZWNpZmljIHNlY3Rpb25cbiAqXG4gKiBAZnVuY3Rpb24gdXBkYXRlU2VjdGlvbkRhdGFcbiAqIEBwYXJhbSB7b2JqZWN0fSBzZWN0aW9uIC0gY29udGFpbnMgdXBkYXRlZCBzZWN0aW9uIGRhdGFcbiAqIEBwYXJhbSB7c3RyaW5nfSBrc3NQYXRoIC0gcGF0aCB0byBLU1Mgc2VjdGlvblxuICogQHBhcmFtIHtvYmplY3R9IHN0b3JlIC0gbWVtb3J5IHN0b3JlXG4gKiBAcmV0dXJuIHtvYmplY3R9IHVwZGF0ZWQgZGF0YSBzdG9yZVxuICovXG5mdW5jdGlvbiB1cGRhdGVTZWN0aW9uRGF0YShrc3NQYXRoLCBzZWN0aW9uLCBvbGRTZWN0aW9uLCBzdG9yZSkge1xuICBjb25zdCBzZWN0aW9uRmlsZUluZm8gPSBwYXRoLnBhcnNlKGtzc1BhdGgpO1xuICBjb25zdCBkYXRhRmlsZXBhdGggPSBwYXRoLmpvaW4oXG4gICAgc2VjdGlvbkZpbGVJbmZvLmRpcixcbiAgICBgJHtzZWN0aW9uRmlsZUluZm8ubmFtZX0uanNvbmBcbiAgKTtcbiAgY29uc3QgaXNJbmxpbmUgPSBudWxsICE9PSBzZWN0aW9uLm1hcmt1cC5tYXRjaCgvPFxcL1tePl0qPi8pO1xuICBjb25zdCBuZXdTb3J0ID0gc29ydFNlY3Rpb24oXG4gICAgc3RvcmUuZ2V0SW4oWydzZWN0aW9ucycsICdzb3J0ZWQnXSksXG4gICAgc2VjdGlvbi5yZWZlcmVuY2UsXG4gICAgc3RvcmUuZ2V0KCdyZWZlcmVuY2VEZWxpbWl0ZXInKVxuICApO1xuICBjb25zdCBuZXdTZWN0aW9uID0gT2JqZWN0LmFzc2lnbih7fSwgb2xkU2VjdGlvbiwgc2VjdGlvbik7XG4gIGxldCBuZXdTdG9yZSA9IHN0b3JlO1xuXG4gIC8vIFJlcXVpcmVkIGZvciByZWZlcmVuY2UgZnJvbSB0ZW1wbGF0ZXMgYW5kIGRhdGFcbiAgbmV3U2VjdGlvbi5rc3NQYXRoID0ga3NzUGF0aDtcblxuICBpZiAoaXNJbmxpbmUpIHtcbiAgICAvLyBTZXQgc2VjdGlvbiB2YWx1ZSBpZiBpbmxpbmVUZW1wYWx0ZSgpIHJldHVybmVkIGEgcGF0aFxuICAgIG5ld1N0b3JlID0gdXBkYXRlSW5saW5lVGVtcGxhdGUoXG4gICAgICBrc3NQYXRoLFxuICAgICAgb2xkU2VjdGlvbixcbiAgICAgIG5ld1NlY3Rpb24sXG4gICAgICBuZXdTdG9yZVxuICAgICk7XG4gIH0gZWxzZSB7XG4gICAgLy8gUmVtb3ZlIGlubGluZSB0ZW1wbGF0ZSwgaWYgaXQgZXhpc3RzXG4gICAgdXRpbHMucmVtb3ZlRmlsZShcbiAgICAgIG5ld1NlY3Rpb24ucmVmZXJlbmNlVVJJLFxuICAgICAgJ3RlbXBsYXRlJyxcbiAgICAgIGtzc1BhdGgsXG4gICAgICBzdG9yZVxuICAgICk7XG4gICAgLy8gVXBkYXRlIG1hcmt1cCBhbmQgZGF0YSBmaWVsZHNcbiAgICBuZXdTdG9yZSA9IHVwZGF0ZVRlbXBsYXRlRmllbGRzKFxuICAgICAgc2VjdGlvbkZpbGVJbmZvLFxuICAgICAgb2xkU2VjdGlvbixcbiAgICAgIG5ld1NlY3Rpb24sXG4gICAgICBuZXdTdG9yZVxuICAgICk7XG4gIH1cblxuICAvLyBPdXRwdXQgc2VjdGlvbiBkZXNjcmlwdGlvblxuICBuZXdTdG9yZSA9IHVwZGF0ZURlc2NyaXB0aW9uKFxuICAgIGtzc1BhdGgsXG4gICAgb2xkU2VjdGlvbixcbiAgICBuZXdTZWN0aW9uLFxuICAgIG5ld1N0b3JlXG4gICk7XG5cbiAgLy8gT3V0cHV0IHNlY3Rpb24gZGF0YSB0byBhIEpTT04gZmlsZVxuICBuZXdTZWN0aW9uLnNlY3Rpb25QYXRoID0gdXRpbHMud3JpdGVTZWN0aW9uRGF0YShcbiAgICBuZXdTdG9yZSxcbiAgICBuZXdTZWN0aW9uLFxuICAgIGRhdGFGaWxlcGF0aFxuICApO1xuXG4gIC8vIFVwZGF0ZSBzZWN0aW9uIHNvcnRpbmdcbiAgcmV0dXJuIG5ld1N0b3JlXG4gICAgLnNldEluKFxuICAgICAgWydzZWN0aW9ucycsICdzb3J0ZWQnXSxcbiAgICAgIG5ld1NvcnRcbiAgICApXG4gICAgLnNldEluKFxuICAgICAgWydzZWN0aW9ucycsICdzZWN0aW9uc0J5UGF0aCcsIGtzc1BhdGhdLFxuICAgICAgbmV3U2VjdGlvblxuICAgIClcbiAgICAuc2V0SW4oXG4gICAgICBbJ3NlY3Rpb25zJywgJ3NlY3Rpb25zQnlVUkknLCBzZWN0aW9uLnJlZmVyZW5jZVVSSV0sXG4gICAgICBuZXdTZWN0aW9uXG4gICAgKTtcbn1cblxuLyoqXG4gKiBIYW5kbGUgZGV0ZWN0aW9uIGFuZCBvdXRwdXQgb2YgaW5saW5lIHRlbXBsYXRlcywgd2hpY2ggaXMgbWFya3VwIHdyaXR0ZW5cbiAqIGluIHRoZSBLU1MgZG9jdW1lbnRhdGlvbiBpdHNlbGYgYXMgb3Bwb3NlZCB0byBhbiBleHRlcm5hbCBmaWxlXG4gKlxuICogQGZ1bmN0aW9uIHVwZGF0ZUlubGluZVRlbXBsYXRlXG4gKiBAcGFyYW0ge3N0cmluZ30gb2xkU2VjdGlvbiAtIHByZXZpb3VzIGl0ZXJhdGlvbiBvZiBLU1MgZGF0YSwgaWYgdXBkYXRlZFxuICogQHBhcmFtIHtvYmplY3R9IHNlY3Rpb24gLSBLU1Mgc2VjdGlvbiBkYXRhXG4gKiBAcmV0dXJuIHtvYmplY3R9IHVwZGF0ZWQgZGF0YSBzdG9yZSB3aXRoIG5ldyB0ZW1wbGF0ZSBwYXRoIGluZm9cbiAqL1xuZnVuY3Rpb24gdXBkYXRlSW5saW5lVGVtcGxhdGUoZmlsZXBhdGgsIG9sZFNlY3Rpb24sIHNlY3Rpb24sIHN0b3JlKSB7XG4gIGNvbnN0IG5ld1NlY3Rpb24gPSBzZWN0aW9uO1xuICBjb25zdCBuZXdTdG9yZSA9IHN0b3JlO1xuXG4gIC8vIElmIHdlIGhhdmUgaW5saW5lIG1hcmt1cFxuICBpZiAoZmllbGRTaG91bGRPdXRwdXQob2xkU2VjdGlvbiwgc2VjdGlvbiwgJ21hcmt1cCcpKSB7XG4gICAgbmV3U2VjdGlvbi50ZW1wbGF0ZVBhdGggPSB1dGlscy53cml0ZUZpbGUoXG4gICAgICBzZWN0aW9uLnJlZmVyZW5jZVVSSSxcbiAgICAgICd0ZW1wbGF0ZScsXG4gICAgICBmaWxlcGF0aCxcbiAgICAgIHNlY3Rpb24ubWFya3VwLFxuICAgICAgc3RvcmVcbiAgICApO1xuICAgIG5ld1NlY3Rpb24udGVtcGxhdGVDb250ZW50ID0gc2VjdGlvbi5tYXJrdXA7XG5cbiAgICByZXR1cm4gbmV3U3RvcmVcbiAgICAgIC5zZXRJbihcbiAgICAgICAgWydzZWN0aW9ucycsICdzZWN0aW9uc0J5UGF0aCcsIGZpbGVwYXRoXSxcbiAgICAgICAgbmV3U2VjdGlvblxuICAgICAgKVxuICAgICAgLnNldEluKFxuICAgICAgICBbJ3NlY3Rpb25zJywgJ3NlY3Rpb25zQnlVUkknLCBzZWN0aW9uLnJlZmVyZW5jZVVSSV0sXG4gICAgICAgIG5ld1NlY3Rpb25cbiAgICAgICk7XG4gIH1cblxuICByZXR1cm4gbmV3U3RvcmU7XG59XG5cbi8qKlxuICogSGFuZGxlIG91dHB1dCBvZiBzZWN0aW9uIGRlc2NyaXB0aW9uXG4gKlxuICogQGZ1bmN0aW9uIHVwZGF0ZURlc2NyaXB0aW9uXG4gKiBAcGFyYW0ge3N0cmluZ30gb2xkU2VjdGlvbiAtIHByZXZpb3VzIGl0ZXJhdGlvbiBvZiBLU1MgZGF0YSwgaWYgdXBkYXRlZFxuICogQHBhcmFtIHtvYmplY3R9IHNlY3Rpb24gLSBLU1Mgc2VjdGlvbiBkYXRhXG4gKiBAcmV0dXJuIHtvYmplY3R9IHVwZGF0ZWQgZGF0YSBzdG9yZSB3aXRoIG5ldyBkZXNjcmlwdG9uIHBhdGggaW5mb1xuICovXG5mdW5jdGlvbiB1cGRhdGVEZXNjcmlwdGlvbihmaWxlcGF0aCwgb2xkU2VjdGlvbiwgc2VjdGlvbiwgc3RvcmUpIHtcbiAgY29uc3QgbmV3U2VjdGlvbiA9IHNlY3Rpb247XG4gIGNvbnN0IG5ld1N0b3JlID0gc3RvcmU7XG5cbiAgLy8gSWYgd2UgZG9uJ3QgaGF2ZSBwcmV2aW91cyBLU1Mgb3IgdGhlIEtTUyBoYXMgYmVlbiB1cGRhdGVkXG4gIGlmIChmaWVsZFNob3VsZE91dHB1dChvbGRTZWN0aW9uLCBzZWN0aW9uLCAnZGVzY3JpcHRpb24nKSkge1xuICAgIC8vIFdyaXRlIG5ldyBkZXNjcmlwdGlvblxuICAgIG5ld1NlY3Rpb24uZGVzY3JpcHRpb25QYXRoID0gdXRpbHMud3JpdGVGaWxlKFxuICAgICAgc2VjdGlvbi5yZWZlcmVuY2VVUkksXG4gICAgICAnZGVzY3JpcHRpb24nLFxuICAgICAgZmlsZXBhdGgsXG4gICAgICBzZWN0aW9uLmRlc2NyaXB0aW9uLFxuICAgICAgc3RvcmVcbiAgICApO1xuXG4gICAgcmV0dXJuIG5ld1N0b3JlXG4gICAgICAuc2V0SW4oXG4gICAgICAgIFsnc2VjdGlvbnMnLCAnc2VjdGlvbnNCeVBhdGgnLCBmaWxlcGF0aF0sXG4gICAgICAgIG5ld1NlY3Rpb25cbiAgICAgIClcbiAgICAgIC5zZXRJbihcbiAgICAgICAgWydzZWN0aW9ucycsICdzZWN0aW9uc0J5VVJJJywgc2VjdGlvbi5yZWZlcmVuY2VVUkldLFxuICAgICAgICBuZXdTZWN0aW9uXG4gICAgICApO1xuICB9XG5cbiAgcmV0dXJuIG5ld1N0b3JlO1xufVxuXG4vKipcbiAqIEhhbmRsZSBEYXRhIGFuZCBNYXJrdXAgZmllbGRzXG4gKlxuICogQGZ1bmN0aW9uIHVwZGF0ZVRlbXBsYXRlRmllbGRzXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZSAtIEZpbGUgZGF0YSBmb3IgS1NTIGZpbGUgZnJvbSBwYXRoLnBhcnNlKClcbiAqIEBwYXJhbSB7b2JqZWN0fSBvbGRTZWN0aW9uIC0gb3V0ZGF0ZWQgS1NTIGRhdGFcbiAqIEBwYXJhbSB7b2JqZWN0fSBzZWN0aW9uIC0gS1NTIHNlY3Rpb24gZGF0YVxuICogQHBhcmFtIHtvYmplY3R9IHN0b3JlIC0gbWVtb3J5IHN0b3JlXG4gKiBAcmV0dXJuIHtvYmplY3R9IEtTUyBzZWN0aW9uIGRhdGEgd2l0aCB1cGRhdGVkIGFzc2V0IHBhdGhzXG4gKi9cbmZ1bmN0aW9uIHVwZGF0ZVRlbXBsYXRlRmllbGRzKGZpbGUsIG9sZFNlY3Rpb24sIHNlY3Rpb24sIHN0b3JlKSB7XG4gIGNvbnN0IGtzc1BhdGggPSBwYXRoLmZvcm1hdChmaWxlKTtcbiAgY29uc3QgbmV3U2VjdGlvbiA9IHNlY3Rpb247XG4gIGxldCBmaWxlcGF0aCA9ICcnO1xuICBsZXQgb2xkRmlsZXBhdGggPSAnJztcbiAgbGV0IG5ld1N0b3JlID0gc3RvcmU7XG5cbiAgWydkYXRhJywgJ21hcmt1cCddLmZvckVhY2goKGZpZWxkKSA9PiB7XG4gICAgaWYgKG5ld1NlY3Rpb25bZmllbGRdKSB7XG4gICAgICBpZiAob2xkU2VjdGlvbltmaWVsZF0pIHtcbiAgICAgICAgb2xkRmlsZXBhdGggPSBwYXRoLmpvaW4oZmlsZS5kaXIsIG9sZFNlY3Rpb25bZmllbGRdKTtcbiAgICAgICAgbmV3U3RvcmUgPSBkZWxldGVUZW1wbGF0ZShcbiAgICAgICAgICBvbGRGaWxlcGF0aCxcbiAgICAgICAgICBvbGRTZWN0aW9uLFxuICAgICAgICAgIG5ld1N0b3JlXG4gICAgICAgICk7XG4gICAgICB9XG5cbiAgICAgIGZpbGVwYXRoID0gcGF0aC5qb2luKGZpbGUuZGlyLCBuZXdTZWN0aW9uW2ZpZWxkXSk7XG4gICAgICBuZXdTdG9yZSA9IHVwZGF0ZVRlbXBsYXRlKFxuICAgICAgICBmaWxlcGF0aCxcbiAgICAgICAgbmV3U2VjdGlvbixcbiAgICAgICAgbmV3U3RvcmVcbiAgICAgICk7XG4gICAgfSBlbHNlIHtcbiAgICAgIGRlbGV0ZSBuZXdTZWN0aW9uW2ZpZWxkXTtcbiAgICAgIG5ld1N0b3JlID0gbmV3U3RvcmVcbiAgICAgICAgLnNldEluKFxuICAgICAgICAgIFsnc2VjdGlvbnMnLCAnc2VjdGlvbnNCeVBhdGgnLCBrc3NQYXRoXSxcbiAgICAgICAgICBuZXdTZWN0aW9uXG4gICAgICAgIClcbiAgICAgICAgLnNldEluKFxuICAgICAgICAgIFsnc2VjdGlvbnMnLCAnc2VjdGlvbnNCeVVSSScsIG5ld1NlY3Rpb24ucmVmZXJlbmNlVVJJXSxcbiAgICAgICAgICBuZXdTZWN0aW9uXG4gICAgICAgICk7XG4gICAgfVxuICB9KTtcblxuICByZXR1cm4gbmV3U3RvcmU7XG59XG5cbi8qKlxuICogUmVtb3ZlIGEgc2VjdGlvbiBmcm9tIHRoZSBtZW1vcnkgc3RvcmVcbiAqXG4gKiBAZnVuY3Rpb24gdW5zZXRTZWN0aW9uXG4gKiBAcGFyYW0ge29iamVjdH0gc2VjdGlvbiAtIGNvbnRhaW5zIHVwZGF0ZWQgc2VjdGlvbiBkYXRhXG4gKiBAcGFyYW0ge3N0cmluZ30gZmlsZSAtIGZpbGUgb2JqZWN0IGZyb20gcGF0aC5wYXJzZSgpXG4gKiBAcGFyYW0ge29iamVjdH0gc3RvcmUgLSBtZW1vcnkgc3RvcmVcbiAqIEBwYXJhbSB7Ym9vbH0gcmVtb3ZlZCAtIGhhcyB0aGUgZmlsZSBiZWVuIHJlbW92ZWQgb3IganVzdCB0aGUgc2VjdGlvbiBpbmZvcm1hdGlvbiBjaGFuZ2VkP1xuICogQHJldHVybiB7b2JqZWN0fSB1cGRhdGVkIGRhdGEgc3RvcmUgd2l0aCBuZXcgZGVzY3JpcHRvbiBwYXRoIGluZm9cbiAqL1xuZnVuY3Rpb24gdW5zZXRTZWN0aW9uKHNlY3Rpb24sIGZpbGUsIHN0b3JlLCByZW1vdmVkKSB7XG4gIGNvbnN0IHNvcnRlZCA9IHN0b3JlLmdldEluKFsnc2VjdGlvbnMnLCAnc29ydGVkJ10pO1xuICBjb25zdCBrc3NQYXRoID0gcGF0aC5mb3JtYXQoZmlsZSk7XG4gIGNvbnN0IGRhdGFGaWxlcGF0aCA9IHBhdGguam9pbihmaWxlLmRpciwgYCR7ZmlsZS5uYW1lfS5qc29uYCk7XG4gIGNvbnN0IGlzSW5saW5lID0gc2VjdGlvbi5tYXJrdXAgJiZcbiAgICBudWxsICE9PSBzZWN0aW9uLm1hcmt1cC5tYXRjaCgvPFxcL1tePl0qPi8pO1xuICBjb25zdCBuZXdTb3J0ID0gdW5zb3J0U2VjdGlvbihcbiAgICBzb3J0ZWQsXG4gICAgc2VjdGlvbi5yZWZlcmVuY2UsXG4gICAgc3RvcmUuZ2V0KCdyZWZlcmVuY2VEZWxpbWl0ZXInKVxuICApO1xuICBsZXQgbmV3U3RvcmUgPSBzdG9yZTtcblxuICAvLyBSZW1vdmUgb2xkIHNlY3Rpb24gZGF0YVxuICB1dGlscy5yZW1vdmVGaWxlKFxuICAgIHNlY3Rpb24ucmVmZXJlbmNlVVJJLFxuICAgICdzZWN0aW9uJyxcbiAgICBkYXRhRmlsZXBhdGgsXG4gICAgbmV3U3RvcmVcbiAgKTtcblxuICAgLy8gUmVtb3ZlIGFzc29jaWF0ZWQgaW5saW5lIHRlbXBsYXRlXG4gIGlmIChpc0lubGluZSkge1xuICAgIHV0aWxzLnJlbW92ZUZpbGUoc2VjdGlvbi5yZWZlcmVuY2VVUkksICd0ZW1wbGF0ZScsIGtzc1BhdGgsIG5ld1N0b3JlKTtcbiAgfVxuXG4gIC8vIFJlbW92ZSBkZXNjcmlwdGlvbiB0ZW1wbGF0ZVxuICB1dGlscy5yZW1vdmVGaWxlKHNlY3Rpb24ucmVmZXJlbmNlVVJJLCAnZGVzY3JpcHRpb24nLCBrc3NQYXRoLCBuZXdTdG9yZSk7XG5cbiAgLy8gUmVtb3ZlIGRhdGEgZnJvbSBzZWN0aW9uc0J5UGF0aCBpZiBmaWxlIGhhcyBiZWVuIHJlbW92ZWRcbiAgaWYgKHJlbW92ZWQpIHtcbiAgICBuZXdTdG9yZSA9IG5ld1N0b3JlLmRlbGV0ZUluKFsnc2VjdGlvbnMnLCAnc2VjdGlvbnNCeVBhdGgnLCBrc3NQYXRoXSk7XG4gIH1cblxuICByZXR1cm4gbmV3U3RvcmVcbiAgICAuZGVsZXRlSW4oWydzZWN0aW9ucycsICdzZWN0aW9uc0J5VVJJJywgc2VjdGlvbi5yZWZlcmVuY2VVUkldKVxuICAgIC5zZXRJbihbJ3NlY3Rpb25zJywgJ3NvcnRlZCddLCBuZXdTb3J0KTtcbn1cblxuLyoqXG4gKiBTb3J0IHNlY3Rpb25zIGFuZCBzdWJzZWN0aW9uc1xuICpcbiAqIEBmdW5jdGlvbiBzb3J0U2VjdGlvblxuICogQHBhcmFtIHtvYmplY3R9IHNvcnRlZCAtIGN1cnJlbnRseSBzb3J0ZWQgc2VjdGlvbnNcbiAqIEBwYXJhbSB7c3RyaW5nfSByZWZlcmVuY2UgLSByZWZlcmVuY2UgVVJJIG9mIHNlY3Rpb24gdG8gc29ydFxuICogQHJldHVybiB7b2JqZWN0fSB1cGRhdGVkIGRhdGEgc3RvcmUgd2l0aCBuZXcgZGVzY3JpcHRvbiBwYXRoIGluZm9cbiAqL1xuZnVuY3Rpb24gc29ydFNlY3Rpb24oc29ydGVkLCByZWZlcmVuY2UsIGRlbGltaXRlcikge1xuICBjb25zdCBwYXJ0cyA9IHJlZmVyZW5jZS5zcGxpdChkZWxpbWl0ZXIpO1xuICBjb25zdCBuZXdTb3J0ID0gc29ydGVkW3BhcnRzWzBdXSB8fCB7fTtcbiAgY29uc3QgbmV3U29ydGVkID0gc29ydGVkO1xuXG4gIGlmICgxIDwgcGFydHMubGVuZ3RoKSB7XG4gICAgY29uc3QgbmV3UGFydHMgPSBwYXJ0cy5maWx0ZXIoKHBhcnQsIGlkeCkgPT4gMCAhPT0gaWR4KTtcbiAgICBuZXdTb3J0ZWRbcGFydHNbMF1dID0gc29ydFNlY3Rpb24oXG4gICAgICBuZXdTb3J0LFxuICAgICAgbmV3UGFydHMuam9pbihkZWxpbWl0ZXIpLFxuICAgICAgZGVsaW1pdGVyXG4gICAgKTtcbiAgfSBlbHNlIHtcbiAgICBuZXdTb3J0ZWRbcGFydHNbMF1dID0gbmV3U29ydDtcbiAgfVxuXG4gIHJldHVybiBuZXdTb3J0ZWQ7XG59XG5cbi8qKlxuICogUmVtb3ZlIGEgc2VjdGlvbiBmcm9tIHRoZSBzb3J0ZWQgc2VjdGlvbnNcbiAqXG4gKiBAZnVuY3Rpb24gdW5zb3J0U2VjdGlvblxuICogQHBhcmFtIHtvYmplY3R9IHNvcnRlZCAtIGN1cnJlbnRseSBzb3J0ZWQgc2VjdGlvbnNcbiAqIEBwYXJhbSB7c3RyaW5nfSByZWZlcmVuY2UgLSByZWZlcmVuY2UgVVJJIG9mIHNlY3Rpb24gdG8gc29ydFxuICogQHJldHVybiB7b2JqZWN0fSB1cGRhdGVkIGRhdGEgc3RvcmUgd2l0aCBuZXcgZGVzY3JpcHRvbiBwYXRoIGluZm9cbiAqL1xuZnVuY3Rpb24gdW5zb3J0U2VjdGlvbihzb3J0ZWQsIHJlZmVyZW5jZSwgZGVsaW1pdGVyKSB7XG4gIGNvbnN0IHBhcnRzID0gcmVmZXJlbmNlLnNwbGl0KGRlbGltaXRlcik7XG4gIGNvbnN0IHN1YnNlY3Rpb25zID0gT2JqZWN0LmtleXMoc29ydGVkW3BhcnRzWzBdXSk7XG4gIGNvbnN0IG5ld1NvcnRlZCA9IHNvcnRlZDtcblxuICBpZiAoc3Vic2VjdGlvbnMubGVuZ3RoKSB7XG4gICAgaWYgKDEgPCBwYXJ0cy5sZW5ndGgpIHtcbiAgICAgIGNvbnN0IG5ld1BhcnRzID0gcGFydHMuZmlsdGVyKChwYXJ0LCBpZHgpID0+IDAgIT09IGlkeCk7XG4gICAgICBuZXdTb3J0ZWRbcGFydHNbMF1dID0gdW5zb3J0U2VjdGlvbihcbiAgICAgICAgbmV3U29ydGVkW3BhcnRzWzBdXSxcbiAgICAgICAgbmV3UGFydHMuam9pbihkZWxpbWl0ZXIpLFxuICAgICAgICBkZWxpbWl0ZXJcbiAgICAgICk7XG4gICAgfVxuICB9IGVsc2Uge1xuICAgIGRlbGV0ZSBuZXdTb3J0ZWRbcGFydHNbMF1dO1xuICB9XG5cbiAgcmV0dXJuIG5ld1NvcnRlZDtcbn1cblxuLyoqXG4gKiBDb21wYXJlIGEgS1NTIGZpZWxkIGJldHdlZW4gb2xkIGFuZCBuZXcgS1NTIGRhdGEgdG8gc2VlIGlmIHdlIG5lZWQgdG8gb3V0cHV0XG4gKiBhIG5ldyBtb2R1bGUgZm9yIHRoYXQgZmllbGRcbiAqXG4gKiBAZnVuY3Rpb24gZmllbGRTaG91bGRPdXRwdXRcbiAqIEBwYXJhbSB7b2JqZWN0fSBvbGRTZWN0aW9uIC0gY3VycmVudGx5IHNvcnRlZCBzZWN0aW9uc1xuICogQHBhcmFtIHtvYmplY3R9IG5ld1NlY3Rpb24gLSByZWZlcmVuY2UgVVJJIG9mIHNlY3Rpb24gdG8gc29ydFxuICogQHBhcmFtIHtzdHJpbmd9IGZpZWxkIC0gS1NTIGZpZWxkIHRvIGNoZWNrXG4gKiBAcmV0dXJuIHtib29sfSBvdXRwdXQgYSBuZXcgbW9kdWxlIGZvciB0aGUgS1NTIGZpZWxkXG4gKi9cbmZ1bmN0aW9uIGZpZWxkU2hvdWxkT3V0cHV0KG9sZFNlY3Rpb24sIG5ld1NlY3Rpb24sIGZpZWxkKSB7XG4gIHJldHVybiAob2xkU2VjdGlvbiAmJlxuICAgICAgKG9sZFNlY3Rpb25bZmllbGRdICE9PSBuZXdTZWN0aW9uW2ZpZWxkXSB8fFxuICAgICAgb2xkU2VjdGlvbi5yZWZlcmVuY2VVUkkgIT09IG5ld1NlY3Rpb24ucmVmZXJlbmNlVVJJKVxuICAgICkgfHxcbiAgICAhb2xkU2VjdGlvbjtcbn1cblxuXG5cbi8vIFdFQlBBQ0sgRk9PVEVSIC8vXG4vLyBzcmMvY2xpL2hhbmRsZUtTUy5qcyJdLCJtYXBwaW5ncyI6Ijs7Ozs7QUFtQkE7QUFzRUE7QUFDQTtBQXhGQTtBQUNBOzs7QUFBQTtBQUNBOzs7QUFBQTtBQUNBO0FBQUE7QUFDQTs7O0FBQ0E7QUFDQTtBQURBO0FBQ0E7QUFBQTtBQUNBO0FBQUE7QUFDQTs7Ozs7QUFDQTs7Ozs7Ozs7QUFRQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUdBO0FBQ0E7QUFDQTtBQUNBO0FBTUE7QUFDQTtBQUlBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFLQTtBQUNBO0FBQ0E7QUFDQTtBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7Ozs7QUFoRkE7QUFDQTtBQXdGQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7Ozs7Ozs7OztBQVNBO0FBQ0E7QUFDQTtBQUlBO0FBQ0E7QUFLQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFNQTtBQUNBO0FBQ0E7QUFNQTtBQUNBO0FBTUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQU1BO0FBQ0E7QUFDQTtBQUtBO0FBQ0E7QUFhQTtBQUNBO0FBQ0E7Ozs7Ozs7OztBQVNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBT0E7QUFDQTtBQUNBO0FBU0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7OztBQVFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQU9BO0FBU0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7Ozs7O0FBVUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBS0E7QUFDQTtBQUNBO0FBQ0E7QUFLQTtBQUNBO0FBQ0E7QUFTQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7Ozs7OztBQVVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFFQTtBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFNQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBR0E7QUFDQTtBQUNBOzs7Ozs7OztBQVFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFLQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7Ozs7OztBQVFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7Ozs7OztBQVVBO0FBQ0E7QUFLQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 16 */
+/* no static exports found */
+/* all exports used */
+/*!************************************!*\
+  !*** ./src/cli/requireExternal.js ***!
+  \************************************/
 /***/ (function(module, exports) {
 
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = requireExternal;
-// Necessary to remove require statement from Webpack processing preserve it in output
-/* eslint-disable import/no-dynamic-require, global-require */
-function requireExternal(requirePath) {
-  return require(requirePath);
-}
-/* eslint-enable */
+eval("\"use strict\";\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.default = requireExternal;\n// Necessary to remove require statement from Webpack processing preserve it in output\n/* eslint-disable import/no-dynamic-require, global-require */\nfunction requireExternal(requirePath) {\n  return require(requirePath);\n}\n/* eslint-enable *///# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTYuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vc3JjL2NsaS9yZXF1aXJlRXh0ZXJuYWwuanM/OWM3MCJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBOZWNlc3NhcnkgdG8gcmVtb3ZlIHJlcXVpcmUgc3RhdGVtZW50IGZyb20gV2VicGFjayBwcm9jZXNzaW5nIHByZXNlcnZlIGl0IGluIG91dHB1dFxuLyogZXNsaW50LWRpc2FibGUgaW1wb3J0L25vLWR5bmFtaWMtcmVxdWlyZSwgZ2xvYmFsLXJlcXVpcmUgKi9cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIHJlcXVpcmVFeHRlcm5hbChyZXF1aXJlUGF0aCkge1xuICByZXR1cm4gcmVxdWlyZShyZXF1aXJlUGF0aCk7XG59XG4vKiBlc2xpbnQtZW5hYmxlICovXG5cblxuXG4vLyBXRUJQQUNLIEZPT1RFUiAvL1xuLy8gc3JjL2NsaS9yZXF1aXJlRXh0ZXJuYWwuanMiXSwibWFwcGluZ3MiOiI7Ozs7O0FBRUE7QUFGQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EiLCJzb3VyY2VSb290IjoiIn0=");
 
 /***/ }),
 /* 17 */
+/* no static exports found */
+/* all exports used */
+/*!***************************!*\
+  !*** ./src/cli/server.js ***!
+  \***************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.default = startWebpack;
-
-var _webpack = __webpack_require__(5);
-
-var _webpack2 = _interopRequireDefault(_webpack);
-
-var _webpackDevServer = __webpack_require__(29);
-
-var _webpackDevServer2 = _interopRequireDefault(_webpackDevServer);
-
-var _chalk = __webpack_require__(2);
-
-var _chalk2 = _interopRequireDefault(_chalk);
-
-var _opn = __webpack_require__(27);
-
-var _opn2 = _interopRequireDefault(_opn);
-
-var _devServer = __webpack_require__(10);
-
-var _devServer2 = _interopRequireDefault(_devServer);
-
-var _parseArgs = __webpack_require__(4);
-
-var _parseArgs2 = _interopRequireDefault(_parseArgs);
-
-var _utils = __webpack_require__(1);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-/**
- * Spin up webpack-dev-server or, if production flag is set, run webpack a single time
- *
- * @function startWebpack
- * @param {object} config - webpack configuration, preprocessed by {@link module:cli/generate-config generateConfig}
- * @see {@link module:cli/generate-config generateConfig}
- */
-function startWebpack(config) {
-  const huron = config.huron;
-  const webpackConfig = config.webpack;
-  const compiler = (0, _webpack2.default)(webpackConfig);
-
-  if (_parseArgs2.default.progress) {
-    compiler.apply(new _webpack2.default.ProgressPlugin((percentage, msg) => {
-      console.log(`${percentage * 100}% `, msg);
-    }));
-  }
-
-  if (_parseArgs2.default.production) {
-    compiler.run((err, stats) => {
-      const info = stats.toJson();
-
-      if (err) {
-        console.log(err);
-      }
-
-      if (stats.hasErrors()) {
-        console.error(_chalk2.default.red('Webpack encountered errors during compile: ', info.errors));
-      }
-
-      if (stats.hasWarnings()) {
-        console.error(_chalk2.default.yellow('Webpack encountered warnings during compile: ', info.warnings));
-      }
-    });
-  } else {
-    const server = new _webpackDevServer2.default(compiler, (0, _devServer2.default)(huron));
-    const prototypeName = huron.prototypes[0].title || huron.prototypes[0];
-
-    server.listen(huron.port, 'localhost', err => {
-      if (err) {
-        return console.log(err);
-      }
-
-      console.log(`Listening at http://localhost:${huron.port}/`);
-      (0, _opn2.default)(`http://localhost:${huron.port}/${(0, _utils.removeTrailingSlash)(huron.root)}/${prototypeName}.html`);
-      return true;
-    });
-  }
-} /** @module cli/webpack-server */
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\nexports.default = startWebpack;\n\nvar _webpack = __webpack_require__(/*! webpack */ 5);\n\nvar _webpack2 = _interopRequireDefault(_webpack);\n\nvar _webpackDevServer = __webpack_require__(/*! webpack-dev-server */ 29);\n\nvar _webpackDevServer2 = _interopRequireDefault(_webpackDevServer);\n\nvar _chalk = __webpack_require__(/*! chalk */ 2);\n\nvar _chalk2 = _interopRequireDefault(_chalk);\n\nvar _opn = __webpack_require__(/*! opn */ 27);\n\nvar _opn2 = _interopRequireDefault(_opn);\n\nvar _devServer = __webpack_require__(/*! ../../config/devServer.config */ 10);\n\nvar _devServer2 = _interopRequireDefault(_devServer);\n\nvar _parseArgs = __webpack_require__(/*! ./parseArgs */ 4);\n\nvar _parseArgs2 = _interopRequireDefault(_parseArgs);\n\nvar _utils = __webpack_require__(/*! ./utils */ 1);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n/**\n * Spin up webpack-dev-server or, if production flag is set, run webpack a single time\n *\n * @function startWebpack\n * @param {object} config - webpack configuration, preprocessed by {@link module:cli/generate-config generateConfig}\n * @see {@link module:cli/generate-config generateConfig}\n */\nfunction startWebpack(config) {\n  const huron = config.huron;\n  const webpackConfig = config.webpack;\n  const compiler = (0, _webpack2.default)(webpackConfig);\n\n  if (_parseArgs2.default.progress) {\n    compiler.apply(new _webpack2.default.ProgressPlugin((percentage, msg) => {\n      console.log(`${percentage * 100}% `, msg);\n    }));\n  }\n\n  if (_parseArgs2.default.production) {\n    compiler.run((err, stats) => {\n      const info = stats.toJson();\n\n      if (err) {\n        console.log(err);\n      }\n\n      if (stats.hasErrors()) {\n        console.error(_chalk2.default.red('Webpack encountered errors during compile: ', info.errors));\n      }\n\n      if (stats.hasWarnings()) {\n        console.error(_chalk2.default.yellow('Webpack encountered warnings during compile: ', info.warnings));\n      }\n    });\n  } else {\n    const server = new _webpackDevServer2.default(compiler, (0, _devServer2.default)(huron));\n    const prototypeName = huron.prototypes[0].title || huron.prototypes[0];\n\n    server.listen(huron.port, 'localhost', err => {\n      if (err) {\n        return console.log(err);\n      }\n\n      console.log(`Listening at http://localhost:${huron.port}/`);\n      (0, _opn2.default)(`http://localhost:${huron.port}/${(0, _utils.removeTrailingSlash)(huron.root)}/${prototypeName}.html`);\n      return true;\n    });\n  }\n} /** @module cli/webpack-server *///# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTcuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vc3JjL2NsaS9zZXJ2ZXIuanM/ODJlMSJdLCJzb3VyY2VzQ29udGVudCI6WyIvKiogQG1vZHVsZSBjbGkvd2VicGFjay1zZXJ2ZXIgKi9cbmltcG9ydCB3ZWJwYWNrIGZyb20gJ3dlYnBhY2snO1xuaW1wb3J0IFdlYnBhY2tEZXZTZXJ2ZXIgZnJvbSAnd2VicGFjay1kZXYtc2VydmVyJztcbmltcG9ydCBjaGFsayBmcm9tICdjaGFsayc7XG5pbXBvcnQgb3BlbiBmcm9tICdvcG4nO1xuXG5pbXBvcnQgY3JlYXRlRGV2U2VydmVyQ29uZmlnIGZyb20gJy4uLy4uL2NvbmZpZy9kZXZTZXJ2ZXIuY29uZmlnJztcbmltcG9ydCBwcm9ncmFtIGZyb20gJy4vcGFyc2VBcmdzJztcbmltcG9ydCB7IHJlbW92ZVRyYWlsaW5nU2xhc2ggfSBmcm9tICcuL3V0aWxzJztcblxuLyoqXG4gKiBTcGluIHVwIHdlYnBhY2stZGV2LXNlcnZlciBvciwgaWYgcHJvZHVjdGlvbiBmbGFnIGlzIHNldCwgcnVuIHdlYnBhY2sgYSBzaW5nbGUgdGltZVxuICpcbiAqIEBmdW5jdGlvbiBzdGFydFdlYnBhY2tcbiAqIEBwYXJhbSB7b2JqZWN0fSBjb25maWcgLSB3ZWJwYWNrIGNvbmZpZ3VyYXRpb24sIHByZXByb2Nlc3NlZCBieSB7QGxpbmsgbW9kdWxlOmNsaS9nZW5lcmF0ZS1jb25maWcgZ2VuZXJhdGVDb25maWd9XG4gKiBAc2VlIHtAbGluayBtb2R1bGU6Y2xpL2dlbmVyYXRlLWNvbmZpZyBnZW5lcmF0ZUNvbmZpZ31cbiAqL1xuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gc3RhcnRXZWJwYWNrKGNvbmZpZykge1xuICBjb25zdCBodXJvbiA9IGNvbmZpZy5odXJvbjtcbiAgY29uc3Qgd2VicGFja0NvbmZpZyA9IGNvbmZpZy53ZWJwYWNrO1xuICBjb25zdCBjb21waWxlciA9IHdlYnBhY2sod2VicGFja0NvbmZpZyk7XG5cbiAgaWYgKHByb2dyYW0ucHJvZ3Jlc3MpIHtcbiAgICBjb21waWxlci5hcHBseShcbiAgICAgIG5ldyB3ZWJwYWNrLlByb2dyZXNzUGx1Z2luKFxuICAgICAgICAocGVyY2VudGFnZSwgbXNnKSA9PiB7XG4gICAgICAgICAgY29uc29sZS5sb2coYCR7KHBlcmNlbnRhZ2UgKiAxMDApfSUgYCwgbXNnKTtcbiAgICAgICAgfVxuICAgICAgKVxuICAgICk7XG4gIH1cblxuICBpZiAocHJvZ3JhbS5wcm9kdWN0aW9uKSB7XG4gICAgY29tcGlsZXIucnVuKChlcnIsIHN0YXRzKSA9PiB7XG4gICAgICBjb25zdCBpbmZvID0gc3RhdHMudG9Kc29uKCk7XG5cbiAgICAgIGlmIChlcnIpIHtcbiAgICAgICAgY29uc29sZS5sb2coZXJyKTtcbiAgICAgIH1cblxuICAgICAgaWYgKHN0YXRzLmhhc0Vycm9ycygpKSB7XG4gICAgICAgIGNvbnNvbGUuZXJyb3IoXG4gICAgICAgICAgY2hhbGsucmVkKFxuICAgICAgICAgICAgJ1dlYnBhY2sgZW5jb3VudGVyZWQgZXJyb3JzIGR1cmluZyBjb21waWxlOiAnLFxuICAgICAgICAgICAgaW5mby5lcnJvcnNcbiAgICAgICAgICApXG4gICAgICAgICk7XG4gICAgICB9XG5cbiAgICAgIGlmIChzdGF0cy5oYXNXYXJuaW5ncygpKSB7XG4gICAgICAgIGNvbnNvbGUuZXJyb3IoXG4gICAgICAgICAgY2hhbGsueWVsbG93KFxuICAgICAgICAgICAgJ1dlYnBhY2sgZW5jb3VudGVyZWQgd2FybmluZ3MgZHVyaW5nIGNvbXBpbGU6ICcsIGluZm8ud2FybmluZ3NcbiAgICAgICAgICApXG4gICAgICAgICk7XG4gICAgICB9XG4gICAgfSk7XG4gIH0gZWxzZSB7XG4gICAgY29uc3Qgc2VydmVyID0gbmV3IFdlYnBhY2tEZXZTZXJ2ZXIoY29tcGlsZXIsIGNyZWF0ZURldlNlcnZlckNvbmZpZyhodXJvbikpO1xuICAgIGNvbnN0IHByb3RvdHlwZU5hbWUgPSBodXJvbi5wcm90b3R5cGVzWzBdLnRpdGxlIHx8IGh1cm9uLnByb3RvdHlwZXNbMF07XG5cbiAgICBzZXJ2ZXIubGlzdGVuKFxuICAgICAgaHVyb24ucG9ydCxcbiAgICAgICdsb2NhbGhvc3QnLFxuICAgICAgKGVycikgPT4ge1xuICAgICAgICBpZiAoZXJyKSB7XG4gICAgICAgICAgcmV0dXJuIGNvbnNvbGUubG9nKGVycik7XG4gICAgICAgIH1cblxuICAgICAgICBjb25zb2xlLmxvZyhgTGlzdGVuaW5nIGF0IGh0dHA6Ly9sb2NhbGhvc3Q6JHtodXJvbi5wb3J0fS9gKTtcbiAgICAgICAgb3BlbihgaHR0cDovL2xvY2FsaG9zdDoke2h1cm9uLnBvcnR9LyR7XG4gICAgICAgICAgcmVtb3ZlVHJhaWxpbmdTbGFzaChodXJvbi5yb290KVxuICAgICAgICB9LyR7cHJvdG90eXBlTmFtZX0uaHRtbGApO1xuICAgICAgICByZXR1cm4gdHJ1ZTtcbiAgICAgIH1cbiAgICApO1xuICB9XG59XG5cblxuXG4vLyBXRUJQQUNLIEZPT1RFUiAvL1xuLy8gc3JjL2NsaS9zZXJ2ZXIuanMiXSwibWFwcGluZ3MiOiI7Ozs7O0FBaUJBO0FBQ0E7QUFqQkE7QUFDQTs7O0FBQUE7QUFDQTs7O0FBQUE7QUFDQTs7O0FBQUE7QUFDQTs7O0FBQ0E7QUFDQTs7O0FBQUE7QUFDQTs7O0FBQUE7QUFDQTs7O0FBQ0E7Ozs7Ozs7QUFPQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUdBO0FBQ0E7QUFHQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFNQTtBQUNBO0FBQ0E7QUFDQTtBQUtBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBR0E7QUFDQTtBQUVBO0FBQ0EiLCJzb3VyY2VSb290IjoiIn0=");
 
 /***/ }),
 /* 18 */
+/* no static exports found */
+/* all exports used */
+/*!*******************************************!*\
+  !*** ./src/defaultConfig/huron.config.js ***!
+  \*******************************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = {
-  css: [],
-  entry: 'huron',
-  js: [],
-  kss: 'css/',
-  kssExtension: '.css',
-  kssOptions: {
-    multiline: true,
-    markdown: true,
-    custom: ['data']
-  },
-  output: 'partials',
-  port: 8080,
-  prototypes: ['index'],
-  root: 'dist/',
-  sectionTemplate: _path2.default.join(__dirname, '../../templates/section.hbs'),
-  classNames: false,
-  templates: {
-    rule: {
-      test: /\.(hbs|handlebars)$/,
-      use: 'handlebars-loader'
-    },
-    extension: '.hbs'
-  },
-  window: {}
-};
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nexports.default = {\n  css: [],\n  entry: 'huron',\n  js: [],\n  kss: 'css/',\n  kssExtension: '.css',\n  kssOptions: {\n    multiline: true,\n    markdown: true,\n    custom: ['data']\n  },\n  output: 'partials',\n  port: 8080,\n  prototypes: ['index'],\n  root: 'dist/',\n  sectionTemplate: _path2.default.join(__dirname, '../../templates/section.hbs'),\n  classNames: false,\n  templates: {\n    rule: {\n      test: /\\.(hbs|handlebars)$/,\n      use: 'handlebars-loader'\n    },\n    extension: '.hbs'\n  },\n  window: {}\n};//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTguanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vc3JjL2RlZmF1bHRDb25maWcvaHVyb24uY29uZmlnLmpzP2I1MjYiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHBhdGggZnJvbSAncGF0aCc7XG5cbmV4cG9ydCBkZWZhdWx0IHtcbiAgY3NzOiBbXSxcbiAgZW50cnk6ICdodXJvbicsXG4gIGpzOiBbXSxcbiAga3NzOiAnY3NzLycsXG4gIGtzc0V4dGVuc2lvbjogJy5jc3MnLFxuICBrc3NPcHRpb25zOiB7XG4gICAgbXVsdGlsaW5lOiB0cnVlLFxuICAgIG1hcmtkb3duOiB0cnVlLFxuICAgIGN1c3RvbTogWydkYXRhJ10sXG4gIH0sXG4gIG91dHB1dDogJ3BhcnRpYWxzJyxcbiAgcG9ydDogODA4MCxcbiAgcHJvdG90eXBlczogWydpbmRleCddLFxuICByb290OiAnZGlzdC8nLFxuICBzZWN0aW9uVGVtcGxhdGU6IHBhdGguam9pbihfX2Rpcm5hbWUsICcuLi8uLi90ZW1wbGF0ZXMvc2VjdGlvbi5oYnMnKSxcbiAgY2xhc3NOYW1lczogZmFsc2UsXG4gIHRlbXBsYXRlczoge1xuICAgIHJ1bGU6IHtcbiAgICAgIHRlc3Q6IC9cXC4oaGJzfGhhbmRsZWJhcnMpJC8sXG4gICAgICB1c2U6ICdoYW5kbGViYXJzLWxvYWRlcicsXG4gICAgfSxcbiAgICBleHRlbnNpb246ICcuaGJzJyxcbiAgfSxcbiAgd2luZG93OiB7fSxcbn07XG5cblxuXG4vLyBXRUJQQUNLIEZPT1RFUiAvL1xuLy8gc3JjL2RlZmF1bHRDb25maWcvaHVyb24uY29uZmlnLmpzIl0sIm1hcHBpbmdzIjoiOzs7Ozs7QUFBQTtBQUNBOzs7OztBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBSEE7QUFLQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUZBO0FBSUE7QUFMQTtBQU9BO0FBeEJBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 19 */
+/* no static exports found */
+/* all exports used */
+/*!*********************************************!*\
+  !*** ./src/defaultConfig/webpack.config.js ***!
+  \*********************************************/
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-var _webpack = __webpack_require__(5);
-
-var _webpack2 = _interopRequireDefault(_webpack);
-
-var _path = __webpack_require__(0);
-
-var _path2 = _interopRequireDefault(_path);
-
-var _parseArgs = __webpack_require__(4);
-
-var _parseArgs2 = _interopRequireDefault(_parseArgs);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-exports.default = huron => {
-  const cwd = process.cwd();
-
-  return {
-    entry: {},
-    output: {
-      path: _path2.default.join(cwd, huron.root),
-      publicPath: _parseArgs2.default.production ? '' : `http://localhost:${huron.port}/${huron.root}`,
-      filename: '[name].js',
-      chunkFilename: '[name].chunk.min.js'
-    },
-    plugins: [new _webpack2.default.HotModuleReplacementPlugin(), new _webpack2.default.NamedModulesPlugin()],
-    resolve: {
-      modulesDirectories: [_path2.default.resolve(__dirname, '../src/js')]
-    },
-    resolveLoader: {
-      modulesDirectories: ['web_loaders', 'web_modules', 'node_loaders', 'node_modules', _path2.default.resolve(__dirname, '../node_modules')]
-    },
-    module: {
-      rules: [{
-        test: /\.html$/,
-        include: [_path2.default.join(cwd, huron.root, huron.output)],
-        use: 'html-loader'
-      }, {
-        test: /\.(hbs|handlebars)$/,
-        include: [_path2.default.join(cwd, huron.root, 'huron-assets')],
-        use: {
-          loader: 'handlebars-loader',
-          options: {
-            helperDirs: [_path2.default.join(__dirname, '../../', 'templates/handlebarsHelpers')]
-          }
-        }
-      }]
-    }
-  };
-};
+eval("\n\nObject.defineProperty(exports, \"__esModule\", {\n  value: true\n});\n\nvar _webpack = __webpack_require__(/*! webpack */ 5);\n\nvar _webpack2 = _interopRequireDefault(_webpack);\n\nvar _path = __webpack_require__(/*! path */ 0);\n\nvar _path2 = _interopRequireDefault(_path);\n\nvar _parseArgs = __webpack_require__(/*! ../cli/parseArgs */ 4);\n\nvar _parseArgs2 = _interopRequireDefault(_parseArgs);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\nexports.default = huron => {\n  const cwd = process.cwd();\n\n  return {\n    entry: {},\n    output: {\n      path: _path2.default.join(cwd, huron.root),\n      publicPath: _parseArgs2.default.production ? '' : `http://localhost:${huron.port}/${huron.root}`,\n      filename: '[name].js',\n      chunkFilename: '[name].chunk.min.js'\n    },\n    plugins: [new _webpack2.default.HotModuleReplacementPlugin(), new _webpack2.default.NamedModulesPlugin()],\n    resolve: {\n      modulesDirectories: [_path2.default.resolve(__dirname, '../src/js')]\n    },\n    resolveLoader: {\n      modulesDirectories: ['web_loaders', 'web_modules', 'node_loaders', 'node_modules', _path2.default.resolve(__dirname, '../node_modules')]\n    },\n    module: {\n      rules: [{\n        test: /\\.html$/,\n        include: [_path2.default.join(cwd, huron.root, huron.output)],\n        use: 'html-loader'\n      }, {\n        test: /\\.(hbs|handlebars)$/,\n        include: [_path2.default.join(cwd, huron.root, 'huron-assets')],\n        use: {\n          loader: 'handlebars-loader',\n          options: {\n            helperDirs: [_path2.default.join(__dirname, '../../', 'templates/handlebarsHelpers')]\n          }\n        }\n      }]\n    }\n  };\n};//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMTkuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vc3JjL2RlZmF1bHRDb25maWcvd2VicGFjay5jb25maWcuanM/M2Q3YyJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgd2VicGFjayBmcm9tICd3ZWJwYWNrJztcbmltcG9ydCBwYXRoIGZyb20gJ3BhdGgnO1xuXG5pbXBvcnQgcHJvZ3JhbSBmcm9tICcuLi9jbGkvcGFyc2VBcmdzJztcblxuZXhwb3J0IGRlZmF1bHQgKGh1cm9uKSA9PiB7XG4gIGNvbnN0IGN3ZCA9IHByb2Nlc3MuY3dkKCk7XG5cbiAgcmV0dXJuIHtcbiAgICBlbnRyeToge30sXG4gICAgb3V0cHV0OiB7XG4gICAgICBwYXRoOiBwYXRoLmpvaW4oY3dkLCBodXJvbi5yb290KSxcbiAgICAgIHB1YmxpY1BhdGg6IHByb2dyYW0ucHJvZHVjdGlvbiA/ICcnIDpcbiAgICAgICAgYGh0dHA6Ly9sb2NhbGhvc3Q6JHtodXJvbi5wb3J0fS8ke2h1cm9uLnJvb3R9YCxcbiAgICAgIGZpbGVuYW1lOiAnW25hbWVdLmpzJyxcbiAgICAgIGNodW5rRmlsZW5hbWU6ICdbbmFtZV0uY2h1bmsubWluLmpzJyxcbiAgICB9LFxuICAgIHBsdWdpbnM6IFtcbiAgICAgIG5ldyB3ZWJwYWNrLkhvdE1vZHVsZVJlcGxhY2VtZW50UGx1Z2luKCksXG4gICAgICBuZXcgd2VicGFjay5OYW1lZE1vZHVsZXNQbHVnaW4oKSxcbiAgICBdLFxuICAgIHJlc29sdmU6IHtcbiAgICAgIG1vZHVsZXNEaXJlY3RvcmllczogW1xuICAgICAgICBwYXRoLnJlc29sdmUoX19kaXJuYW1lLCAnLi4vc3JjL2pzJyksXG4gICAgICBdLFxuICAgIH0sXG4gICAgcmVzb2x2ZUxvYWRlcjoge1xuICAgICAgbW9kdWxlc0RpcmVjdG9yaWVzOiBbXG4gICAgICAgICd3ZWJfbG9hZGVycycsXG4gICAgICAgICd3ZWJfbW9kdWxlcycsXG4gICAgICAgICdub2RlX2xvYWRlcnMnLFxuICAgICAgICAnbm9kZV9tb2R1bGVzJyxcbiAgICAgICAgcGF0aC5yZXNvbHZlKF9fZGlybmFtZSwgJy4uL25vZGVfbW9kdWxlcycpLFxuICAgICAgXSxcbiAgICB9LFxuICAgIG1vZHVsZToge1xuICAgICAgcnVsZXM6IFtcbiAgICAgICAge1xuICAgICAgICAgIHRlc3Q6IC9cXC5odG1sJC8sXG4gICAgICAgICAgaW5jbHVkZTogW3BhdGguam9pbihjd2QsIGh1cm9uLnJvb3QsIGh1cm9uLm91dHB1dCldLFxuICAgICAgICAgIHVzZTogJ2h0bWwtbG9hZGVyJyxcbiAgICAgICAgfSxcbiAgICAgICAge1xuICAgICAgICAgIHRlc3Q6IC9cXC4oaGJzfGhhbmRsZWJhcnMpJC8sXG4gICAgICAgICAgaW5jbHVkZTogW3BhdGguam9pbihjd2QsIGh1cm9uLnJvb3QsICdodXJvbi1hc3NldHMnKV0sXG4gICAgICAgICAgdXNlOiB7XG4gICAgICAgICAgICBsb2FkZXI6ICdoYW5kbGViYXJzLWxvYWRlcicsXG4gICAgICAgICAgICBvcHRpb25zOiB7XG4gICAgICAgICAgICAgIGhlbHBlckRpcnM6IFtwYXRoLmpvaW4oXG4gICAgICAgICAgICAgICAgX19kaXJuYW1lLFxuICAgICAgICAgICAgICAgICcuLi8uLi8nLFxuICAgICAgICAgICAgICAgICd0ZW1wbGF0ZXMvaGFuZGxlYmFyc0hlbHBlcnMnXG4gICAgICAgICAgICAgICldLFxuICAgICAgICAgICAgfSxcbiAgICAgICAgICB9LFxuICAgICAgICB9LFxuICAgICAgXSxcbiAgICB9LFxuICB9O1xufTtcblxuXG5cbi8vIFdFQlBBQ0sgRk9PVEVSIC8vXG4vLyBzcmMvZGVmYXVsdENvbmZpZy93ZWJwYWNrLmNvbmZpZy5qcyJdLCJtYXBwaW5ncyI6Ijs7Ozs7O0FBQUE7QUFDQTs7O0FBQUE7QUFDQTs7O0FBQ0E7QUFDQTs7Ozs7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBRUE7QUFDQTtBQUxBO0FBT0E7QUFJQTtBQUNBO0FBREE7QUFLQTtBQUNBO0FBREE7QUFTQTtBQUNBO0FBRUE7QUFDQTtBQUNBO0FBSEE7QUFNQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFEQTtBQUZBO0FBSEE7QUFQQTtBQTNCQTtBQW1EQSIsInNvdXJjZVJvb3QiOiIifQ==");
 
 /***/ }),
 /* 20 */
+/* no static exports found */
+/* all exports used */
+/*!**********************************************************************!*\
+  !*** ./~/raw-loader!./~/babel-loader/lib!./templates/hotTemplate.js ***!
+  \**********************************************************************/
 /***/ (function(module, exports) {
 
-module.exports = "'use strict';\n\nvar _huronStore = require('./huron-store');\n\nvar _huronStore2 = _interopRequireDefault(_huronStore);\n\nvar _insertNodes = require('./insertNodes');\n\nvar _insertNodes2 = _interopRequireDefault(_insertNodes);\n\nvar _section = require('./section.hbs');\n\nvar _section2 = _interopRequireDefault(_section);\n\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\n\n/* eslint-enable */\n\nconst assets = require.context(hotScope.requirePath, true, hotScope.requireRegex); /* globals hotScope */\n\n// NOTE: This is not a normal JS file! It is pulled in by the CLI as a string\n// and prepended to the browser script after replacing anything referenced via `hotScope[variable]`\n// with CLI arguments or config properties passed in by the user.\n\n/* eslint-disable */\n\nconst modules = {};\n\nmodules[hotScope.sectionTemplatePath] = _section2.default;\n\nassets.keys().forEach(key => {\n  modules[key] = assets(key);\n});\n\nconst insert = new _insertNodes2.default(modules, _huronStore2.default);\n\nif (module.hot) {\n  // Hot Module Replacement for huron components (json, hbs, html)\n  module.hot.accept(assets.id, () => {\n    const newAssets = require.context(hotScope.requirePath, true, hotScope.requireRegex);\n    const newModules = newAssets.keys().map(key => [key, newAssets(key)]).filter(newModule => modules[newModule[0]] !== newModule[1]);\n\n    updateStore(require('./huron-store.js')); // eslint-disable-line global-require, import/no-unresolved\n    newModules.forEach(module => {\n      modules[module[0]] = module[1];\n      hotReplace(module[0], module[1], modules);\n    });\n  });\n\n  // Hot Module Replacement for sections template\n  module.hot.accept('./section.hbs', () => {\n    const newSectionTemplate = require('./section.hbs'); // eslint-disable-line global-require, import/no-unresolved\n\n    modules[hotScope.sectionTemplatePath] = newSectionTemplate;\n    hotReplace('./huron-assets/section.hbs', newSectionTemplate, modules);\n  });\n\n  // Hot Module Replacement for data store\n  module.hot.accept('./huron-store.js', () => {\n    updateStore(require('./huron-store.js')); // eslint-disable-line global-require, import/no-unresolved\n  });\n}\n\nfunction hotReplace(key, module, newModules) {\n  insert.modules = newModules;\n  if (key === _huronStore2.default.sectionTemplatePath) {\n    insert.cycleSections();\n  } else {\n    insert.inserted = [];\n    insert.loadModule(key, module, false);\n  }\n}\n\nfunction updateStore(newStore) {\n  insert.store = newStore;\n}"
+eval("module.exports = \"'use strict';\\n\\nvar _huronStore = require('./huron-store');\\n\\nvar _huronStore2 = _interopRequireDefault(_huronStore);\\n\\nvar _insertNodes = require('./insertNodes');\\n\\nvar _insertNodes2 = _interopRequireDefault(_insertNodes);\\n\\nvar _section = require('./section.hbs');\\n\\nvar _section2 = _interopRequireDefault(_section);\\n\\nfunction _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }\\n\\n/* eslint-enable */\\n\\nconst assets = require.context(hotScope.requirePath, true, hotScope.requireRegex); /* globals hotScope */\\n\\n// NOTE: This is not a normal JS file! It is pulled in by the CLI as a string\\n// and prepended to the browser script after replacing anything referenced via `hotScope[variable]`\\n// with CLI arguments or config properties passed in by the user.\\n\\n/* eslint-disable */\\n\\nconst modules = {};\\n\\nmodules[hotScope.sectionTemplatePath] = _section2.default;\\n\\nassets.keys().forEach(key => {\\n  modules[key] = assets(key);\\n});\\n\\nconst insert = new _insertNodes2.default(modules, _huronStore2.default);\\n\\nif (module.hot) {\\n  // Hot Module Replacement for huron components (json, hbs, html)\\n  module.hot.accept(assets.id, () => {\\n    const newAssets = require.context(hotScope.requirePath, true, hotScope.requireRegex);\\n    const newModules = newAssets.keys().map(key => [key, newAssets(key)]).filter(newModule => modules[newModule[0]] !== newModule[1]);\\n\\n    updateStore(require('./huron-store.js')); // eslint-disable-line global-require, import/no-unresolved\\n    newModules.forEach(module => {\\n      modules[module[0]] = module[1];\\n      hotReplace(module[0], module[1], modules);\\n    });\\n  });\\n\\n  // Hot Module Replacement for sections template\\n  module.hot.accept('./section.hbs', () => {\\n    const newSectionTemplate = require('./section.hbs'); // eslint-disable-line global-require, import/no-unresolved\\n\\n    modules[hotScope.sectionTemplatePath] = newSectionTemplate;\\n    hotReplace('./huron-assets/section.hbs', newSectionTemplate, modules);\\n  });\\n\\n  // Hot Module Replacement for data store\\n  module.hot.accept('./huron-store.js', () => {\\n    updateStore(require('./huron-store.js')); // eslint-disable-line global-require, import/no-unresolved\\n  });\\n}\\n\\nfunction hotReplace(key, module, newModules) {\\n  insert.modules = newModules;\\n  if (key === _huronStore2.default.sectionTemplatePath) {\\n    insert.cycleSections();\\n  } else {\\n    insert.inserted = [];\\n    insert.loadModule(key, module, false);\\n  }\\n}\\n\\nfunction updateStore(newStore) {\\n  insert.store = newStore;\\n}\"//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjAuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vLi90ZW1wbGF0ZXMvaG90VGVtcGxhdGUuanM/YzA4MiJdLCJzb3VyY2VzQ29udGVudCI6WyJtb2R1bGUuZXhwb3J0cyA9IFwiJ3VzZSBzdHJpY3QnO1xcblxcbnZhciBfaHVyb25TdG9yZSA9IHJlcXVpcmUoJy4vaHVyb24tc3RvcmUnKTtcXG5cXG52YXIgX2h1cm9uU3RvcmUyID0gX2ludGVyb3BSZXF1aXJlRGVmYXVsdChfaHVyb25TdG9yZSk7XFxuXFxudmFyIF9pbnNlcnROb2RlcyA9IHJlcXVpcmUoJy4vaW5zZXJ0Tm9kZXMnKTtcXG5cXG52YXIgX2luc2VydE5vZGVzMiA9IF9pbnRlcm9wUmVxdWlyZURlZmF1bHQoX2luc2VydE5vZGVzKTtcXG5cXG52YXIgX3NlY3Rpb24gPSByZXF1aXJlKCcuL3NlY3Rpb24uaGJzJyk7XFxuXFxudmFyIF9zZWN0aW9uMiA9IF9pbnRlcm9wUmVxdWlyZURlZmF1bHQoX3NlY3Rpb24pO1xcblxcbmZ1bmN0aW9uIF9pbnRlcm9wUmVxdWlyZURlZmF1bHQob2JqKSB7IHJldHVybiBvYmogJiYgb2JqLl9fZXNNb2R1bGUgPyBvYmogOiB7IGRlZmF1bHQ6IG9iaiB9OyB9XFxuXFxuLyogZXNsaW50LWVuYWJsZSAqL1xcblxcbmNvbnN0IGFzc2V0cyA9IHJlcXVpcmUuY29udGV4dChob3RTY29wZS5yZXF1aXJlUGF0aCwgdHJ1ZSwgaG90U2NvcGUucmVxdWlyZVJlZ2V4KTsgLyogZ2xvYmFscyBob3RTY29wZSAqL1xcblxcbi8vIE5PVEU6IFRoaXMgaXMgbm90IGEgbm9ybWFsIEpTIGZpbGUhIEl0IGlzIHB1bGxlZCBpbiBieSB0aGUgQ0xJIGFzIGEgc3RyaW5nXFxuLy8gYW5kIHByZXBlbmRlZCB0byB0aGUgYnJvd3NlciBzY3JpcHQgYWZ0ZXIgcmVwbGFjaW5nIGFueXRoaW5nIHJlZmVyZW5jZWQgdmlhIGBob3RTY29wZVt2YXJpYWJsZV1gXFxuLy8gd2l0aCBDTEkgYXJndW1lbnRzIG9yIGNvbmZpZyBwcm9wZXJ0aWVzIHBhc3NlZCBpbiBieSB0aGUgdXNlci5cXG5cXG4vKiBlc2xpbnQtZGlzYWJsZSAqL1xcblxcbmNvbnN0IG1vZHVsZXMgPSB7fTtcXG5cXG5tb2R1bGVzW2hvdFNjb3BlLnNlY3Rpb25UZW1wbGF0ZVBhdGhdID0gX3NlY3Rpb24yLmRlZmF1bHQ7XFxuXFxuYXNzZXRzLmtleXMoKS5mb3JFYWNoKGtleSA9PiB7XFxuICBtb2R1bGVzW2tleV0gPSBhc3NldHMoa2V5KTtcXG59KTtcXG5cXG5jb25zdCBpbnNlcnQgPSBuZXcgX2luc2VydE5vZGVzMi5kZWZhdWx0KG1vZHVsZXMsIF9odXJvblN0b3JlMi5kZWZhdWx0KTtcXG5cXG5pZiAobW9kdWxlLmhvdCkge1xcbiAgLy8gSG90IE1vZHVsZSBSZXBsYWNlbWVudCBmb3IgaHVyb24gY29tcG9uZW50cyAoanNvbiwgaGJzLCBodG1sKVxcbiAgbW9kdWxlLmhvdC5hY2NlcHQoYXNzZXRzLmlkLCAoKSA9PiB7XFxuICAgIGNvbnN0IG5ld0Fzc2V0cyA9IHJlcXVpcmUuY29udGV4dChob3RTY29wZS5yZXF1aXJlUGF0aCwgdHJ1ZSwgaG90U2NvcGUucmVxdWlyZVJlZ2V4KTtcXG4gICAgY29uc3QgbmV3TW9kdWxlcyA9IG5ld0Fzc2V0cy5rZXlzKCkubWFwKGtleSA9PiBba2V5LCBuZXdBc3NldHMoa2V5KV0pLmZpbHRlcihuZXdNb2R1bGUgPT4gbW9kdWxlc1tuZXdNb2R1bGVbMF1dICE9PSBuZXdNb2R1bGVbMV0pO1xcblxcbiAgICB1cGRhdGVTdG9yZShyZXF1aXJlKCcuL2h1cm9uLXN0b3JlLmpzJykpOyAvLyBlc2xpbnQtZGlzYWJsZS1saW5lIGdsb2JhbC1yZXF1aXJlLCBpbXBvcnQvbm8tdW5yZXNvbHZlZFxcbiAgICBuZXdNb2R1bGVzLmZvckVhY2gobW9kdWxlID0+IHtcXG4gICAgICBtb2R1bGVzW21vZHVsZVswXV0gPSBtb2R1bGVbMV07XFxuICAgICAgaG90UmVwbGFjZShtb2R1bGVbMF0sIG1vZHVsZVsxXSwgbW9kdWxlcyk7XFxuICAgIH0pO1xcbiAgfSk7XFxuXFxuICAvLyBIb3QgTW9kdWxlIFJlcGxhY2VtZW50IGZvciBzZWN0aW9ucyB0ZW1wbGF0ZVxcbiAgbW9kdWxlLmhvdC5hY2NlcHQoJy4vc2VjdGlvbi5oYnMnLCAoKSA9PiB7XFxuICAgIGNvbnN0IG5ld1NlY3Rpb25UZW1wbGF0ZSA9IHJlcXVpcmUoJy4vc2VjdGlvbi5oYnMnKTsgLy8gZXNsaW50LWRpc2FibGUtbGluZSBnbG9iYWwtcmVxdWlyZSwgaW1wb3J0L25vLXVucmVzb2x2ZWRcXG5cXG4gICAgbW9kdWxlc1tob3RTY29wZS5zZWN0aW9uVGVtcGxhdGVQYXRoXSA9IG5ld1NlY3Rpb25UZW1wbGF0ZTtcXG4gICAgaG90UmVwbGFjZSgnLi9odXJvbi1hc3NldHMvc2VjdGlvbi5oYnMnLCBuZXdTZWN0aW9uVGVtcGxhdGUsIG1vZHVsZXMpO1xcbiAgfSk7XFxuXFxuICAvLyBIb3QgTW9kdWxlIFJlcGxhY2VtZW50IGZvciBkYXRhIHN0b3JlXFxuICBtb2R1bGUuaG90LmFjY2VwdCgnLi9odXJvbi1zdG9yZS5qcycsICgpID0+IHtcXG4gICAgdXBkYXRlU3RvcmUocmVxdWlyZSgnLi9odXJvbi1zdG9yZS5qcycpKTsgLy8gZXNsaW50LWRpc2FibGUtbGluZSBnbG9iYWwtcmVxdWlyZSwgaW1wb3J0L25vLXVucmVzb2x2ZWRcXG4gIH0pO1xcbn1cXG5cXG5mdW5jdGlvbiBob3RSZXBsYWNlKGtleSwgbW9kdWxlLCBuZXdNb2R1bGVzKSB7XFxuICBpbnNlcnQubW9kdWxlcyA9IG5ld01vZHVsZXM7XFxuICBpZiAoa2V5ID09PSBfaHVyb25TdG9yZTIuZGVmYXVsdC5zZWN0aW9uVGVtcGxhdGVQYXRoKSB7XFxuICAgIGluc2VydC5jeWNsZVNlY3Rpb25zKCk7XFxuICB9IGVsc2Uge1xcbiAgICBpbnNlcnQuaW5zZXJ0ZWQgPSBbXTtcXG4gICAgaW5zZXJ0LmxvYWRNb2R1bGUoa2V5LCBtb2R1bGUsIGZhbHNlKTtcXG4gIH1cXG59XFxuXFxuZnVuY3Rpb24gdXBkYXRlU3RvcmUobmV3U3RvcmUpIHtcXG4gIGluc2VydC5zdG9yZSA9IG5ld1N0b3JlO1xcbn1cIlxuXG5cbi8vLy8vLy8vLy8vLy8vLy8vL1xuLy8gV0VCUEFDSyBGT09URVJcbi8vIC4vfi9yYXctbG9hZGVyIS4vfi9iYWJlbC1sb2FkZXIvbGliIS4vdGVtcGxhdGVzL2hvdFRlbXBsYXRlLmpzXG4vLyBtb2R1bGUgaWQgPSAyMFxuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 21 */
+/* no static exports found */
+/* all exports used */
+/*!****************************!*\
+  !*** external "commander" ***!
+  \****************************/
 /***/ (function(module, exports) {
 
-module.exports = require("commander");
+eval("module.exports = require(\"commander\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjEuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vZXh0ZXJuYWwgXCJjb21tYW5kZXJcIj83NTczIl0sInNvdXJjZXNDb250ZW50IjpbIm1vZHVsZS5leHBvcnRzID0gcmVxdWlyZShcImNvbW1hbmRlclwiKTtcblxuXG4vLy8vLy8vLy8vLy8vLy8vLy9cbi8vIFdFQlBBQ0sgRk9PVEVSXG4vLyBleHRlcm5hbCBcImNvbW1hbmRlclwiXG4vLyBtb2R1bGUgaWQgPSAyMVxuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 22 */
+/* no static exports found */
+/* all exports used */
+/*!***********************!*\
+  !*** external "gaze" ***!
+  \***********************/
 /***/ (function(module, exports) {
 
-module.exports = require("gaze");
+eval("module.exports = require(\"gaze\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjIuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vZXh0ZXJuYWwgXCJnYXplXCI/ZjIxOCJdLCJzb3VyY2VzQ29udGVudCI6WyJtb2R1bGUuZXhwb3J0cyA9IHJlcXVpcmUoXCJnYXplXCIpO1xuXG5cbi8vLy8vLy8vLy8vLy8vLy8vL1xuLy8gV0VCUEFDSyBGT09URVJcbi8vIGV4dGVybmFsIFwiZ2F6ZVwiXG4vLyBtb2R1bGUgaWQgPSAyMlxuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 23 */
+/* no static exports found */
+/* all exports used */
+/*!**************************************!*\
+  !*** external "html-webpack-plugin" ***!
+  \**************************************/
 /***/ (function(module, exports) {
 
-module.exports = require("html-webpack-plugin");
+eval("module.exports = require(\"html-webpack-plugin\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjMuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vZXh0ZXJuYWwgXCJodG1sLXdlYnBhY2stcGx1Z2luXCI/MThlYyJdLCJzb3VyY2VzQ29udGVudCI6WyJtb2R1bGUuZXhwb3J0cyA9IHJlcXVpcmUoXCJodG1sLXdlYnBhY2stcGx1Z2luXCIpO1xuXG5cbi8vLy8vLy8vLy8vLy8vLy8vL1xuLy8gV0VCUEFDSyBGT09URVJcbi8vIGV4dGVybmFsIFwiaHRtbC13ZWJwYWNrLXBsdWdpblwiXG4vLyBtb2R1bGUgaWQgPSAyM1xuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 24 */
+/* no static exports found */
+/* all exports used */
+/*!****************************!*\
+  !*** external "immutable" ***!
+  \****************************/
 /***/ (function(module, exports) {
 
-module.exports = require("immutable");
+eval("module.exports = require(\"immutable\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjQuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vZXh0ZXJuYWwgXCJpbW11dGFibGVcIj8xZDIwIl0sInNvdXJjZXNDb250ZW50IjpbIm1vZHVsZS5leHBvcnRzID0gcmVxdWlyZShcImltbXV0YWJsZVwiKTtcblxuXG4vLy8vLy8vLy8vLy8vLy8vLy9cbi8vIFdFQlBBQ0sgRk9PVEVSXG4vLyBleHRlcm5hbCBcImltbXV0YWJsZVwiXG4vLyBtb2R1bGUgaWQgPSAyNFxuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 25 */
+/* no static exports found */
+/* all exports used */
+/*!**********************!*\
+  !*** external "kss" ***!
+  \**********************/
 /***/ (function(module, exports) {
 
-module.exports = require("kss");
+eval("module.exports = require(\"kss\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjUuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vZXh0ZXJuYWwgXCJrc3NcIj9jZDAyIl0sInNvdXJjZXNDb250ZW50IjpbIm1vZHVsZS5leHBvcnRzID0gcmVxdWlyZShcImtzc1wiKTtcblxuXG4vLy8vLy8vLy8vLy8vLy8vLy9cbi8vIFdFQlBBQ0sgRk9PVEVSXG4vLyBleHRlcm5hbCBcImtzc1wiXG4vLyBtb2R1bGUgaWQgPSAyNVxuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 26 */
+/* no static exports found */
+/* all exports used */
+/*!*********************************!*\
+  !*** external "lodash/isEqual" ***!
+  \*********************************/
 /***/ (function(module, exports) {
 
-module.exports = require("lodash/isEqual");
+eval("module.exports = require(\"lodash/isEqual\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjYuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vZXh0ZXJuYWwgXCJsb2Rhc2gvaXNFcXVhbFwiP2NiNTIiXSwic291cmNlc0NvbnRlbnQiOlsibW9kdWxlLmV4cG9ydHMgPSByZXF1aXJlKFwibG9kYXNoL2lzRXF1YWxcIik7XG5cblxuLy8vLy8vLy8vLy8vLy8vLy8vXG4vLyBXRUJQQUNLIEZPT1RFUlxuLy8gZXh0ZXJuYWwgXCJsb2Rhc2gvaXNFcXVhbFwiXG4vLyBtb2R1bGUgaWQgPSAyNlxuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 27 */
+/* no static exports found */
+/* all exports used */
+/*!**********************!*\
+  !*** external "opn" ***!
+  \**********************/
 /***/ (function(module, exports) {
 
-module.exports = require("opn");
+eval("module.exports = require(\"opn\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjcuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vZXh0ZXJuYWwgXCJvcG5cIj82MDBmIl0sInNvdXJjZXNDb250ZW50IjpbIm1vZHVsZS5leHBvcnRzID0gcmVxdWlyZShcIm9wblwiKTtcblxuXG4vLy8vLy8vLy8vLy8vLy8vLy9cbi8vIFdFQlBBQ0sgRk9PVEVSXG4vLyBleHRlcm5hbCBcIm9wblwiXG4vLyBtb2R1bGUgaWQgPSAyN1xuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 28 */
+/* no static exports found */
+/* all exports used */
+/*!**********************!*\
+  !*** external "url" ***!
+  \**********************/
 /***/ (function(module, exports) {
 
-module.exports = require("url");
+eval("module.exports = require(\"url\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjguanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vZXh0ZXJuYWwgXCJ1cmxcIj9jYWVjIl0sInNvdXJjZXNDb250ZW50IjpbIm1vZHVsZS5leHBvcnRzID0gcmVxdWlyZShcInVybFwiKTtcblxuXG4vLy8vLy8vLy8vLy8vLy8vLy9cbi8vIFdFQlBBQ0sgRk9PVEVSXG4vLyBleHRlcm5hbCBcInVybFwiXG4vLyBtb2R1bGUgaWQgPSAyOFxuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 29 */
+/* no static exports found */
+/* all exports used */
+/*!*************************************!*\
+  !*** external "webpack-dev-server" ***!
+  \*************************************/
 /***/ (function(module, exports) {
 
-module.exports = require("webpack-dev-server");
+eval("module.exports = require(\"webpack-dev-server\");//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiMjkuanMiLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly8vZXh0ZXJuYWwgXCJ3ZWJwYWNrLWRldi1zZXJ2ZXJcIj8xYmVhIl0sInNvdXJjZXNDb250ZW50IjpbIm1vZHVsZS5leHBvcnRzID0gcmVxdWlyZShcIndlYnBhY2stZGV2LXNlcnZlclwiKTtcblxuXG4vLy8vLy8vLy8vLy8vLy8vLy9cbi8vIFdFQlBBQ0sgRk9PVEVSXG4vLyBleHRlcm5hbCBcIndlYnBhY2stZGV2LXNlcnZlclwiXG4vLyBtb2R1bGUgaWQgPSAyOVxuLy8gbW9kdWxlIGNodW5rcyA9IDAiXSwibWFwcGluZ3MiOiJBQUFBIiwic291cmNlUm9vdCI6IiJ9");
 
 /***/ }),
 /* 30 */
+/* no static exports found */
+/* all exports used */
+/*!*****************************!*\
+  !*** multi ./src/cli/index ***!
+  \*****************************/
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(9);
+module.exports = __webpack_require__(/*! ./src/cli/index */9);
 
 
 /***/ })
 /******/ ]);
-//# sourceMappingURL=index.js.map

@@ -245,6 +245,12 @@ function configurePrototypes(huron, config) {
       );
     }
 
+    // Move other misc assets
+    // reset js option with new file paths
+    if (huron.assets.length) {
+      moveAdditionalAssets(huron.assets, null, huron);
+    }
+
     // Push a new plugin for each configured prototype
     if (Object.keys(opts).length) {
       newConfig.plugins.push(
@@ -270,32 +276,52 @@ function moveAdditionalAssets(assets, subdir = '', huron) {
 
   currentAssets.forEach((asset) => {
     const assetInfo = path.parse(asset);
-    const assetURL = url.parse(asset);
-    const sourcePath = path.join(cwd, asset);
-    const outputPath = path.resolve(cwd, huron.root, subdir, assetInfo.base);
-    const loadPath = program.production ?
-      path.join(subdir, assetInfo.base) :
-      path.join('/', subdir, assetInfo.base); // Use absolute path in development
-    let contents = false;
+    const assetStats = fs.statSync(asset);
 
-    if (
-      !path.isAbsolute(asset) &&
-      !assetURL.protocol
-    ) {
-      try {
-        contents = fs.readFileSync(sourcePath);
-      } catch (e) {
-        console.warn(`could not read ${sourcePath}`);
-      }
+    if (assetStats.isDirectory()) {
+      const location = assetInfo.base || assetInfo.dir;
+      const files = fs.readdirSync(path.join(cwd, asset));
 
-      if (contents) {
-        fs.outputFileSync(outputPath, contents);
-        assetResults.push(loadPath);
-      }
+      files.forEach((file) => {
+        assetResults.push(moveAsset(
+          path.join(location, file),
+          path.join(location, file),
+          huron
+        ));
+      });
     } else {
-      assetResults.push(asset);
+      const outPath = path.join(subdir, assetInfo.base);
+      assetResults.push(moveAsset(asset, outPath, huron));
     }
   });
 
   return assetResults;
+}
+
+function moveAsset(asset, outPath, huron) {
+  const assetURL = url.parse(asset);
+  const sourcePath = path.join(cwd, asset);
+  const outputLocation = path.resolve(cwd, huron.root, outPath);
+  const loadPath = program.production ?
+    path.join(outPath) :
+    path.join('/', outPath); // Use absolute path in development
+  let contents = false;
+
+  if (
+    !path.isAbsolute(asset) &&
+    !assetURL.protocol
+  ) {
+    try {
+      contents = fs.readFileSync(sourcePath);
+    } catch (e) {
+      console.warn(`could not read ${sourcePath}`);
+    }
+
+    if (contents) {
+      fs.outputFileSync(outputLocation, contents);
+      return loadPath;
+    }
+  }
+
+  return asset;
 }
