@@ -1,5 +1,3 @@
-// import path from 'path';
-
 export default (huron) => ({
   hot: true,
   host: 'localhost',
