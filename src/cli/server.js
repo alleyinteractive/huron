@@ -6,7 +6,7 @@ import open from 'opn';
 
 import createDevServerConfig from '../../config/devServer.config';
 import program from './parseArgs';
-import { removeTrailingSlash } from './utils';
+// import { removeTrailingSlash } from './utils';
 
 /**
  * Spin up webpack-dev-server or, if production flag is set, run webpack a single time
@@ -68,9 +68,7 @@ export default function startWebpack(config) {
         }
 
         console.log(`Listening at http://localhost:${huron.port}/`);
-        open(`http://localhost:${huron.port}/${
-          removeTrailingSlash(huron.root)
-        }/${prototypeName}.html`);
+        open(`http://localhost:${huron.port}/${prototypeName}.html`);
         return true;
       }
     );

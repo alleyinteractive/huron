@@ -233,7 +233,7 @@ function configurePrototypes(huron, config) {
     // reset css option with new file paths
     if (huron.css.length) {
       opts.css = opts.css.concat(
-        moveAdditionalAssets(huron.css, 'css', huron)
+        moveAdditionalAssets(huron.css, huron, 'css')
       );
     }
 
@@ -241,14 +241,13 @@ function configurePrototypes(huron, config) {
     // reset js option with new file paths
     if (huron.js.length) {
       opts.js = opts.js.concat(
-        moveAdditionalAssets(huron.js, 'js', huron)
+        moveAdditionalAssets(huron.js, huron, 'js')
       );
     }
 
     // Move other misc assets
-    // reset js option with new file paths
     if (huron.assets.length) {
-      moveAdditionalAssets(huron.assets, null, huron);
+      moveAdditionalAssets(huron.assets, huron);
     }
 
     // Push a new plugin for each configured prototype
@@ -263,48 +262,45 @@ function configurePrototypes(huron, config) {
 }
 
 /**
- * Move relative (and local) js and css assets provided in huron options
+ * Move an array of assets provided in huron options to server root
  *
  * @param {array|string} assets - array of assets or single asset
  * @param {string} subdir - subdirectory in huron root from which to load additional asset
  * @param {object} huron - huron configuration object
  * @return {array} assetResults - paths to js and css assets
  */
-function moveAdditionalAssets(assets, subdir = '', huron) {
+function moveAdditionalAssets(assets, huron, subdir = '') {
   const currentAssets = [].concat(assets);
   const assetResults = [];
 
   currentAssets.forEach((asset) => {
     const assetInfo = path.parse(asset);
-    const assetStats = fs.statSync(asset);
+    const targetPath = path.join(
+      subdir || assetInfo.dir,
+      assetInfo.base
+    );
 
-    if (assetStats.isDirectory()) {
-      const location = assetInfo.base || assetInfo.dir;
-      const files = fs.readdirSync(path.join(cwd, asset));
-
-      files.forEach((file) => {
-        assetResults.push(moveAsset(
-          path.join(location, file),
-          path.join(location, file),
-          huron
-        ));
-      });
-    } else {
-      const outPath = path.join(subdir, assetInfo.base);
-      assetResults.push(moveAsset(asset, outPath, huron));
-    }
+    assetResults.push(moveAsset(asset, targetPath, huron));
   });
 
   return assetResults;
 }
 
-function moveAsset(asset, outPath, huron) {
+/**
+ * Move a single asset to server root
+ *
+ * @param {array|string} asset - source asset path
+ * @param {string} targetPath - path of output directory relative to server root
+ * @param {object} huron - huron configuration object
+ * @return path to output asset
+ */
+function moveAsset(asset, targetPath, huron) {
   const assetURL = url.parse(asset);
-  const sourcePath = path.join(cwd, asset);
-  const outputLocation = path.resolve(cwd, huron.root, outPath);
+  const sourceLocation = path.join(cwd, asset);
+  const outputLocation = path.resolve(cwd, huron.root, targetPath);
   const loadPath = program.production ?
-    path.join(outPath) :
-    path.join('/', outPath); // Use absolute path in development
+    path.join(targetPath) :
+    path.join('/', targetPath); // Use absolute path in development
   let contents = false;
 
   if (
@@ -312,9 +308,9 @@ function moveAsset(asset, outPath, huron) {
     !assetURL.protocol
   ) {
     try {
-      contents = fs.readFileSync(sourcePath);
+      contents = fs.readFileSync(sourceLocation);
     } catch (e) {
-      console.warn(`could not read ${sourcePath}`);
+      console.warn(`could not read ${sourceLocation}`);
     }
 
     if (contents) {
