@@ -873,8 +873,10 @@ Object.defineProperty(exports, "__esModule", {
 
 exports.default = huron => ({
   hot: true,
+  host: 'localhost',
   quiet: false,
   noInfo: false,
+  overlay: true,
   stats: {
     colors: true,
     hash: false,
@@ -886,9 +888,7 @@ exports.default = huron => ({
     children: false,
     source: false
   },
-  contentBase: huron.root,
-  overlay: true,
-  publicPath: `http://localhost:${huron.port}/${huron.root}`
+  publicPath: `/${huron.root}`
 });
 
 /***/ }),
@@ -1296,7 +1296,7 @@ function configureEntries(huron, config) {
 
   newConfig.entry = {};
   if (!_parseArgs2.default.production) {
-    newConfig.entry[huron.entry] = [`webpack-dev-server/client?http://localhost:${huron.port}`, 'webpack/hot/dev-server', _path2.default.join(cwd, huron.root, 'huron-assets/index')].concat(entry);
+    newConfig.entry[huron.entry] = [`webpack-dev-server/client/index.js?http://localhost:${huron.port}/`, 'webpack/hot/dev-server', _path2.default.join(cwd, huron.root, 'huron-assets/index')].concat(entry);
   } else {
     newConfig.entry[huron.entry] = [_path2.default.join(cwd, huron.root, 'huron-assets/index')].concat(entry);
   }
@@ -1445,7 +1445,7 @@ function moveAdditionalAssets(assets, subdir = '', huron) {
     const assetURL = _url2.default.parse(asset);
     const sourcePath = _path2.default.join(cwd, asset);
     const outputPath = _path2.default.resolve(cwd, huron.root, subdir, assetInfo.base);
-    const loadPath = _parseArgs2.default.production ? _path2.default.join(subdir, assetInfo.base) : _path2.default.join('/', subdir, assetInfo.base); // Use absolute path in development
+    const loadPath = _path2.default.join(subdir, assetInfo.base);
     let contents = false;
 
     if (!_path2.default.isAbsolute(asset) && !assetURL.protocol) {
@@ -2099,7 +2099,7 @@ exports.default = huron => {
     entry: {},
     output: {
       path: _path2.default.join(cwd, huron.root),
-      publicPath: _parseArgs2.default.production ? '' : `http://localhost:${huron.port}/${huron.root}`,
+      publicPath: _parseArgs2.default.production ? '' : `/${huron.root}`,
       filename: '[name].js',
       chunkFilename: '[name].chunk.min.js'
     },

@@ -11,7 +11,7 @@ export default (huron) => {
     output: {
       path: path.join(cwd, huron.root),
       publicPath: program.production ? '' :
-        `http://localhost:${huron.port}/${huron.root}`,
+        `/${huron.root}`,
       filename: '[name].js',
       chunkFilename: '[name].chunk.min.js',
     },

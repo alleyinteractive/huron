@@ -87,7 +87,7 @@ function configureEntries(huron, config) {
   newConfig.entry = {};
   if (!program.production) {
     newConfig.entry[huron.entry] = [
-      `webpack-dev-server/client?http://localhost:${huron.port}`,
+      `webpack-dev-server/client/index.js?http://localhost:${huron.port}/`,
       'webpack/hot/dev-server',
       path.join(cwd, huron.root, 'huron-assets/index'),
     ].concat(entry);
@@ -273,9 +273,7 @@ function moveAdditionalAssets(assets, subdir = '', huron) {
     const assetURL = url.parse(asset);
     const sourcePath = path.join(cwd, asset);
     const outputPath = path.resolve(cwd, huron.root, subdir, assetInfo.base);
-    const loadPath = program.production ?
-      path.join(subdir, assetInfo.base) :
-      path.join('/', subdir, assetInfo.base); // Use absolute path in development
+    const loadPath = path.join(subdir, assetInfo.base);
     let contents = false;
 
     if (
