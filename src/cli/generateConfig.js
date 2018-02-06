@@ -82,22 +82,11 @@ export default function generateConfig() {
  * @return {object} newConfig - updated data store
  */
 function configureEntries(huron, config) {
+  const entry = config.entry[huron.hotEntry];
   const newConfig = config;
-  const currentPrototype = program.useProtoype ?
-    huron.prototypes[program.useProtoype] : null;
-  let entry = config.entry[huron.hotEntry];
 
-  // Start with existing entry config to allow use of
-  // `chunks` option for HTML webpack plugin
+  // Start with existing entry config
   newConfig.entry = { ...config.entry };
-
-  // Merge prototypeEntry if the option is specified and users
-  // is developing a specific prototype
-  if (currentPrototype) {
-    entry = currentPrototype.prototypeEntry
-      .reduce((acc, entryName) => acc.concat(config.entry[entryName]))
-      .concat(entry);
-  }
 
   // Merge in hot loader scripts and huron assets
   if (!program.production) {
