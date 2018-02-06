@@ -5,6 +5,7 @@ import fs from 'fs-extra';
 import webpack from 'webpack';
 import HTMLWebpackPlugin from 'html-webpack-plugin';
 
+import { mergeWithConcat } from './utils';
 import program from './parseArgs';
 import requireExternal from './requireExternal';
 import defaultWebpack from '../defaultConfig/webpack.config';
@@ -14,11 +15,19 @@ const cwd = process.cwd();
 
 // Require configs passed in by user from CLI
 let defaultConfig = false;
-const localConfig = requireExternal(
-  path.resolve(program.webpackConfig)
-);
-const localHuron = requireExternal(
-  path.resolve(program.huronConfig)
+const localHuron = program.huronConfig ?
+  requireExternal(path.resolve(program.huronConfig)) :
+  false;
+const localConfig = program.webpackConfig ?
+  requireExternal(path.resolve(program.webpackConfig)) :
+  false;
+
+// Filter prototypes if only one is specified in CLI
+const getCurrentPrototype = (huron) => (
+  huron.prototypes.find((prototype) => (
+    prototype === program.usePrototype ||
+    prototype.title === program.usePrototype
+  ))
 );
 
 /**
@@ -46,6 +55,7 @@ export default function generateConfig() {
   newHuron = Object.assign({}, defaultHuron, newHuron);
   // Use user huron config to modify webpack defaults
   defaultConfig = defaultWebpack(newHuron);
+  newConfig = newConfig || defaultConfig;
 
   // Set ouput options
   newConfig.output = Object.assign({}, defaultConfig.output, newConfig.output);
@@ -81,11 +91,24 @@ export default function generateConfig() {
  * @return {object} newConfig - updated data store
  */
 function configureEntries(huron, config) {
-  const entry = config.entry[huron.entry];
   const newConfig = config;
+  const currentPrototype = getCurrentPrototype(huron);
+  let entry = config.entry[huron.entry];
 
-  newConfig.entry = {};
+  // Start with existing entry config to allow use of
+  // `chunks` option for HTML webpack plugin
+  newConfig.entry = { ...config.entry };
+
+  // Merge in hot loader scripts and huron assets
   if (!program.production) {
+    // Merge prototypeEntry if the option is specified and users
+    // is developing a specific prototype
+    if (currentPrototype && currentPrototype.prototypeEntry) {
+      entry = currentPrototype.prototypeEntry
+        .reduce((acc, entryName) => acc.concat(newConfig.entry[entryName]), [])
+        .concat(entry);
+    }
+
     newConfig.entry[huron.entry] = [
       `webpack-dev-server/client/index.js?http://localhost:${huron.port}/`,
       'webpack/hot/dev-server',
@@ -119,11 +142,11 @@ function configurePlugins(huron, config) {
           'NamedModulesPlugin' !== plugin.constructor.name
       );
     }
-    newConfig.plugins = newConfig.plugins
-      .concat([
-        new webpack.HotModuleReplacementPlugin(),
-        new webpack.NamedModulesPlugin(),
-      ]);
+    newConfig.plugins = [
+      ...newConfig.plugins,
+      new webpack.HotModuleReplacementPlugin(),
+      new webpack.NamedModulesPlugin(),
+    ];
   }
 
   return newConfig;
@@ -151,11 +174,11 @@ function configureLoaders(huron, config) {
     [];
 
   // Add default loaders
-  newConfig.module.rules = defaultConfig.module.rules
-    .concat(
-      newConfig.module.rules,
-      templatesLoader
-    );
+  newConfig.module.rules = [
+    ...defaultConfig.module.rules,
+    ...newConfig.module.rules,
+    templatesLoader,
+  ];
 
   return newConfig;
 }
@@ -172,12 +195,12 @@ function configurePrototypes(huron, config) {
     path.join(__dirname, '../../templates/prototypeTemplate.hbs'),
     'utf8'
   );
-
   const defaultHTMLPluginOptions = {
     title: 'Huron',
     window: huron.window,
-    js: [],
-    css: [],
+    bodyClasses: huron.bodyClasses || [],
+    js: moveAdditionalAssets(huron.js, 'js', huron),
+    css: moveAdditionalAssets(huron.css, 'css', huron),
     filename: 'index.html',
     template: path.join(
       cwd,
@@ -188,6 +211,9 @@ function configurePrototypes(huron, config) {
     chunks: [huron.entry],
   };
   const newConfig = config;
+  const currentPrototype = getCurrentPrototype(huron);
+  const prototypes = currentPrototype ?
+    [currentPrototype] : huron.prototypes;
 
   // Write prototype template file for HTML webpack plugin
   fs.outputFileSync(
@@ -195,53 +221,30 @@ function configurePrototypes(huron, config) {
     wrapperTemplate
   );
 
-  huron.prototypes.forEach((prototype) => {
+  // Generate an HTML webpack plugin config for each prototype
+  prototypes.forEach((prototype) => {
     const newPrototype = prototype;
     let opts = {};
 
     // Merge configured settings with default settings
     if ('string' === typeof prototype) {
-      opts = Object.assign({}, defaultHTMLPluginOptions, {
+      opts = {
+        ...defaultHTMLPluginOptions,
         title: prototype,
         filename: `${prototype}.html`,
-      });
-    } else if (
-      'object' === typeof prototype &&
-      {}.hasOwnProperty.call(prototype, 'title')
-    ) {
-      // Create filename based on configured title if not provided
-      if (!prototype.filename) {
-        newPrototype.filename = `${prototype.title}.html`;
-      }
-
-      // Move css assets for this prototype,
-      // reset css option with new file paths
-      if (prototype.css) {
-        newPrototype.css = moveAdditionalAssets(prototype.css, 'css', huron);
-      }
-
-      // Move js assets for this prototype,
-      // reset js option with new file paths
-      if (prototype.js) {
-        newPrototype.js = moveAdditionalAssets(prototype.js, 'js', huron);
-      }
-
-      opts = Object.assign({}, defaultHTMLPluginOptions, newPrototype);
-    }
-
-    // Move global css assets,
-    // reset css option with new file paths
-    if (huron.css.length) {
-      opts.css = opts.css.concat(
-        moveAdditionalAssets(huron.css, 'css', huron)
-      );
-    }
-
-    // Move global js assets,
-    // reset js option with new file paths
-    if (huron.js.length) {
-      opts.js = opts.js.concat(
-        moveAdditionalAssets(huron.js, 'js', huron)
+      };
+    } else if ('object' === typeof prototype && prototype.title) {
+      opts = mergeWithConcat(
+        defaultHTMLPluginOptions,
+        {
+          ...newPrototype,
+          chunks: program.production && prototype.prototypeEntry ?
+            prototype.prototypeEntry :
+            (prototype.chunks || []),
+          filename: prototype.filename || `${prototype.title}.html`,
+          css: moveAdditionalAssets(prototype.css, 'css', huron),
+          js: moveAdditionalAssets(prototype.js, 'js', huron),
+        }
       );
     }
 
@@ -264,8 +267,12 @@ function configurePrototypes(huron, config) {
  * @param {object} huron - huron configuration object
  * @return {array} assetResults - paths to js and css assets
  */
-function moveAdditionalAssets(assets, subdir = '', huron) {
-  const currentAssets = [].concat(assets);
+function moveAdditionalAssets(assets, subdir, huron) {
+  if (!assets || !assets.length) {
+    return [];
+  }
+
+  const currentAssets = [...assets];
   const assetResults = [];
 
   currentAssets.forEach((asset) => {
