@@ -11,21 +11,21 @@ Huron can be installed via [NPM](https://www.npmjs.com/package/huron).
 npm install huron --save
 ```
 
-Once installed, you'll need to write a configuration. The default settings and how to modify them is documented in the [configuration](src/default-config/README.md) documentation.
+Once installed, you'll need to write a configuration or use the default. The default settings and how to modify them is documented in the [configuration](src/default-config/README.md) documentation.
 
-Then, start the CLI with the respective paths to your configs:
-```
-npm run huron -w webpack.config.js -c huron.config.js
-```
+## CLI
+Huron is executed as a command line interface using `huron`. To see all available CLI options enter `huron --help` (or `node_modules/.bin/huron --help` outside of npm). No configuration is required for huron, but you will likely want to modify the defaults as described in the previous section.
 
 Once the CLI has started, you can access your prototype(s) at `localhost:8080/dist/[prototype-name].html`, in which port 8080 and `dist` are the default settings for `port` and `root` respectively. You can find the defaults for all huron options and how to change them in the [configuration](src/default-config/README.md) documentation.
 
 To build your prototype files for production, run
 ```
-npm run huron-build -w webpack.config.js -c huron.config.js
+npm run huron -w webpack.config.js -c huron.config.js -p
 ```
 
 The files will be accessible through whatever folder you specified as your huron root in the [configuration](src/default-config/README.md) file.
+
+**NOTE:** You can choose to build only a single prototype via the `--use-prototype` flag and passing in a prototype title. However, you will likely want to specify the `prototypeEntry` property in the configuration as well to provide specific entry points for that prototype. Details on this property can be found in the configuration README.
 
 ## Writing KSS, templates and data
 KSS is a documentation syntax and styleguide generator. All documentation should be located in your stylesheets, and should largely follow the regular [KSS syntax](http://warpspire.com/kss/syntax/). However, Huron uses [kss-node](https://github.com/kss-node/kss-node) which includes some changes, and there are a few differences specific to Huron as well. All your KSS should include the following:

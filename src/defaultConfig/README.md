@@ -8,6 +8,7 @@ Huron's configuration object must currently be a top-level `huron` property of t
 * **css** {array|string} : default `[]` - CSS files that should be included on all prototypes, but are not a part of your webpack bundle. These will go directly in the the `href` attribute of a `<link>` tag, so could reference remote resources. These files, if local, will automatically be copied to the directory configured in the Huron `root` option within a `css` subdirectory.
 * **entry** {string} : default `'huron'` - webpack entry point you want Huron to use. Since Huron development uses HMR, it assumes you will combine all necessary assets into a single entry point for development purposes, which will allow you to hot reload all assets. You will likely want to create a specific entry point for use with Huron and/or HMR containing all these assets you need.
 * **js** {array|string}: default `[]` - JS files that should be included on all prototypes, but are not a part of your webpack bundle. These will go directly into the `src` attribute of a `<script>` tag, so could reference remote resources. These files, if local, will automatically be copied to the directory configured in the Huron `root` option within a `js` subdirectory.
+* **bodyClasses** {array}: classes to add to the <body> of all prototypes.
 * **kss** {string} : default `'/css'` - relative path to KSS source directory. Currently you may only provide a single directory, but in the future we may allow an array.
 * **kssExtension** {string} : default `'.css'` - Extension of files containing your KSS documentation
 * **kssOptions**: {object} default
@@ -20,11 +21,14 @@ Huron's configuration object must currently be a top-level `huron` property of t
 }
 ```
 
-Object containing options to pass through to KSS-node. I can't find a good source of the available options here, but I'll keep looking.
+Object containing options to pass through to KSS-node.
 
 * **output** {string} : default `'partials'` - Relative path (relative to the `huron.root` option) to the directory where you want your templates to be generated.
 * **port** {number} : default `8080` - `localhost` port from which to server your prototypes via webpack-dev-server
-* **prototypes** {array} : default `['index']` - Array of prototypes to generate via HTML webpack plugin. For each array entry you can either pass in a single string corresponding to the title of the prototype, or an object containing option overrides for HTML webpack plugin [(configuration)](https://github.com/ampedandwired/html-webpack-plugin). If you use an object, you must at least provide a `title` field. The title field, whether passed in as a string or the `title` property value, must be the same name as your prototype file located in your `prototypes` directory. So for example, if you provided `['homepage']` in the prototypes option, you would need to have a `prototypes/prototype-homepage.html` file in order for the prototype to display correctly.
+* **prototypes** {array} : default `['index']` - Array of prototypes to generate via HTML webpack plugin. For each array entry you can either pass in a single string corresponding to the title of the prototype, or an object containing option overrides for HTML webpack plugin [(configuration)](https://github.com/ampedandwired/html-webpack-plugin). If you use an object, you must at least provide a `title` field. The title field, whether passed in as a string or the `title` property value, must be the same name as your prototype file located in your `prototypes` directory. So for example, if you provided `['homepage']` in the prototypes option, you would need to have a `prototypes/prototype-homepage.html` file in order for the prototype to display correctly. There are also some option caveats:
+  * **bodyClasses** {array}: classes to add to the <body> of a specific prototype. These classes will be included in addition to classes supplied in the top-level `bodyClasses` property.
+  * **chunks** {array}: you may use this option to supply additional entry points to a specific prototype. They will not, however, be hot reloaded.
+  * **prototypeEntry** {array}: use this to supply a specific prototype with names of entry points you'd like to be hot reloaded in `dev`. Note that this property will _override_ `chunks` in a production build.
 * **root** {string} : default `'dist/'` - Root directory for `webpack-dev-server`. All static assets you need for your prototype(s) should be located in this directory. The `output` option should be relative to this path.
 * **sectionTemplate** {string} : default `path.join(__dirname, '../templates/section.hbs')` - Override for the template used to produce styleguide sections. This should always be a handlebars file, and will utilize the KSS data as its source.
 * **classNames** {string} : For use with CSS Modules. This option should point to a directory with JSON files containing localized classnames. NOTE: at the moment this will only work a CSS Modules implementation that produces JSON output, like `postcss-modules`. The CSS modules implementation offered by the `modules` option in `css-loader` currently will not work.
@@ -49,6 +53,7 @@ huron: {
   css: [],
   entry: 'huron',
   js: [],
+  bodyClasses: [],
   kss: 'css/',
   kssExtension: '.css',
   kssOptions: {
@@ -60,7 +65,7 @@ huron: {
   port: 8080,
   prototypes: ['index'],
   root: 'dist/',
-  sectionTemplate: path.join(__dirname, '../templates/section.hbs'),
+  sectionTemplate: path.join(__dirname, '../../templates/section.hbs'),
   templates: {
     loader: {
       test: /\.hbs$/,

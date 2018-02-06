@@ -1,8 +1,7 @@
 /** @module cli/parse-arguments */
 /* eslint-disable space-unary-ops */
-
 import program from 'commander';
-import path from 'path';
+import packageInfo from '../../package.json';
 
 // Requires
 /** @global */
@@ -29,16 +28,14 @@ function parseArgs() {
     return true;
   });
 
-  program.version('1.0.1')
+  program.version(packageInfo.version)
     .option(
       '-c, --huron-config [huronConfig]',
-      '[huronConfig] for all huron options',
-      path.resolve(__dirname, '../defaultConfig/huron.config.js')
+      '[huronConfig] for all huron options'
     )
     .option(
       '-w, --webpack-config [webpackConfig]',
-      '[webpackConfig] for all webpack options',
-      path.resolve(__dirname, '../defaultConfig/webpack.config.js')
+      '[webpackConfig] for all webpack options'
     )
     .option('-p, --production', 'compile assets once for production')
     .option(

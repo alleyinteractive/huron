@@ -4,6 +4,7 @@ export default {
   css: [],
   entry: 'huron',
   js: [],
+  bodyClasses: [],
   kss: 'css/',
   kssExtension: '.css',
   kssOptions: {
@@ -14,7 +15,7 @@ export default {
   output: 'partials',
   port: 8080,
   prototypes: ['index'],
-  root: 'dist/',
+  root: 'dist/prototype',
   sectionTemplate: path.join(__dirname, '../../templates/section.hbs'),
   classNames: false,
   templates: {

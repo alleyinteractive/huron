@@ -7,7 +7,9 @@ export default (huron) => {
   const cwd = process.cwd();
 
   return {
-    entry: {},
+    entry: {
+      huron: ['./src/index.js'],
+    },
     output: {
       path: path.join(cwd, huron.root),
       publicPath: program.production ? '' :
@@ -20,12 +22,12 @@ export default (huron) => {
       new webpack.NamedModulesPlugin(),
     ],
     resolve: {
-      modulesDirectories: [
+      modules: [
         path.resolve(__dirname, '../src/js'),
       ],
     },
     resolveLoader: {
-      modulesDirectories: [
+      modules: [
         'web_loaders',
         'web_modules',
         'node_loaders',
