@@ -22,6 +22,13 @@ const localHuron = requireExternal(
   path.resolve(program.huronConfig)
 );
 
+const getCurrentPrototype = (huron) => (
+  huron.prototypes.find((prototype) => (
+    prototype === program.usePrototype ||
+    prototype.title === program.usePrototype
+  ))
+);
+
 /**
  * Generate a mutant hybrid of the huron default webpack config and your local webpack config
  *
@@ -82,11 +89,21 @@ export default function generateConfig() {
  * @return {object} newConfig - updated data store
  */
 function configureEntries(huron, config) {
-  const entry = config.entry[huron.hotEntry];
   const newConfig = config;
+  const currentPrototype = getCurrentPrototype(huron);
+  let entry = config.entry[huron.hotEntry];
 
-  // Start with existing entry config
+  // Start with existing entry config to allow use of
+  // `chunks` option for HTML webpack plugin
   newConfig.entry = { ...config.entry };
+
+  // Merge prototypeEntry if the option is specified and users
+  // is developing a specific prototype
+  if (currentPrototype) {
+    entry = currentPrototype.prototypeEntry
+      .reduce((acc, entryName) => acc.concat(newConfig.entry[entryName]), [])
+      .concat(entry);
+  }
 
   // Merge in hot loader scripts and huron assets
   if (!program.production) {
@@ -176,11 +193,10 @@ function configurePrototypes(huron, config) {
     path.join(__dirname, '../../templates/prototypeTemplate.hbs'),
     'utf8'
   );
-
   const defaultHTMLPluginOptions = {
     title: 'Huron',
     window: huron.window,
-    bodyClasses: huron.bodyClasses,
+    bodyClasses: huron.bodyClasses || [],
     js: moveAdditionalAssets(huron.js, 'js', huron),
     css: moveAdditionalAssets(huron.css, 'css', huron),
     filename: 'index.html',
@@ -193,6 +209,8 @@ function configurePrototypes(huron, config) {
     chunks: [huron.hotEntry],
   };
   const newConfig = config;
+  // Filter prototypes if only one is specified in CLI
+  const prototypes = [getCurrentPrototype(huron)] || huron.prototypes;
 
   // Write prototype template file for HTML webpack plugin
   fs.outputFileSync(
@@ -200,7 +218,8 @@ function configurePrototypes(huron, config) {
     wrapperTemplate
   );
 
-  huron.prototypes.forEach((prototype) => {
+  // Generate an HTML webpack plugin config for each prototype
+  prototypes.forEach((prototype) => {
     const newPrototype = prototype;
     let opts = {};
 
@@ -214,8 +233,8 @@ function configurePrototypes(huron, config) {
     } else if ('object' === typeof prototype && prototype.title) {
       opts = mergeWithConcat(
         defaultHTMLPluginOptions,
-        newPrototype,
         {
+          ...newPrototype,
           filename: prototype.filename || `${prototype.title}.html`,
           css: moveAdditionalAssets(prototype.css, 'css', huron),
           js: moveAdditionalAssets(prototype.js, 'js', huron),
@@ -244,7 +263,7 @@ function configurePrototypes(huron, config) {
  */
 function moveAdditionalAssets(assets, subdir, huron) {
   if (!assets || !assets.length) {
-    return false;
+    return [];
   }
 
   const currentAssets = [...assets];

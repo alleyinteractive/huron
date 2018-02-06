@@ -40,7 +40,11 @@ function parseArgs() {
       '[webpackConfig] for all webpack options',
       path.resolve(__dirname, '../defaultConfig/webpack.config.js')
     )
-    .option('-p, --production', 'compile assets once for production');
+    .option('-p, --production', 'compile assets once for production')
+    .option(
+      '--use-prototype [usePrototype]',
+      'use only a single prototype in development'
+    );
 
   program.env = envArg;
 

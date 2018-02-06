@@ -21,7 +21,7 @@
     </script>
   {{/if}}
 </head>
-<body class="prototype prototype-{{htmlWebpackPlugin.options.title}} {{htmlWebpackPlugin.options.bodyClasses}}">
+<body class="prototype prototype-{{htmlWebpackPlugin.options.title}}{{#each htmlWebpackPlugin.options.bodyClasses as |bodyClass|}} {{bodyClass}}{{/each}}">
 <div data-huron-id="prototype-{{htmlWebpackPlugin.options.title}}" data-huron-type="prototype"></div>
 {{#each htmlWebpackPlugin.options.js as |script|}}
   <script type="text/javascript" src="{{script}}"></script>
