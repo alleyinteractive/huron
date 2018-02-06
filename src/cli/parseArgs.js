@@ -39,7 +39,7 @@ function parseArgs() {
     )
     .option('-p, --production', 'compile assets once for production')
     .option(
-      '--use-prototype [usePrototype]',
+      '-u, --use-prototype [usePrototype]',
       'use only a single prototype in development'
     );
 

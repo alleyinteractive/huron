@@ -492,7 +492,7 @@ function parseArgs() {
     return true;
   });
 
-  _commander2.default.version(_package2.default.version).option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options').option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options').option('-p, --production', 'compile assets once for production').option('--use-prototype [usePrototype]', 'use only a single prototype in development');
+  _commander2.default.version(_package2.default.version).option('-c, --huron-config [huronConfig]', '[huronConfig] for all huron options').option('-w, --webpack-config [webpackConfig]', '[webpackConfig] for all webpack options').option('-p, --production', 'compile assets once for production').option('-u, --use-prototype [usePrototype]', 'use only a single prototype in development');
 
   _commander2.default.env = envArg;
 
@@ -2155,7 +2155,7 @@ module.exports = {
 	"name": "huron",
 	"description": "An in-browser prototyping tool built on top of webpack and kss-node",
 	"author": "Alley Interactive",
-	"version": "2.3.3",
+	"version": "2.4.0-beta.0",
 	"license": "GPL-2.0",
 	"repository": {
 		"type": "git",
