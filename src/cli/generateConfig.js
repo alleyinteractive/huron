@@ -4,6 +4,7 @@ import url from 'url';
 import fs from 'fs-extra';
 import webpack from 'webpack';
 import HTMLWebpackPlugin from 'html-webpack-plugin';
+import merge from 'lodash/fp/merge';
 
 import program from './parseArgs';
 import requireExternal from './requireExternal';
@@ -185,7 +186,6 @@ function configurePrototypes(huron, config) {
       'huron-assets/prototypeTemplate.hbs'
     ),
     inject: false,
-    chunks: [huron.entry],
   };
   const newConfig = config;
 
@@ -201,49 +201,30 @@ function configurePrototypes(huron, config) {
 
     // Merge configured settings with default settings
     if ('string' === typeof prototype) {
-      opts = Object.assign({}, defaultHTMLPluginOptions, {
+      opts = {
+        ...defaultHTMLPluginOptions,
         title: prototype,
         filename: `${prototype}.html`,
-      });
+      };
     } else if (
       'object' === typeof prototype &&
       {}.hasOwnProperty.call(prototype, 'title')
     ) {
-      // Create filename based on configured title if not provided
-      if (!prototype.filename) {
-        newPrototype.filename = `${prototype.title}.html`;
-      }
-
-      // Move css assets for this prototype,
-      // reset css option with new file paths
-      if (prototype.css) {
-        newPrototype.css = moveAdditionalAssets(prototype.css, 'css', huron);
-      }
-
-      // Move js assets for this prototype,
-      // reset js option with new file paths
-      if (prototype.js) {
-        newPrototype.js = moveAdditionalAssets(prototype.js, 'js', huron);
-      }
-
-      opts = Object.assign({}, defaultHTMLPluginOptions, newPrototype);
+      opts = {
+        ...defaultHTMLPluginOptions,
+        ...newPrototype,
+        filename: prototype.filename || `${prototype.title}.html`,
+        css: moveAdditionalAssets(prototype.css, 'css', huron),
+        js: moveAdditionalAssets(prototype.js, 'js', huron),
+      };
     }
 
     // Move global css assets,
     // reset css option with new file paths
-    if (huron.css.length) {
-      opts.css = opts.css.concat(
-        moveAdditionalAssets(huron.css, 'css', huron)
-      );
-    }
-
-    // Move global js assets,
-    // reset js option with new file paths
-    if (huron.js.length) {
-      opts.js = opts.js.concat(
-        moveAdditionalAssets(huron.js, 'js', huron)
-      );
-    }
+    opts = merge(opts, {
+      css: moveAdditionalAssets(huron.css, 'css', huron),
+      js: moveAdditionalAssets(huron.js, 'js', huron),
+    });
 
     // Push a new plugin for each configured prototype
     if (Object.keys(opts).length) {
@@ -267,6 +248,10 @@ function configurePrototypes(huron, config) {
 function moveAdditionalAssets(assets, subdir = '', huron) {
   const currentAssets = [].concat(assets);
   const assetResults = [];
+
+  if (!assets || !assets.length) {
+    return false;
+  }
 
   currentAssets.forEach((asset) => {
     const assetInfo = path.parse(asset);
