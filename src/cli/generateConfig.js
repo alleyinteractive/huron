@@ -4,8 +4,8 @@ import url from 'url';
 import fs from 'fs-extra';
 import webpack from 'webpack';
 import HTMLWebpackPlugin from 'html-webpack-plugin';
-import merge from 'lodash/fp/merge';
 
+import { mergeWithConcat } from './utils';
 import program from './parseArgs';
 import requireExternal from './requireExternal';
 import defaultWebpack from '../defaultConfig/webpack.config';
@@ -82,18 +82,32 @@ export default function generateConfig() {
  * @return {object} newConfig - updated data store
  */
 function configureEntries(huron, config) {
-  const entry = config.entry[huron.entry];
   const newConfig = config;
+  const currentPrototype = program.useProtoype ?
+    huron.prototypes[program.useProtoype] : null;
+  let entry = config.entry[huron.hotEntry];
 
-  newConfig.entry = {};
+  // Start with existing entry config to allow use of
+  // `chunks` option for HTML webpack plugin
+  newConfig.entry = { ...config.entry };
+
+  // Merge prototypeEntry if the option is specified and users
+  // is developing a specific prototype
+  if (currentPrototype) {
+    entry = currentPrototype.prototypeEntry
+      .reduce((acc, entryName) => acc.concat(config.entry[entryName]))
+      .concat(entry);
+  }
+
+  // Merge in hot loader scripts and huron assets
   if (!program.production) {
-    newConfig.entry[huron.entry] = [
+    newConfig.entry[huron.hotEntry] = [
       `webpack-dev-server/client/index.js?http://localhost:${huron.port}/`,
       'webpack/hot/dev-server',
       path.join(cwd, huron.root, 'huron-assets/index'),
     ].concat(entry);
   } else {
-    newConfig.entry[huron.entry] = [
+    newConfig.entry[huron.hotEntry] = [
       path.join(cwd, huron.root, 'huron-assets/index'),
     ].concat(entry);
   }
@@ -120,11 +134,11 @@ function configurePlugins(huron, config) {
           'NamedModulesPlugin' !== plugin.constructor.name
       );
     }
-    newConfig.plugins = newConfig.plugins
-      .concat([
-        new webpack.HotModuleReplacementPlugin(),
-        new webpack.NamedModulesPlugin(),
-      ]);
+    newConfig.plugins = [
+      ...newConfig.plugins,
+      new webpack.HotModuleReplacementPlugin(),
+      new webpack.NamedModulesPlugin(),
+    ];
   }
 
   return newConfig;
@@ -152,11 +166,11 @@ function configureLoaders(huron, config) {
     [];
 
   // Add default loaders
-  newConfig.module.rules = defaultConfig.module.rules
-    .concat(
-      newConfig.module.rules,
-      templatesLoader
-    );
+  newConfig.module.rules = [
+    ...defaultConfig.module.rules,
+    ...newConfig.module.rules,
+    templatesLoader,
+  ];
 
   return newConfig;
 }
@@ -177,8 +191,9 @@ function configurePrototypes(huron, config) {
   const defaultHTMLPluginOptions = {
     title: 'Huron',
     window: huron.window,
-    js: [],
-    css: [],
+    bodyClasses: huron.bodyClasses,
+    js: moveAdditionalAssets(huron.js, 'js', huron),
+    css: moveAdditionalAssets(huron.css, 'css', huron),
     filename: 'index.html',
     template: path.join(
       cwd,
@@ -186,6 +201,7 @@ function configurePrototypes(huron, config) {
       'huron-assets/prototypeTemplate.hbs'
     ),
     inject: false,
+    chunks: [huron.hotEntry],
   };
   const newConfig = config;
 
@@ -206,25 +222,17 @@ function configurePrototypes(huron, config) {
         title: prototype,
         filename: `${prototype}.html`,
       };
-    } else if (
-      'object' === typeof prototype &&
-      {}.hasOwnProperty.call(prototype, 'title')
-    ) {
-      opts = {
-        ...defaultHTMLPluginOptions,
-        ...newPrototype,
-        filename: prototype.filename || `${prototype.title}.html`,
-        css: moveAdditionalAssets(prototype.css, 'css', huron),
-        js: moveAdditionalAssets(prototype.js, 'js', huron),
-      };
+    } else if ('object' === typeof prototype && prototype.title) {
+      opts = mergeWithConcat(
+        defaultHTMLPluginOptions,
+        newPrototype,
+        {
+          filename: prototype.filename || `${prototype.title}.html`,
+          css: moveAdditionalAssets(prototype.css, 'css', huron),
+          js: moveAdditionalAssets(prototype.js, 'js', huron),
+        }
+      );
     }
-
-    // Move global css assets,
-    // reset css option with new file paths
-    opts = merge(opts, {
-      css: moveAdditionalAssets(huron.css, 'css', huron),
-      js: moveAdditionalAssets(huron.js, 'js', huron),
-    });
 
     // Push a new plugin for each configured prototype
     if (Object.keys(opts).length) {
@@ -245,13 +253,13 @@ function configurePrototypes(huron, config) {
  * @param {object} huron - huron configuration object
  * @return {array} assetResults - paths to js and css assets
  */
-function moveAdditionalAssets(assets, subdir = '', huron) {
-  const currentAssets = [].concat(assets);
-  const assetResults = [];
-
+function moveAdditionalAssets(assets, subdir, huron) {
   if (!assets || !assets.length) {
     return false;
   }
+
+  const currentAssets = [...assets];
+  const assetResults = [];
 
   currentAssets.forEach((asset) => {
     const assetInfo = path.parse(asset);

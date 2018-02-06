@@ -2,6 +2,7 @@
 import path from 'path';
 import fs from 'fs-extra';
 import chalk from 'chalk';
+import mergeWith from 'lodash/fp/mergeWith';
 
 const cwd = process.cwd(); // Current working directory
 
@@ -369,3 +370,7 @@ export function removeTrailingSlash(directory) {
 
   return directory;
 }
+
+export const mergeWithConcat = mergeWith((value, src) => (
+  Array.isArray(value) ? value.concat(src) : undefined
+));
