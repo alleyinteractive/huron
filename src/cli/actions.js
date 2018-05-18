@@ -1,4 +1,6 @@
-/** @module cli/actions */
+/**
+ * @module cli/actions
+ */
 
 // Imports
 import path from 'path';
@@ -105,9 +107,8 @@ export function updateFile(filepath, store) {
         return updateTemplate(filepath, section, store);
       }
 
-      console.log( // eslint-disable-line no-console
-        chalk.red(`Could not find associated KSS section for ${filepath}`)
-      );
+      console.log(chalk.red(`Failed to find KSS section for ${filepath}`));
+
       break;
 
     // KSS documentation (default extension is `.css`)
@@ -172,9 +173,8 @@ export function deleteFile(filepath, store) {
       break;
 
     default:
-      console.warn(  // eslint-disable-line no-console
-        chalk.red(`Could not delete: ${file.name}`)
-      );
+      console.warn( // eslint-disable-line no-console
+        chalk.red(`Could not delete: ${file.name}`));
       break;
   }
 

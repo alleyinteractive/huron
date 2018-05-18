@@ -16,18 +16,16 @@ import { removeTrailingSlash } from './utils';
  * @see {@link module:cli/generate-config generateConfig}
  */
 export default function startWebpack(config) {
-  const huron = config.huron;
-  const webpackConfig = config.webpack;
+  const {
+    huron,
+    webpackConfig,
+  } = config;
   const compiler = webpack(webpackConfig);
 
   if (program.progress) {
-    compiler.apply(
-      new webpack.ProgressPlugin(
-        (percentage, msg) => {
-          console.log(`${(percentage * 100)}% `, msg);
-        }
-      )
-    );
+    compiler.apply(new webpack.ProgressPlugin((percentage, msg) => {
+      console.log(`${(percentage * 100)}% `, msg);
+    }));
   }
 
   if (program.production) {
@@ -39,20 +37,14 @@ export default function startWebpack(config) {
       }
 
       if (stats.hasErrors()) {
-        console.error(
-          chalk.red(
-            'Webpack encountered errors during compile: ',
-            info.errors
-          )
-        );
+        console.error(chalk.red(
+          'Webpack encountered errors during compile: ',
+          info.errors
+        ));
       }
 
       if (stats.hasWarnings()) {
-        console.error(
-          chalk.yellow(
-            'Webpack encountered warnings during compile: ', info.warnings
-          )
-        );
+        console.error(chalk.yellow('Webpack encountered warnings during compile: ', info.warnings)); // eslint-disable-line max-len
       }
     });
   } else {

@@ -1,4 +1,6 @@
-/** @module cli/kss-handler */
+/**
+ * @module cli/kss-handler
+ */
 
 import path from 'path';
 import fs from 'fs-extra';
@@ -338,7 +340,7 @@ function unsetSection(section, file, store, removed) {
     newStore
   );
 
-   // Remove associated inline template
+  // Remove associated inline template
   if (isInline) {
     utils.removeFile(section.referenceURI, 'template', kssPath, newStore);
   }
@@ -426,6 +428,6 @@ function fieldShouldOutput(oldSection, newSection, field) {
   return (oldSection &&
       (oldSection[field] !== newSection[field] ||
       oldSection.referenceURI !== newSection.referenceURI)
-    ) ||
+  ) ||
     !oldSection;
 }

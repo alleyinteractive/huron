@@ -1,4 +1,6 @@
-/** @module cli/utilities */
+/**
+ * @module cli/utilities
+ */
 import path from 'path';
 import fs from 'fs-extra';
 import chalk from 'chalk';
@@ -53,9 +55,8 @@ export function writeSectionData(store, section, sectionPath = false) {
     );
   }
 
-  console.warn( // eslint-disable-line no-console
-    chalk.red(`Failed to write section data for ${section.referenceURI}`)
-  );
+  // eslint-disable-next-line no-console
+  console.warn(chalk.red(`Failed to write data for ${section.referenceURI}`));
   return false;
 }
 
@@ -227,9 +228,7 @@ export function removeFile(id, type, filepath, store) {
       fs.removeSync(outputPath);
       console.log(chalk.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console
     } catch (e) {
-      console.log( // eslint-disable-line no-console
-        chalk.red(`${outputRelative} does not exist or cannot be deleted`)
-      );
+      console.log(chalk.red(`${outputRelative} does not exist or cannot be deleted`)); // eslint-disable-line
     }
 
     return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;

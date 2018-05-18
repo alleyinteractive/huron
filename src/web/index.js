@@ -1,6 +1,6 @@
+/* eslint-disable no-underscore-dangle */
 import { compose, isEqual } from 'lodash/fp';
 
-/* eslint-disable no-underscore-dangle */
 // Accept the huron.js module for Huron development
 if (module.hot) {
   module.hot.accept();
@@ -12,7 +12,6 @@ if (module.hot) {
  * and [huron-type] corresponding with the required KSS field
  */
 export default class InsertNodes {
-
   constructor(modules, store) {
     /** webpack module list in which keys are relative require paths and values are the module contents */
     this._modules = modules;
@@ -265,7 +264,7 @@ export default class InsertNodes {
         .filter((name) => this._prototypes[name] === key);
 
       if (prototype.length) {
-        id = prototype[0];
+        [id] = prototype;
         type = 'prototype';
       }
     } else if (key === this._sectionTemplatePath) {
@@ -293,7 +292,7 @@ export default class InsertNodes {
         testTypes.length
       ) {
         id = sections[testSections[0]].referenceURI;
-        type = testTypes[0];
+        [type] = testTypes;
       }
     }
 
@@ -302,7 +301,9 @@ export default class InsertNodes {
       const replaceKey = this.generateModuleReplaceKey(key);
 
       if (renderData) {
-        return Object.assign({ id, type, key, replaceKey, module }, renderData);
+        return Object.assign({
+          id, type, key, replaceKey, module,
+        }, renderData);
       }
     }
 
@@ -441,7 +442,8 @@ export default class InsertNodes {
     if (cached) {
       moduleMeta = this.meta[key];
     } else {
-      moduleMeta = this.meta[key] = this.getMetaFromPath(key, module);
+      this.meta[key] = this.getMetaFromPath(key, module);
+      moduleMeta = this.meta[key];
     }
 
     if (moduleMeta) {
@@ -477,7 +479,7 @@ export default class InsertNodes {
 
       if (newEl) {
         const title = this._sections
-            .sectionsByURI[templateId] ?
+          .sectionsByURI[templateId] ?
           this._sections
             .sectionsByURI[templateId]
             .header :
@@ -675,7 +677,7 @@ export default class InsertNodes {
           )(meta.data, modifier);
           const rendered = meta.render(data);
           const renderedTemplate = InsertNodes.convertToElement(rendered)
-              .querySelector('template');
+            .querySelector('template');
           let renderedContents = null;
 
           // Remove existing module tags

@@ -11,7 +11,7 @@ Huron's configuration object must currently be a top-level `huron` property of t
 * **kss** {string} : default `'/css'` - relative path to KSS source directory. Currently you may only provide a single directory, but in the future we may allow an array.
 * **kssExtension** {string} : default `'.css'` - Extension of files containing your KSS documentation
 * **kssOptions**: {object} default
- 
+
 ```javascript
 {
   multiline: true,
