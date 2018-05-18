@@ -4,6 +4,7 @@ import path from 'path';
 import program from '../cli/parseArgs';
 
 export default ({ root, output }) => ({
+  mode: 'development',
   entry: {},
   output: {
     path: path.join(process.cwd(), root),
@@ -44,7 +45,7 @@ export default ({ root, output }) => ({
         include: [path.join(process.cwd(), root, 'huron-assets')],
         use: {
           loader: 'handlebars-loader',
-          options: {
+          query: {
             helperDirs: [path.join(
               __dirname,
               '../../',
