@@ -18,7 +18,7 @@ import { removeTrailingSlash } from './utils';
 export default function startWebpack(config) {
   const {
     huron,
-    webpackConfig,
+    webpack: webpackConfig,
   } = config;
   const compiler = webpack(webpackConfig);
 
