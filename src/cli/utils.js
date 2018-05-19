@@ -55,7 +55,6 @@ export function writeSectionData(store, section, sectionPath = false) {
     );
   }
 
-  // eslint-disable-next-line no-console
   console.warn(chalk.red(`Failed to write data for ${section.referenceURI}`));
   return false;
 }

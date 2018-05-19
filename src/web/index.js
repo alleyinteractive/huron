@@ -97,7 +97,7 @@ export default class InsertNodes {
       return Boolean(match.length) === filter.include;
     }
 
-    console.log(` // eslint-disable-line no-console
+    console.log(`
       filter ${filter} is not in a valid format.
       module filters must include 'property', 'values', and 'include' properties
     `);
@@ -307,7 +307,7 @@ export default class InsertNodes {
       }
     }
 
-    console.warn( // eslint-disable-line no-console
+    console.warn(
       `Module '${key}' does not exist on the page
       or is no longer in use`
     );
@@ -724,7 +724,7 @@ export default class InsertNodes {
         });
       }
     } else {
-      console.warn( // eslint-disable-line no-console
+      console.warn(
         `Could not render module
         section: ${meta.id}
         type: ${meta.type}`
