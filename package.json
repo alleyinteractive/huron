@@ -33,7 +33,11 @@
     "templates"
   ],
   "dependencies": {
+    "babel-cli": "^6.26.0",
     "babel-core": "^6.26.3",
+    "babel-jest": "^22.4.3",
+    "babel-loader": "^7.1.4",
+    "babel-preset-env": "^1.7.0",
     "chalk": "^2.4.1",
     "commander": "^2.15.1",
     "concurrently": "^3.5.1",
@@ -45,7 +49,7 @@
     "handlebars": "^4.0.11",
     "handlebars-loader": "^1.7.0",
     "html-loader": "^0.5.5",
-    "html-webpack-plugin": "jantimon/html-webpack-plugin#webpack-4",
+    "html-webpack-plugin": "github:jantimon/html-webpack-plugin#webpack-4",
     "immutable": "^3.8.2",
     "json-loader": "^0.5.7",
     "kss": "^3.0.0-beta.20",
@@ -53,13 +57,8 @@
     "opn": "^5.3.0",
     "style-loader": "^0.21.0",
     "webpack": "^4.8.3",
-    "webpack-dev-server": "^3.1.4"
-  },
-  "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-jest": "^22.4.3",
-    "babel-loader": "^7.1.4",
-    "babel-preset-env": "^1.7.0",
+    "webpack-cli": "^2.1.3",
+    "webpack-dev-server": "^3.1.4",
     "clean-webpack-plugin": "^0.1.19",
     "eslint": "^4.19.1",
     "eslint-config-airbnb": "^16.1.0",
@@ -73,7 +72,6 @@
     "mock-fs": "^4.5.0",
     "raw-loader": "^0.5.1",
     "regenerator-runtime": "^0.11.1",
-    "webpack-cli": "^2.1.3",
     "webpack-node-externals": "^1.7.2"
   }
 }
