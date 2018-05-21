@@ -31,8 +31,7 @@ cache:
     - "$HOME/.npm"
 
 script:
-    - npm run test
-    - npm run start &
+    - npm run build
     - sleep 10 # Give server enough time to spin up
 
 # Disabling sanity test curl test until REACT_APP_WPAPI_ROOT is ready
