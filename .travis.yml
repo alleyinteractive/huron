@@ -8,7 +8,6 @@ node_js:
 env:
   global:
     - NODE_ENV=production
-    - REACT_APP_WPAPI_ROOT=https://api.onbeing.org/wp-json
 
 branches:
   only:
