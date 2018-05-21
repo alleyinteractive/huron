@@ -173,8 +173,7 @@ export function deleteFile(filepath, store) {
       break;
 
     default:
-      console.warn(
-        chalk.red(`Could not delete: ${file.name}`));
+      console.warn(chalk.red(`Could not delete: ${file.name}`));
       break;
   }
 
