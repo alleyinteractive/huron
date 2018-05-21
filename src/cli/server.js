@@ -37,10 +37,12 @@ export default function startWebpack(config) {
       }
 
       if (stats.hasErrors()) {
-        console.error(chalk.red(
-          'Webpack encountered errors during compile: ',
-          info.errors
-        ));
+        console.error(
+          chalk.red(
+            'Webpack encountered errors during compile: ',
+            info.errors
+          )
+        );
       }
 
       if (stats.hasWarnings()) {
