@@ -315,43 +315,64 @@ export function matchKssDir(filepath, huron) {
  * @return {object} classnamesMerged - merged classnames. contents of each JSON file is nested within
  *                           the returned object by filename. (e.g. article.json -> { article: {...json contents}})
  */
-export function mergeClassnameJSON(directory) {
-  let files;
+// Have the huron config provide a path to a file that provides the classnames mainfest
+// and use wahtever is in that
+export function getClassnamesFromJSON(filepath) {
+  const fileInfo = path.parse(filepath);
+  let classNames = {};
 
-  // If no config is provided, return immediately
-  if (!directory) {
-    return {};
-  }
-
-  // Try to read through classnames directory
-  try {
-    files = fs.readdirSync(directory);
-  } catch (e) {
-    console.warn(chalk.red(e));
-  }
-
-  // Merge classname json files
-  const classNamesMerged = files.reduce((acc, file) => {
-    const fileInfo = path.parse(file);
-    let classNames = {};
-
-    if ('.json' === fileInfo.ext) {
-      try {
-        const contents = fs.readFileSync(
-          path.join(directory, file),
-          'utf8'
-        );
-        classNames = JSON.parse(contents);
-      } catch (e) {
-        console.warn(chalk.red(e));
-      }
+  if ('.json' === fileInfo.ext) {
+    try {
+      const contents = fs.readFileSync(
+        filepath,
+        'utf8'
+      );
+      classNames = JSON.parse(contents);
+    } catch (e) {
+      console.warn(chalk.red(e));
     }
+  }
 
-    return Object.assign({}, acc, { [fileInfo.name]: classNames });
-  }, {});
-
-  return classNamesMerged;
+  return { [filepath]: classNames };
 }
+
+// export function mergeClassnameJSON(directory) {
+//   let files;
+
+//   // If no config is provided, return immediately
+//   if (!directory) {
+//     return {};
+//   }
+
+//   // Try to read through classnames directory
+//   try {
+//     files = fs.readdirSync(directory);
+//   } catch (e) {
+//     console.warn(chalk.red(e));
+//   }
+
+//   // Merge classname json files
+//   const classNamesMerged = files.reduce((acc, file) => {
+//     const fileInfo = path.parse(file);
+//     let classNames = {};
+
+//     if ('.json' === fileInfo.ext) {
+//       try {
+//         const contents = fs.readFileSync(
+//           path.join(directory, file),
+//           'utf8'
+//         );
+//         classNames = JSON.parse(contents);
+//       } catch (e) {
+//         console.warn(chalk.red(e));
+//       }
+//     }
+
+//     return Object.assign({}, acc, { [fileInfo.name]: classNames });
+//   }, {});
+
+//   return classNamesMerged;
+// }
 
 /**
  * Remove the trailing slash from a provided directory
