@@ -1,7 +1,7 @@
 import { Map } from 'immutable';
 
 import generateConfig from './generateConfig';
-// import { getClassnamesFromJSON } from './utils';
+import { getClassnamesFromJSON } from './utils';
 // Create initial data structure
 
 // Merge Huron default webpack config with user config
@@ -26,7 +26,7 @@ const defaultStore = Map({
     'sections-template',
   ],
   config: Map(config.huron),
-  classNames: config.huron.classNames,
+  classNames: getClassnamesFromJSON(config.huron.classNames),
   sections: Map({
     sectionsByPath: Map({}),
     sectionsByURI: Map({}),
