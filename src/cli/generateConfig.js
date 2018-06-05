@@ -185,7 +185,6 @@ function configurePrototypes(huron, config) {
       huron.root,
       'huron-assets/prototypeTemplate.hbs'
     ),
-    inject: false,
     chunks: [huron.entry],
   };
   const newConfig = config;
