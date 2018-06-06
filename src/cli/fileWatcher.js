@@ -32,7 +32,6 @@ watchedFiles.push(path.resolve(huron.get('sectionTemplate')));
 // Watch cssmodules classname files (if they exist)
 if (huron.get('classNames')) {
   watchedFiles.push(
-    // `${path.resolve(huron.get('classNames'))}/*.json`
     path.resolve(huron.get('classNames'))
   );
 }
