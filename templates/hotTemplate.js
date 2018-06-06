@@ -11,10 +11,10 @@ import sectionTemplate from './section.hbs';
 /* eslint-enable */
 
 const assets = require.context(
-    hotScope.requirePath,
-    true,
-    hotScope.requireRegex
-  );
+  hotScope.requirePath,
+  true,
+  hotScope.requireRegex
+);
 const modules = {};
 
 modules[hotScope.sectionTemplatePath] = sectionTemplate;
@@ -41,7 +41,7 @@ if (module.hot) {
 
       updateStore(require('./huron-store.js')); // eslint-disable-line global-require, import/no-unresolved
       newModules.forEach((module) => {
-        modules[module[0]] = module[1];
+        modules[module[0]] = module[1]; // eslint-disable-line prefer-destructuring
         hotReplace(module[0], module[1], modules);
       });
     }

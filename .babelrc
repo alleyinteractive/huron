@@ -5,7 +5,7 @@
         ["env", {
           "targets": {
             "node": "6.11.4",
-          }
+          },
         }]
       ]
     },
@@ -14,7 +14,10 @@
         ["env", {
           "targets": {
             "node": "6.11.4",
-          }
+          },
+          "modules": "commonjs",
+          "useBuiltIns": "usage",
+          "debug": false,
         }]
       ]
     },

@@ -75,29 +75,30 @@ export default function generateConfig() {
 
 /**
  * Configure and manage webpack entry points
- *
- * @param {object} huron - huron configuration object
- * @param {object} config - webpack configuration object
- * @return {object} newConfig - updated data store
+ * @param  {object} huron.entry Entry from huron config
+ * @param  {string} huron.root  Path to root
+ * @param  {string} huron.port  Port process is running on
+ * @param  {object} config      Webpack config object
+ * @return {object}             Webpack config object with modified entries
  */
-function configureEntries(huron, config) {
-  const entry = config.entry[huron.entry];
-  const newConfig = config;
+function configureEntries({ entry, root, port }, config) {
+  const originalEntry = config.entry[entry];
+  const devServerEntries = program.production ? [] : [
+    `webpack-dev-server/client/index.js?http://localhost:${port}/`,
+    'webpack/hot/dev-server',
+  ];
 
-  newConfig.entry = {};
-  if (!program.production) {
-    newConfig.entry[huron.entry] = [
-      `webpack-dev-server/client/index.js?http://localhost:${huron.port}/`,
-      'webpack/hot/dev-server',
-      path.join(cwd, huron.root, 'huron-assets/index'),
-    ].concat(entry);
-  } else {
-    newConfig.entry[huron.entry] = [
-      path.join(cwd, huron.root, 'huron-assets/index'),
-    ].concat(entry);
-  }
-
-  return newConfig;
+  return Object.assign({},
+    config,
+    {
+      entry: {
+        [entry]: Array.prototype.concat(
+          devServerEntries,
+          path.join(cwd, root, 'huron-assets/index'),
+          originalEntry
+        ),
+      },
+    });
 }
 
 /**
@@ -184,7 +185,6 @@ function configurePrototypes(huron, config) {
       huron.root,
       'huron-assets/prototypeTemplate.hbs'
     ),
-    inject: false,
     chunks: [huron.entry],
   };
   const newConfig = config;

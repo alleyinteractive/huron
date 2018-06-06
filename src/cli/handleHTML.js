@@ -1,7 +1,8 @@
-/** @module cli/html-handler */
+/**
+ * @module cli/html-handler
+ */
 import path from 'path';
 import fs from 'fs-extra';
-
 import * as utils from './utils';
 
 /**
@@ -100,9 +101,9 @@ export function updatePrototype(filepath, store) {
     );
 
     return store.setIn(
-        ['prototypes', file.name],
-        requirePath
-      );
+      ['prototypes', file.name],
+      requirePath
+    );
   }
 
   console.log(`File ${file.base} could not be read`);
@@ -127,7 +128,7 @@ export function deletePrototype(filepath, store) {
   );
 
   return store.setIn(
-      ['prototypes', file.name],
-      requirePath
-    );
+    ['prototypes', file.name],
+    requirePath
+  );
 }

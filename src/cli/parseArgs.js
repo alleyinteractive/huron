@@ -7,6 +7,8 @@ import path from 'path';
 // Requires
 /** @global */
 
+// @todo this may be deprecated with webpack 4
+
 /**
  * Process huron CLI arguments
  *

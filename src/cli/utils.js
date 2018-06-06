@@ -1,4 +1,6 @@
-/** @module cli/utilities */
+/**
+ * @module cli/utilities
+ */
 import path from 'path';
 import fs from 'fs-extra';
 import chalk from 'chalk';
@@ -53,9 +55,7 @@ export function writeSectionData(store, section, sectionPath = false) {
     );
   }
 
-  console.warn( // eslint-disable-line no-console
-    chalk.red(`Failed to write section data for ${section.referenceURI}`)
-  );
+  console.warn(chalk.red(`Failed to write data for ${section.referenceURI}`));
   return false;
 }
 
@@ -227,9 +227,7 @@ export function removeFile(id, type, filepath, store) {
       fs.removeSync(outputPath);
       console.log(chalk.green(`Removing ${outputRelative}`)); // eslint-disable-line no-console
     } catch (e) {
-      console.log( // eslint-disable-line no-console
-        chalk.red(`${outputRelative} does not exist or cannot be deleted`)
-      );
+      console.log(chalk.red(`${outputRelative} does not exist or cannot be deleted`)); // eslint-disable-line
     }
 
     return `./${outputRelative.replace(`${huron.get('output')}/`, '')}`;
@@ -309,50 +307,30 @@ export function matchKssDir(filepath, huron) {
 }
 
 /**
- * Merge JSON files for css modules classnames in a provided directory
+ * Ingest the classnames from the file specified in the huron config.
  *
- * @function mergeClassnameJSON
- * @param {string} directory - directory containing classname JSON files
+ * @function getClassnamesFromJSON
+ * @param {string} filepath - file containing classname JSON files
  *
- * @return {object} classnamesMerged - merged classnames. contents of each JSON file is nested within
- *                           the returned object by filename. (e.g. article.json -> { article: {...json contents}})
+ * @return {object}          contents of classnames JSON file
  */
-export function mergeClassnameJSON(directory) {
-  let files;
+export function getClassnamesFromJSON(filepath) {
+  const fileInfo = path.parse(filepath);
+  let classNames = {};
 
-  // If no config is provided, return immediately
-  if (!directory) {
-    return {};
-  }
-
-  // Try to read through classnames directory
-  try {
-    files = fs.readdirSync(directory);
-  } catch (e) {
-    console.warn(chalk.red(e));
-  }
-
-  // Merge classname json files
-  const classNamesMerged = files.reduce((acc, file) => {
-    const fileInfo = path.parse(file);
-    let classNames = {};
-
-    if ('.json' === fileInfo.ext) {
-      try {
-        const contents = fs.readFileSync(
-          path.join(directory, file),
-          'utf8'
-        );
-        classNames = JSON.parse(contents);
-      } catch (e) {
-        console.warn(chalk.red(e));
-      }
+  if ('.json' === fileInfo.ext) {
+    try {
+      const contents = fs.readFileSync(
+        filepath,
+        'utf8'
+      );
+      classNames = JSON.parse(contents);
+    } catch (e) {
+      console.warn(chalk.red(e));
     }
+  }
 
-    return Object.assign({}, acc, { [fileInfo.name]: classNames });
-  }, {});
-
-  return classNamesMerged;
+  return classNames;
 }
 
 /**
