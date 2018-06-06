@@ -312,8 +312,7 @@ export function matchKssDir(filepath, huron) {
  * @function getClassnamesFromJSON
  * @param {string} filepath - file containing classname JSON files
  *
- * @return {object}           merged classnames. contents of each JSON file is nested within
- *                           the returned object by filename. (e.g. article.json -> { article: {...json contents}})
+ * @return {object}          contents of classnames JSON file
  */
 export function getClassnamesFromJSON(filepath) {
   const fileInfo = path.parse(filepath);
