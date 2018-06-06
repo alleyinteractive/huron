@@ -81,7 +81,7 @@ In Huron, everything is a "prototype" (even a style guide). Unlike previous vers
 ## Using CSS Modules
 If you're using CSS modules in your production site, it makes sense to also use it when developing in-browser prototypes. Huron supports usage of certain CSS modules implementations (specifically any that is capable of producing JSON output containing localized classes). All that's needed in order to configure this is the `classNames` configuration property, more details for which are in the [configuration docs](src/default-config/README.md).
 
-Once you have that set up, all classes will be be provided to every template. These classes are available on a `classNames` object, under which all classes are nested and organized by filename. For example, if your build produces two JSON files for localized classes called `article.json` and `home.json`, you can access those classes in your huron templates via `classNames.article[className]` and `classNames.home[className]` respectively.
+Once you have that set up, all classes within the provided JSON file will be be provided to every template on a global classNames object. Because huron only accepts a single classnames file, the recommended approach is to nest classnames under top-level keys corresponding to component names. For example, if you have article and newsletter components, set up your JSON output so you can access classes for those components in your huron templates via `classNames.article[className]` and `classNames.newsletter[className]` respectively.
 
 A sample of how to set this up can be found in the [`huron-examples` repo](https://github.com/alleyinteractive/huron-examples). (Note: Needs to be updated to show a filepath and not a directory).
 
