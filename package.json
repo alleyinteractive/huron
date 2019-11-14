@@ -52,7 +52,7 @@
     "opn": "^5.1.0",
     "style-loader": "0.13.1",
     "webpack": ">=2.6.1",
-    "webpack-dev-server": "^2.9.3"
+    "webpack-dev-server": "^3.1.11"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
